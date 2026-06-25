@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+/RLMSLogic/rlms_2024_adult_profiles.jsonl
+/data/r33hall_83_DTA/r33hall_83.dta
+/data/r33iall_84_DTA/r33iall_84.dta
