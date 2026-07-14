@@ -10,7 +10,7 @@ profiles = profilesLoader.loadProfiles('.\\data')
 surveyDate = date(2025, 7, 1)
 
 surveyExecutor = StandardSurveyExecutor()
-surveySerializer = SurveySerializer('rlms2025', 'surveyResults')
+surveySerializer = SurveySerializer('rlms2024', 'surveyResults')
 runner = StandardSurveyRunner(surveySerializer, surveyExecutor)
 
 surveyResults = runner.RunSurvey(surveyDate, profiles)
