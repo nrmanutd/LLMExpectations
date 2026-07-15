@@ -1,16 +1,22 @@
 from datetime import date
 
+from Configuration.configuration import bothub_key
 from SurveyLogic.PromptBuilders.Profiles.ProfileDataLoader import ProfileDataLoader
+from SurveyLogic.PromptBuilders.profileBuildersHelpers import createSimplePromptBuilder
 from SurveyLogic.StandardSurveyRunner import StandardSurveyRunner
 from SurveyLogic.SurveyExecution.StandardSurveyExecutor import StandardSurveyExecutor
 from SurveyLogic.SurveyResultsSerialization.SurveySerializer import SurveySerializer
+from SurveyLogic.Surveyers.BothubSurveyer import BothubSurveyer
 
 profilesLoader = ProfileDataLoader()
-profiles = profilesLoader.loadProfiles('.\\data')
+profiles = profilesLoader.loadProfiles('.\\data\\target_rlms2024_os_based_profiles')
 surveyDate = date(2025, 7, 1)
 
-surveyExecutor = StandardSurveyExecutor()
-surveySerializer = SurveySerializer('rlms2024', 'surveyResults')
+systemPromptBuilder, promptBuilder = createSimplePromptBuilder()
+surveyer = BothubSurveyer(modelToUse='gpt-4o', key=bothub_key)
+
+surveyExecutor = StandardSurveyExecutor(systemPromptBuilder, promptBuilder, surveyer)
+surveySerializer = SurveySerializer('rlms2024', 'data\\target_rlms2024_os_based_profiles_results')
 runner = StandardSurveyRunner(surveySerializer, surveyExecutor)
 
 surveyResults = runner.RunSurvey(surveyDate, profiles)

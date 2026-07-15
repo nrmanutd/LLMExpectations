@@ -25,7 +25,7 @@ class SurveySerializer(BaseSurveySerializer):
 
     @staticmethod
     def __saveSingleSurvey(survey: InflationSurveyRespond, targetFolder: Path):
-        filename = f'{survey.respondentId}.json'
+        filename = f'{survey.respondent_id}.json'
         file_path = targetFolder / filename
 
         # Преобразуем датакласс в словарь и записываем в JSON

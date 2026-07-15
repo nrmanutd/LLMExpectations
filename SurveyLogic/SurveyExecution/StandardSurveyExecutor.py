@@ -7,12 +7,15 @@ from SurveyLogic.Surveyers.BaseSurveyer import BaseSurveyer
 
 
 class StandardSurveyExecutor(BaseSurveyExecutor):
-    def __init__(self, promptBuilder: BasePromptBuilder, surveyer: BaseSurveyer):
+    def __init__(self, systemPromptBuilder: BasePromptBuilder, promptBuilder: BasePromptBuilder, surveyer: BaseSurveyer):
+        self.systemPromptBuilder = systemPromptBuilder
         self.surveyer = surveyer
         self.promptBuilder = promptBuilder
 
     def executeSurvey(self, surveyDate: date, profile: ProfileData):
+        systemPrompt = self.systemPromptBuilder.buildPrompt(surveyDate, profile)
         prompt = self.promptBuilder.buildPrompt(surveyDate, profile)
-        respond = self.surveyer.askSurvey(prompt)
+
+        respond = self.surveyer.askSurvey(systemPrompt, prompt, profile.respondentId)
 
         return respond

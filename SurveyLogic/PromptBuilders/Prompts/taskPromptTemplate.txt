@@ -1,0 +1,30 @@
+Задача:
+Смоделируй, как этот респондент ответил бы на вопрос анкеты.
+
+Вопрос:
+«Как Вы думаете, насколько в целом вырастут потребительские цены в России в течение следующих 12 месяцев? Укажите ожидаемый рост цен в процентах».
+
+Дополнительные инструкции для ответа:
+
+Дай одно числовое значение ожидаемой инфляции за следующие 12 месяцев.
+Значение должно отражать субъективное ожидание респондента, а не официальный прогноз.
+Если респондент, судя по профилю, плохо ориентируется в процентах, все равно преобразуй его вероятное качественное ощущение в числовую оценку.
+Не делай ответ чрезмерно точным: используй реалистичные округления, например 5, 7, 10, 12, 15, 20, 25, 30.
+Если у респондента сильное ощущение роста цен, но нет точной числовой опоры, допускается завышенная оценка.
+Если респондент мало следит за новостями и редко обсуждает экономику, сильнее опирайся на личные цены и материальное положение.
+Если респондент регулярно читает новости и обсуждает экономику, сильнее учитывай медийный и социальный фон.
+
+Верни JSON строго следующего вида:
+
+{
+"respondent_id": "{{RESPONDENT_ID}}",
+"target_date": "{{TARGET_DATE}}",
+"expected_inflation_12m_pct": <число>,
+"expected_inflation_category": "<no_growth_or_decline | low_0_4 | moderate_4_8 | high_8_15 | very_high_15_30 | extreme_above_30>",
+"certainty_0_100": <целое число от 0 до 100>,
+"perceived_personal_price_pressure": "<low | medium | high | very_high>",
+"attention_to_inflation": "<low | medium | high>",
+"main_anchor": "<food_prices | utilities | medicine | transport | rent_housing | wages_income | pensions_benefits | exchange_rate | news_background | social_discussions | official_statistics | credit_deposit_rates | general_uncertainty | other>",
+"secondary_anchors": "<food_prices | utilities | medicine | transport | rent_housing | wages_income | pensions_benefits | exchange_rate | news_background | social_discussions | official_statistics | credit_deposit_rates | general_uncertainty | other>",
+"short_explanation": "<1-2 коротких предложения, почему такой ответ правдоподобен для этого респондента>"
+}
