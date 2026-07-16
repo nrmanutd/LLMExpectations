@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import date
 
 
-class BaseSurveyRunner(ABC):
+class BaseProfilesProvider(ABC):
     @abstractmethod
-    def RunSurvey(self, surveyDate: date):
+    def getProfiles(self, surveyDate: date):
         pass

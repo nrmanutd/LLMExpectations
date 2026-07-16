@@ -10,4 +10,4 @@ converter = SimpleRLMSProfileConverter()
 extractor = RLMSProfileExtractor(converter)
 
 extractor.extractAndSaveRLMSProfiles(dta_file, out_folder)
-extractor.generateAndSaveProfilesFromRLMS(out_folder, profiles_out_folder, 0.01)
+extractor.generateAndSaveProfilesFromRLMS(out_folder, profiles_out_folder, 0.01 / 12)

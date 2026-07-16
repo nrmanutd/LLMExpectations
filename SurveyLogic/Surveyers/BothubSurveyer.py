@@ -1,6 +1,9 @@
+import json
+
+from SurveyLogic.SurveyResults.InflationSurveyRespond import InflationSurveyRespond
 from SurveyLogic.Surveyers.BaseSurveyer import BaseSurveyer
 from openai import OpenAI
-
+from dataclasses import fields
 
 class BothubSurveyer(BaseSurveyer):
     def __init__(self, modelToUse: str, key: str):
@@ -14,6 +17,7 @@ class BothubSurveyer(BaseSurveyer):
         )
 
     def askSurvey(self, systemPrompt: str, prompt: str, respondentId: str):
+
         try:
             response = self.client.chat.completions.create(
                 model=self.modelToUse,  # Specify any model available on your BotHub account
@@ -23,8 +27,16 @@ class BothubSurveyer(BaseSurveyer):
                 ]
             )
 
+            resp = response.choices[0].message.content
+            resp_json = json.loads(resp)
+
             # Print the text response
-            print(response.choices[0].message.content)
-            return response.choices[0].message.content
+            print(resp)
+
+            valid_field_names = {f.name for f in fields(InflationSurveyRespond)}
+            filtered_data = {k: v for k, v in resp_json.items() if k in valid_field_names}
+
+            result = InflationSurveyRespond(**filtered_data)
+            return result
         except Exception as e:
             print(f"An error occurred: {e}")
