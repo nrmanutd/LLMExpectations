@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+import re
 import random
 from dataclasses import asdict, fields
 from pathlib import Path
@@ -16,8 +17,9 @@ from RLMSLogic.extractionHelpers import norm, value_to_label, safe_filename
 class RLMSProfileExtractor:
     def __init__(self, converter: SimpleRLMSProfileConverter):
         self.converter = converter
+        self.prefix = {33: 'cc', 32: 'bb', 31: 'aa', 30: 'z', 29: 'y', 28: 'x', 27: 'w', 26: 'v', 25: 'u', 24: 't', 23: 's'}
 
-    def extractAndSaveRLMSProfiles(self, dta_path: str, output_dir: str) -> List[RLMSProfileData]:
+    def extractAndSaveRLMSProfiles(self, dta_path: Path, output_path: Path) -> List[RLMSProfileData]:
         """
         Загружает данные RLMS, извлекает профиль каждого респондента и сохраняет JSON-файлы.
 
@@ -31,13 +33,16 @@ class RLMSProfileExtractor:
         """
         # Чтение данных без применения меток (чтобы получить числовые коды)
         df, meta = pyreadstat.read_dta(
-            dta_path,
+            str(dta_path),
             apply_value_formats=False,
             formats_as_category=False,
             user_missing=False
         )
 
-        output_path = Path(output_dir)
+        match = re.search(r'.*r(\d+)i.*', dta_path.name)
+        waveNumber = int(match.group(1))
+        p = self.prefix[waveNumber]
+
         output_path.mkdir(parents=True, exist_ok=True)
 
         profiles = []
@@ -49,20 +54,20 @@ class RLMSProfileExtractor:
                 continue  # пропускаем записи без id
 
             # Возраст: вычисляем из года рождения (переменная CCJ69.0)
-            age = int(norm(row.get('cc_age')))
+            age = norm(row.get(f'{p}_age'))
 
             # Пол (CCH5)
-            sex = value_to_label('cch5', row.get('cch5'), meta)
+            sex = value_to_label(f'{p}h5', row.get(f'{p}h5'), meta)
 
-            highestEducation = value_to_label('ccj72_18a', row.get('ccj72_18a'), meta)
-            commonEducation = value_to_label('cc_educ', row.get('cc_educ'), meta)
-            diploma = value_to_label('cc_diplom', row.get('cc_diplom'), meta)
+            highestEducation = value_to_label(f'{p}j72_18a', row.get(f'{p}j72_18a'), meta)
+            commonEducation = value_to_label(f'{p}_educ', row.get(f'{p}_educ'), meta)
+            diploma = value_to_label(f'{p}_diplom', row.get(f'{p}_diplom'), meta)
             education = f'{diploma}, {commonEducation}, {highestEducation}'
 
             # Место рождения: комбинация ответов на вопросы 1-3
-            loc_birth = value_to_label('cci1', row.get('cci1'), meta)  # другой/тот же
-            country = value_to_label('cci2', row.get('cci2'), meta)
-            place_type = value_to_label('cci3', row.get('cci3'), meta)
+            loc_birth = value_to_label(f'{p}i1', row.get(f'{p}i1'), meta)  # другой/тот же
+            country = value_to_label(f'{p}i2', row.get(f'{p}i2'), meta)
+            place_type = value_to_label(f'{p}i3', row.get(f'{p}i3'), meta)
             parts = [p for p in (loc_birth, country, place_type) if p]
             LocalityOfBirth = ', '.join(parts)
 
@@ -75,34 +80,41 @@ class RLMSProfileExtractor:
             typeOfPlace = localityStatus
 
             # Должность/профессия (вопрос 3: CCJ2_3a – должность, CCJ2_3b – профессия)
-            occupation = value_to_label('cc_occup08', row.get('cc_occup08'), meta)
-            numberOfEmployees = value_to_label('ccj13', row.get('ccj13'), meta)
+            occupation = value_to_label(f'{p}_occup08', row.get(f'{p}_occup08'), meta)
+            numberOfEmployees = value_to_label(f'{p}j13', row.get(f'{p}j13'), meta)
             job = f'{occupation} (численность {numberOfEmployees})'
 
             # Отрасль (вопрос 6, CCJ5A)
-            jobSector = value_to_label('ccj4_1', row.get('ccj4_1'), meta)
+            jobSector = value_to_label(f'{p}j4_1', row.get(f'{p}j4_1'), meta)
 
             # Зарплата: среднемесячная за 12 месяцев (вопрос 32, CCJ13)
-            salary_raw = norm(row.get('ccj13_2'))
+            salary_raw = norm(row.get(f'{p}j13_2'))
             salary = str(salary_raw) if salary_raw is not None else None
 
             # Сбережения: банковский депозит (вопрос 79.1, CCJ596.1)
-            deposit = value_to_label('ccj596_1', row.get('ccj596_1'), meta)
-            equities = value_to_label('ccj596_3', row.get('ccj596_3'), meta)
-            brokerAccount = value_to_label('ccj596_4', row.get('ccj596_4'), meta)
+            deposit = value_to_label(f'{p}j596_1', row.get(f'{p}j596_1'), meta)
+            equities = value_to_label(f'{p}j596_3', row.get(f'{p}j596_3'), meta)
+            brokerAccount = value_to_label(f'{p}j596_4', row.get(f'{p}j596_4'), meta)
             hasSavings = (deposit == 'Да' or equities == 'Да' or brokerAccount == 'Да')
 
             # Кредит: невыплаченный кредит (вопрос 79.2, CCJ596.2)
-            credit_raw = value_to_label('ccj596_2', row.get('ccj596_2'), meta)
+            credit_raw = value_to_label(f'{p}j596_2', row.get(f'{p}j596_2'), meta)
             hasCredit = (credit_raw == 'Да') if credit_raw is not None else False
 
-            familyStatus = value_to_label('cc_marst', row.get('cc_marst'), meta)
-            currentStatus = value_to_label('ccj1', row.get('ccj1'), meta)
-            nationality = value_to_label('cci4', row.get('cci4'), meta)
-            lastMonthSalary = str(norm(row.get('ccj60')))
+            familyStatus = value_to_label(f'{p}_marst', row.get(f'{p}_marst'), meta)
+            currentStatus = value_to_label(f'{p}j1', row.get(f'{p}j1'), meta)
+            nationality = value_to_label(f'{p}i4', row.get(f'{p}i4'), meta)
+            lastMonthSalary = str(norm(row.get(f'{p}j60')))
 
-            economicsSourceOfKnowledge = value_to_label('ccj597_1', row.get('ccj597_1'), meta)
-            moneyStatusLastThreeYears = value_to_label('ccj60_5b', row.get('ccj60_5b'), meta)
+            currentSources = []
+            for i in range(1, 11):
+                curLabel = f'{p}j597_{i}'
+                curValue = value_to_label(curLabel, row.get(curLabel), meta)
+                if curValue is not None:
+                    currentSources.append(curValue)
+
+            economicsSourceOfKnowledge = ','.join(currentSources)
+            moneyStatusLastThreeYears = value_to_label(f'{p}j60_5b', row.get(f'{p}j60_5b'), meta)
 
             profile = RLMSProfileData(
                 respondentId=str(respondent_id),
@@ -135,8 +147,8 @@ class RLMSProfileExtractor:
 
         return profiles
 
-    def generateAndSaveProfilesFromRLMS(self, rlmsProfilesFolder: str, targetFolder: str, fraction: float, seed: int = 42):
-        pattern = os.path.join(rlmsProfilesFolder, "*.json")
+    def generateAndSaveProfilesFromRLMS(self, rlmsProfilesFolder: Path, folderPath: Path, fraction: float, seed: int = 42):
+        pattern = os.path.join(str(rlmsProfilesFolder), "*.json")
         json_files = glob.glob(pattern)
 
         total = len(json_files)
@@ -162,10 +174,9 @@ class RLMSProfileExtractor:
 
             resultProfile = self.converter.convert(profile)
 
-            folderPath = Path(targetFolder)
             folderPath.mkdir(parents=True, exist_ok=True)
 
-            path = f'{targetFolder}//{resultProfile.respondentId}.json'
+            path = folderPath / f'{resultProfile.respondentId}.json'
             with open(path, 'w', encoding='utf-8') as ff:
                 json.dump(asdict(resultProfile), ff, ensure_ascii=False, indent=2)
 
