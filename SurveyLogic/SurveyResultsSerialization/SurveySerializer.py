@@ -8,24 +8,25 @@ from SurveyLogic.SurveyResultsSerialization.BaseSurveySerializer import BaseSurv
 
 
 class SurveySerializer(BaseSurveySerializer):
-    def __init__(self, profilesName: str, resultFolder: str):
+    def __init__(self, subFolderName: str, resultFolder: str):
         self.resultFolder = resultFolder
-        self.profilesName = profilesName
+        self.subFolderName = subFolderName
 
     def saveSurvey(self, surveys: list[InflationSurveyRespond], surveyDate: date):
-        targetFolder = Path(f'{self.resultFolder}//{self.profilesName}//{surveyDate.strftime("%d.%m.%Y")}')
+        targetFolder = Path(f'{self.resultFolder}//{self.subFolderName}')
 
         dir_path = Path(targetFolder)
         dir_path.mkdir(parents=True, exist_ok=True)
 
         for survey in surveys:
+            survey.target_date = surveyDate.strftime('%d.%m.%Y')
             self.__saveSingleSurvey(survey, targetFolder)
 
         return
 
     @staticmethod
     def __saveSingleSurvey(survey: InflationSurveyRespond, targetFolder: Path):
-        filename = f'{survey.respondent_id}.json'
+        filename = f'{survey.target_date}_{survey.respondent_id}.json'
         file_path = targetFolder / filename
 
         # Преобразуем датакласс в словарь и записываем в JSON

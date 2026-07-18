@@ -1,6 +1,8 @@
 from pathlib import Path
 
 promptsPath = 'SurveyLogic/PromptBuilders/Prompts'
+inflationPath = 'data/Inflation'
+politicsPath = 'data/Politics'
 
 systemPrompt = Path(f'{promptsPath}/systemPromptTemplate_v1.txt').read_text(encoding="utf-8")
 respondentPrompt = Path(f'{promptsPath}/commonRespondentPromptTemplate.txt').read_text(encoding="utf-8")
