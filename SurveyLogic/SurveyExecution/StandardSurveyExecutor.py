@@ -16,6 +16,6 @@ class StandardSurveyExecutor(BaseSurveyExecutor):
         systemPrompt = self.systemPromptBuilder.buildPrompt(surveyDate, profile)
         prompt = self.promptBuilder.buildPrompt(surveyDate, profile)
 
-        respond = self.surveyer.askSurvey(systemPrompt, prompt, profile.respondentId)
+        respond = self.surveyer.askSurvey(systemPrompt, prompt, profile.respondentId, surveyDate)
 
         return respond

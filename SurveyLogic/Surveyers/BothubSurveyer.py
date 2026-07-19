@@ -1,12 +1,15 @@
 import json
+from datetime import date
 
+from Logging.BaseLogger import BaseLogger
 from SurveyLogic.SurveyResults.InflationSurveyRespond import InflationSurveyRespond
 from SurveyLogic.Surveyers.BaseSurveyer import BaseSurveyer
 from openai import OpenAI
 from dataclasses import fields
 
 class BothubSurveyer(BaseSurveyer):
-    def __init__(self, modelToUse: str, key: str):
+    def __init__(self, modelToUse: str, key: str, logger: BaseLogger):
+        self.logger = logger
         self.modelToUse = modelToUse
         self.key=key
         self.baseUrl="https://openai.bothub.chat/v1"  # Or https://openai.bothub.chat/v1
@@ -16,7 +19,7 @@ class BothubSurveyer(BaseSurveyer):
             base_url=self.baseUrl
         )
 
-    def askSurvey(self, systemPrompt: str, prompt: str, respondentId: str):
+    def askSurvey(self, systemPrompt: str, prompt: str, respondentId: str, surveyDate: date):
 
         try:
             response = self.client.chat.completions.create(
@@ -31,7 +34,7 @@ class BothubSurveyer(BaseSurveyer):
             resp_json = json.loads(resp)
 
             # Print the text response
-            print(resp)
+            self.logger.logDebug(resp)
 
             valid_field_names = {f.name for f in fields(InflationSurveyRespond)}
             filtered_data = {k: v for k, v in resp_json.items() if k in valid_field_names}
