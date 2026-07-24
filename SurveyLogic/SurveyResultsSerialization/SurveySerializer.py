@@ -13,7 +13,7 @@ class SurveySerializer(BaseSurveySerializer):
         self.subFolderName = subFolderName
 
     def saveSurvey(self, surveys: list[InflationSurveyRespond], surveyDate: date):
-        targetFolder = Path(f'{self.resultFolder}//{self.subFolderName}')
+        targetFolder = Path(f'{self.resultFolder}/{self.subFolderName}')
 
         dir_path = Path(targetFolder)
         dir_path.mkdir(parents=True, exist_ok=True)

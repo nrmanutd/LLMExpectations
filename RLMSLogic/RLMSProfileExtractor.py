@@ -147,17 +147,13 @@ class RLMSProfileExtractor:
 
         return profiles
 
-    def generateAndSaveProfilesFromRLMS(self, rlmsProfilesFolder: Path, folderPath: Path, fraction: float, seed: int = 42):
+    def generateAndSaveProfilesFromRLMS(self, rlmsProfilesFolder: Path, folderPath: Path, sample_size: int, seed: int = 42):
         pattern = os.path.join(str(rlmsProfilesFolder), "*.json")
         json_files = glob.glob(pattern)
 
         total = len(json_files)
-        sample_size = int(fraction * total)
-
-        if fraction > 0.0 and sample_size == 0:
-            sample_size = 1
-
-        sample_size = min(sample_size, total)
+        if sample_size <= 0 or sample_size > total:
+            raise ValueError(f'Incorrect value of sample size: {sample_size}, it should be 0 < {sample_size} <= {total}')
 
         # Случайная выборка без повторений
         random.seed(seed)

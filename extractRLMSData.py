@@ -31,7 +31,7 @@ for f in files:
     targetProfileDirectory.mkdir(parents=True, exist_ok=True)
 
     extractor.extractAndSaveRLMSProfiles(f, waveDirectory)
-    extractor.generateAndSaveProfilesFromRLMS(waveDirectory, targetProfileDirectory, 0.01 / 12)
+    extractor.generateAndSaveProfilesFromRLMS(waveDirectory, targetProfileDirectory, 100)
 
     archive_base = dtaSources / f'{waveYear}'
     archive_path = shutil.make_archive(str(archive_base), 'zip', str(waveDirectory))
