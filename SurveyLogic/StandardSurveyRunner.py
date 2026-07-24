@@ -24,6 +24,8 @@ class StandardSurveyRunner(BaseSurveyRunner):
             self.logger.logDebug(f'Executing survey for profile #{i} (of {len(profiles)}): {p}...')
             r = self.surveyExecutor.executeSurvey(surveyDate, p)
             self.logger.logDebug(f'Surveyed profile # {i}.')
+            print(r)
+
             result.append(r)
 
             self.serializer.saveSurvey(result, surveyDate)
