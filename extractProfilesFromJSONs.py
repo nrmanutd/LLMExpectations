@@ -11,6 +11,8 @@ files = list(jsonSources.rglob("*.zip"))
 converter = SimpleRLMSProfileConverter()
 extractor = RLMSProfileExtractor(converter)
 
+adultAge = 18
+
 for f in files:
     waveYear = f.stem
     print(f'Parsing file: {f}, year = {waveYear}')
@@ -23,6 +25,6 @@ for f in files:
     # Распаковываем
     shutil.unpack_archive(str(f), str(extract_dir), 'zip')
 
-    extractor.generateAndSaveProfilesFromRLMS(extract_dir, targetProfileDirectory, 100)
+    extractor.generateAndSaveProfilesFromRLMS(extract_dir, targetProfileDirectory, 100, adultAge)
 
     shutil.rmtree(extract_dir)

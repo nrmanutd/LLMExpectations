@@ -147,7 +147,7 @@ class RLMSProfileExtractor:
 
         return profiles
 
-    def generateAndSaveProfilesFromRLMS(self, rlmsProfilesFolder: Path, folderPath: Path, sample_size: int, seed: int = 42):
+    def generateAndSaveProfilesFromRLMS(self, rlmsProfilesFolder: Path, folderPath: Path, sample_size: int, adultAge: int, seed: int = 42):
         pattern = os.path.join(str(rlmsProfilesFolder), "*.json")
         json_files = glob.glob(pattern)
 
@@ -157,9 +157,14 @@ class RLMSProfileExtractor:
 
         # Случайная выборка без повторений
         random.seed(seed)
-        selectedFiles = random.sample(json_files, sample_size)
+        selectedFiles = random.sample(json_files, len(json_files))
+
+        counter = 0
 
         for f in selectedFiles:
+            if counter >= sample_size:
+                break
+
             with open(f, 'r', encoding='utf-8') as ff:
                 profile = json.load(ff)
 
@@ -167,12 +172,16 @@ class RLMSProfileExtractor:
             filtered_data = {k: v for k, v in profile.items() if k in valid_field_names}
 
             profile = RLMSProfileData(**filtered_data)
-
             resultProfile = self.converter.convert(profile)
+
+            if resultProfile.age < adultAge:
+                continue
 
             folderPath.mkdir(parents=True, exist_ok=True)
 
             path = folderPath / f'{resultProfile.respondentId}.json'
             with open(path, 'w', encoding='utf-8') as ff:
                 json.dump(asdict(resultProfile), ff, ensure_ascii=False, indent=2)
+
+            counter = counter + 1
 

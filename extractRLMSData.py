@@ -8,6 +8,7 @@ from RLMSLogic.RLMSProfileExtractor import RLMSProfileExtractor
 targetDirectory = 'data\\Target profiles'
 dtaSources = Path('data\\RLMS waves')
 files = list(dtaSources.rglob("*.dta"))
+adultAge = 18
 
 start_wave = 33
 end_wave = 20          # например, до 20-й волны
@@ -31,7 +32,7 @@ for f in files:
     targetProfileDirectory.mkdir(parents=True, exist_ok=True)
 
     extractor.extractAndSaveRLMSProfiles(f, waveDirectory)
-    extractor.generateAndSaveProfilesFromRLMS(waveDirectory, targetProfileDirectory, 100)
+    extractor.generateAndSaveProfilesFromRLMS(waveDirectory, targetProfileDirectory, 100, adultAge)
 
     archive_base = dtaSources / f'{waveYear}'
     archive_path = shutil.make_archive(str(archive_base), 'zip', str(waveDirectory))
