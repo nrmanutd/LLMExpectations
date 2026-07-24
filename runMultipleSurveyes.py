@@ -27,7 +27,7 @@ surveyer = MLClusterSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=mlcluster_key, l
 
 profilesProvider = StandardProfilesProvider(profilesFolder, ProfileDataLoader())
 surveyExecutor = StandardSurveyExecutor(systemPromptBuilder, promptBuilder, surveyer)
-surveySerializer = SurveySerializer('mlcluster_qwen36_custom_inflation_politics_2020_2020_QS', 'data\\SurveyResults')
+surveySerializer = SurveySerializer('mlcluster_qwen36_custom_inflation_politics_2020_2020_QS', 'data/SurveyResults')
 runner = StandardSurveyRunner(surveySerializer, surveyExecutor, profilesProvider, logger)
 
 for surveyDate in surveyDates:
