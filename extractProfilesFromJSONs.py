@@ -13,6 +13,12 @@ extractor = RLMSProfileExtractor(converter)
 
 adultAge = 18
 
+folder = Path(targetDirectory)
+if folder.exists():
+    shutil.rmtree(folder)  # удаляем папку целиком
+
+folder.mkdir(parents=True, exist_ok=True)  # создаём заново
+
 for f in files:
     waveYear = f.stem
     print(f'Parsing file: {f}, year = {waveYear}')
