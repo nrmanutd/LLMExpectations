@@ -15,7 +15,7 @@ from SurveyLogic.Surveyers.MLClusterSurveyer import MLClusterSurveyer
 from SurveyLogic.Surveyers.StubSurveyer import StubSurveyer
 
 logger = SimpleLogger()
-profilesFolder = Path('.\\data\\Target profiles')
+profilesFolder = Path('./data/Target profiles')
 surveyDates = dates = pd.date_range(start='2016-01-01', end='2026-01-01', freq='QS', inclusive='both').tolist()
 
 #systemPromptBuilder, promptBuilder = createSimplePromptBuilder()

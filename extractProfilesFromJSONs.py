@@ -4,8 +4,8 @@ from pathlib import Path
 from RLMSLogic.RLMSProfileExtractor import RLMSProfileExtractor
 from RLMSLogic.SimpleRLMSProfileConverter import SimpleRLMSProfileConverter
 
-targetDirectory = 'data\\Target profiles temp'
-jsonSources = Path('data\\RLMS waves temp')
+targetDirectory = 'data/Target profiles temp'
+jsonSources = Path('data/RLMS waves temp')
 files = list(jsonSources.rglob("*.zip"))
 
 converter = SimpleRLMSProfileConverter()
