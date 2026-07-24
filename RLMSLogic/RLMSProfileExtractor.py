@@ -155,6 +155,8 @@ class RLMSProfileExtractor:
         if sample_size <= 0 or sample_size > total:
             raise ValueError(f'Incorrect value of sample size: {sample_size}, it should be 0 < {sample_size} <= {total}')
 
+        folderPath.mkdir(parents=True, exist_ok=True)
+
         # Случайная выборка без повторений
         random.seed(seed)
         selectedFiles = random.sample(json_files, len(json_files))
@@ -175,9 +177,8 @@ class RLMSProfileExtractor:
             resultProfile = self.converter.convert(profile)
 
             if resultProfile.age < adultAge:
+                print(f'Skipping profile {resultProfile.respondentId} because of age: {resultProfile.age} < {adultAge}')
                 continue
-
-            folderPath.mkdir(parents=True, exist_ok=True)
 
             path = folderPath / f'{resultProfile.respondentId}.json'
             with open(path, 'w', encoding='utf-8') as ff:

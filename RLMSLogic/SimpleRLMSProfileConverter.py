@@ -8,9 +8,11 @@ class SimpleRLMSProfileConverter:
         if salary == "99999997.0":
             salary = "Не указано"
 
+        age = int(profile.age)
+
         return ProfileData(
             respondentId=profile.respondentId,
-            age=profile.age,
+            age=age,
             sex=profile.sex,
             education=profile.education,
             LocalityOfBirth=profile.LocalityOfBirth,
