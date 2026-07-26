@@ -27,6 +27,9 @@ class MLClusterSurveyer(BaseSurveyer):
     def askSurvey(self, systemPrompt: str, prompt: str, respondentId: str, surveyDate: date):
         for iAttempt in range(self.maxAttempts):
             try:
+                #self.logger.logDebug(systemPrompt)
+                #self.logger.logDebug(prompt)
+
                 response = self.client.chat.completions.create(
                     model=self.modelToUse,  # Specify any model available on your BotHub account
                     messages=[

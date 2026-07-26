@@ -22,7 +22,17 @@ class CommonProfilePromptBuilder(BasePromptBuilder):
         prompt = prompt.replace(constants.currentStatusTag, str(profile.currentStatus))
         prompt = prompt.replace(constants.jobSectorTag, str(profile.jobSector))
         prompt = prompt.replace(constants.jobTag, str(profile.job))
-        prompt = prompt.replace(constants.salaryTag, f'{str(profile.salary)} рублей в месяц')
+
+        if '99999998' in profile.salary:
+            salary = 'Отказ от ответа'
+        elif '99999997' in profile.salary:
+            salary = 'Затрудняюсь ответить'
+        elif '99999999' in profile.salary:
+            salary = 'Нет ответа'
+        else:
+            salary = f'{profile.salary} рублей в месяц'
+
+        prompt = prompt.replace(constants.salaryTag, salary)
         prompt = prompt.replace(constants.economicsSourceOfKnowledge, str(profile.economicsSourceOfKnowledge))
         prompt = prompt.replace(constants.hasSavingsTag, "Да" if profile.hasSavings else "Нет")
         prompt = prompt.replace(constants.hasCreditsTag, "Да" if profile.hasCredit else "Нет")
