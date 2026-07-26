@@ -23,7 +23,9 @@ class CommonProfilePromptBuilder(BasePromptBuilder):
         prompt = prompt.replace(constants.jobSectorTag, str(profile.jobSector))
         prompt = prompt.replace(constants.jobTag, str(profile.job))
 
-        if '99999998' in profile.salary:
+        if profile.salary is None or profile.salary == '':
+            salary = 'Нет ответа'
+        elif '99999998' in profile.salary:
             salary = 'Отказ от ответа'
         elif '99999997' in profile.salary:
             salary = 'Затрудняюсь ответить'
