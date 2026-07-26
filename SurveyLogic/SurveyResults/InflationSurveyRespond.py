@@ -21,4 +21,7 @@ class InflationSurveyRespond:
     secondary_anchors: Optional[str] = None
     short_explanation: Optional[str] = None
 
+    hasCredit: Optional[bool] = None
+    hasSavings: Optional[bool] = None
+
 
