@@ -246,16 +246,26 @@ p = {exp_stats['p_value']:.4f}"""
 
 def plot_time_series(comparison_df, save_path=None):
     """
-    Визуализирует временные ряды для обоих показателей
+    Визуализирует временные ряды для обоих показателей с доверительными интервалами (± std)
     """
     fig, axes = plt.subplots(2, 1, figsize=(14, 10))
 
     # Observable Inflation
     ax1 = axes[0]
     ax1.plot(comparison_df['date'], comparison_df['monthly_observable'],
-             'o-', label='Monthly (фактические)', color='#2E86AB', markersize=8)
+             'o-', label='Monthly (фактические)', color='#2E86AB', markersize=8, linewidth=2)
+
+    # График для quarterly с доверительным интервалом
     ax1.plot(comparison_df['date'], comparison_df['quarterly_observable_mean'],
-             's-', label='Quarterly (среднее по опросу)', color='#E74C3C', markersize=8)
+             's-', label='Quarterly (среднее по опросу)', color='#E74C3C', markersize=8, linewidth=2)
+
+    # Добавляем доверительный интервал (± std) для observable
+    if 'quarterly_observable_std' in comparison_df.columns:
+        ax1.fill_between(comparison_df['date'],
+                         comparison_df['quarterly_observable_mean'] - comparison_df['quarterly_observable_std'],
+                         comparison_df['quarterly_observable_mean'] + comparison_df['quarterly_observable_std'],
+                         color='#E74C3C', alpha=0.2, label='±1 std')
+
     ax1.set_title('Observable Inflation: Сравнение рядов', fontsize=14, fontweight='bold')
     ax1.set_xlabel('Дата', fontsize=12)
     ax1.set_ylabel('Инфляция, %', fontsize=12)
@@ -265,9 +275,19 @@ def plot_time_series(comparison_df, save_path=None):
     # Expected Inflation
     ax2 = axes[1]
     ax2.plot(comparison_df['date'], comparison_df['monthly_expected'],
-             'o-', label='Monthly (фактические)', color='#A23B72', markersize=8)
+             'o-', label='Monthly (фактические)', color='#A23B72', markersize=8, linewidth=2)
+
+    # График для quarterly с доверительным интервалом
     ax2.plot(comparison_df['date'], comparison_df['quarterly_expected_mean'],
-             's-', label='Quarterly (среднее по опросу)', color='#F39C12', markersize=8)
+             's-', label='Quarterly (среднее по опросу)', color='#F39C12', markersize=8, linewidth=2)
+
+    # Добавляем доверительный интервал (± std) для expected
+    if 'quarterly_expected_std' in comparison_df.columns:
+        ax2.fill_between(comparison_df['date'],
+                         comparison_df['quarterly_expected_mean'] - comparison_df['quarterly_expected_std'],
+                         comparison_df['quarterly_expected_mean'] + comparison_df['quarterly_expected_std'],
+                         color='#F39C12', alpha=0.2, label='±1 std')
+
     ax2.set_title('Expected Inflation: Сравнение рядов', fontsize=14, fontweight='bold')
     ax2.set_xlabel('Дата', fontsize=12)
     ax2.set_ylabel('Инфляция, %', fontsize=12)

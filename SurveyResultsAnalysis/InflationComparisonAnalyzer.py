@@ -24,8 +24,7 @@ class InflationComparisonAnalyzer:
         self.stats = {}
 
     def _add_missing_dates(self):
-        """Добавляет пропущенные даты с указанным значением"""
-
+        # Приводим даты к единому формату
         # Приводим даты к единому формату
         if not pd.api.types.is_datetime64_any_dtype(self.monthly_df.index):
             self.monthly_df.index = pd.to_datetime(self.monthly_df.index)
@@ -37,45 +36,65 @@ class InflationComparisonAnalyzer:
         quarterly_dates = set(self.quarterly_agg_df['date'])
         monthly_dates = set(self.monthly_df.index)
 
-        # Находим пропущенные
-        missing_dates = quarterly_dates - monthly_dates
+        # Находим пересечение дат
+        common_dates = monthly_dates & quarterly_dates
 
-        if len(missing_dates) == 0:
-            print("✅ Все квартальные даты уже есть в месячных данных")
+        if len(common_dates) == 0:
+            print("❌ Нет общих дат между месячными и квартальными данными")
+            # Возвращаем пустые DataFrame'ы
+            self.monthly_df = pd.DataFrame(columns=self.monthly_df.columns)
+            self.quarterly_agg_df = pd.DataFrame(columns=self.quarterly_agg_df.columns)
             return self.monthly_df
 
-        print(f"⚠️ Добавляю {len(missing_dates)} пропущенных дат со значением {self.fill_value}")
+        print(f"✅ Оставляю только {len(common_dates)} общих дат")
 
-        # Создаем DataFrame с пропущенными датами
-        missing_df = pd.DataFrame(
-            index=sorted(missing_dates),
-            data={
-                'observable_inflation': self.fill_value,
-                'expected_inflation': self.fill_value
-            }
-        )
+        # Фильтруем monthly_df - оставляем только общие даты
+        self.monthly_df = self.monthly_df[self.monthly_df.index.isin(common_dates)]
 
-        # Объединяем
-        monthly_extended = pd.concat([self.monthly_df, missing_df])
-        monthly_extended.sort_index(inplace=True)
+        # Фильтруем quarterly_agg_df - оставляем только общие даты
+        self.quarterly_agg_df = self.quarterly_agg_df[self.quarterly_agg_df['date'].isin(common_dates)]
 
-        print(f"   Новый период: {monthly_extended.index.min()} - {monthly_extended.index.max()}")
-        print(f"   Всего записей: {len(monthly_extended)}")
+        print(f"   Период monthly: {self.monthly_df.index.min()} - {self.monthly_df.index.max()}")
+        print(f"   Период quarterly: {self.quarterly_agg_df['date'].min()} - {self.quarterly_agg_df['date'].max()}")
+        print(f"   Всего записей в monthly: {len(self.monthly_df)}")
+        print(f"   Всего записей в quarterly: {len(self.quarterly_agg_df)}")
 
-        return monthly_extended
+        return self.monthly_df
 
     def _prepare_data(self):
-        """Подготавливает данные"""
+        """Подготавливает данные с расчетом средних и стандартных отклонений"""
         quarterly_dates = self.quarterly_agg_df['date'].values
         monthly_quarterly = self.monthly_df.loc[quarterly_dates]
 
-        return pd.DataFrame({
+        # Проверяем наличие столбцов со стандартными отклонениями
+        has_obs_std = 'obs_std' in self.quarterly_agg_df.columns
+        has_exp_std = 'exp_std' in self.quarterly_agg_df.columns
+
+        # Формируем базовый DataFrame
+        result_df = pd.DataFrame({
             'date': quarterly_dates,
             'monthly_observable': monthly_quarterly['observable_inflation'].values,
             'monthly_expected': monthly_quarterly['expected_inflation'].values,
             'quarterly_observable_mean': self.quarterly_agg_df['obs_mean'].values,
             'quarterly_expected_mean': self.quarterly_agg_df['exp_mean'].values
         })
+
+        # Добавляем стандартные отклонения, если они есть
+        if has_obs_std:
+            result_df['quarterly_observable_std'] = self.quarterly_agg_df['obs_std'].values
+        else:
+            # Если std нет, рассчитываем из исходных данных (если они есть)
+            # или заполняем NaN
+            result_df['quarterly_observable_std'] = np.nan
+            print("⚠️ 'obs_std' не найден в quarterly_agg_df. Доверительные интервалы не будут отображены.")
+
+        if has_exp_std:
+            result_df['quarterly_expected_std'] = self.quarterly_agg_df['exp_std'].values
+        else:
+            result_df['quarterly_expected_std'] = np.nan
+            print("⚠️ 'exp_std' не найден в quarterly_agg_df. Доверительные интервалы не будут отображены.")
+
+        return result_df
 
     def analyze(self):
         """Проводит полный анализ"""
