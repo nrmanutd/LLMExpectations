@@ -113,19 +113,19 @@ class InflationComparisonAnalyzer:
         return self.stats
 
     def plot_all(self, save_prefix='inflation_comparison'):
-        """Создает все графики"""
-        # 1. Scatter plots
-        plot_comparison(self.comparison_df,
-                        self.stats['observable'],
-                        self.stats['expected'],
-                        save_path=f'{save_prefix}_scatter.png')
-
         # 2. Time series
         plot_time_series(self.comparison_df,
                          save_path=f'{save_prefix}_timeseries.png')
 
         # 3. Residuals plot (дополнительно)
         self._plot_residuals(save_path=f'{save_prefix}_residuals.png')
+
+        """Создает все графики"""
+        # 1. Scatter plots
+        plot_comparison(self.comparison_df,
+                        self.stats['observable'],
+                        self.stats['expected'],
+                        save_path=f'{save_prefix}_scatter.png')
 
     def _plot_residuals(self, save_path=None):
         """График остатков"""

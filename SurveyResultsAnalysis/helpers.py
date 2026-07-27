@@ -40,6 +40,12 @@ def getCategory(answeredCategory: str, type: str):
     if answeredCategory == 'no_answer':
         return 'затрудняюсь ответить'
 
+    if answeredCategory == 'выросли умеренно' or answeredCategory == 'выросли очень сильно' or answeredCategory == 'выросли незначительно' or answeredCategory == 'не изменились' or answeredCategory == 'затрудняюсь ответить' or answeredCategory == 'снизятся':
+        return answeredCategory
+
+    if answeredCategory == 'снизились' or answeredCategory == 'снизлись' or answeredCategory == 'снизился' or answeredCategory == 'снизилась':
+        return 'снизились'
+
     if answeredCategory is None:
         return None
 
@@ -59,6 +65,9 @@ def load_pdtable(folder: str):
         if expectedCategory is None or observableCategory is None:
             continue
 
+        if respond.expected_inflation_12m_pct is None or respond.observable_inflation_12m_pct is None:
+            continue
+
         rows.append({
             'date': datetime.strptime(respond.target_date, "%d.%m.%Y"),
             'expected_12m': float(respond.expected_inflation_12m_pct),
@@ -66,6 +75,35 @@ def load_pdtable(folder: str):
             'expected_1m': expectedCategory,
             'observable_1m': observableCategory
         })
+
+    return pd.DataFrame(rows)
+
+def load_pdtable_with_repeats(folder: str):
+    dates = pd.date_range(start='2016-01-01', end='2026-01-01', freq='QS', inclusive='both').tolist()
+    files = os.listdir(folder)
+    files = [f for f in files if os.path.isfile(os.path.join(folder, f))]
+
+    rows = []
+    for file in files:
+        respond = load_respond_from_json(f'{folder}/{file}')
+
+        expectedCategory = getCategory(respond.expected_inflation_1m_pct, 'expected')
+        observableCategory = getCategory(respond.observable_inflation_last_1m_pct, 'observable')
+
+        if expectedCategory is None or observableCategory is None:
+            continue
+
+        if respond.expected_inflation_12m_pct is None or respond.observable_inflation_12m_pct is None:
+            continue
+
+        for d in dates:
+            rows.append({
+                'date': d,
+                'expected_12m': float(respond.expected_inflation_12m_pct),
+                'observable_12m': float(respond.observable_inflation_12m_pct),
+                'expected_1m': expectedCategory,
+                'observable_1m': observableCategory
+            })
 
     return pd.DataFrame(rows)
 

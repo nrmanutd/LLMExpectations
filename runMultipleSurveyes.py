@@ -17,19 +17,19 @@ from SurveyLogic.Surveyers.StubSurveyer import StubSurveyer
 
 logger = SimpleLogger()
 profilesFolder = Path('./data/Target profiles')
-surveyDates = dates = pd.date_range(start='2016-04-01', end='2026-01-01', freq='QS', inclusive='both').tolist()
+surveyDates = pd.date_range(start='2016-04-01', end='2026-04-01', freq='QS', inclusive='both').tolist()
 
 #systemPromptBuilder, promptBuilder = createSimplePromptBuilder()
 systemPromptBuilder, promptBuilder = createCustomPromptBuilder(useInflation=True, usePolitics=True)
 #surveyer = BothubSurveyer(modelToUse='deepseek-v4-pro', key=bothub_key, logger=logger)
-surveyer = MLClusterSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=mlcluster_key, logger=logger)
-#surveyer = StubSurveyer()
+#surveyer = MLClusterSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=mlcluster_key, logger=logger)
+surveyer = StubSurveyer()
 
 profilesProvider = StandardProfilesProvider(profilesFolder, ProfileDataLoader())
 surveyExecutor = StandardSurveyExecutor(systemPromptBuilder, promptBuilder, surveyer)
 surveyExecutor = AdditionalInformationSurveyExecutor(surveyExecutor)
 
-surveySerializer = SurveySerializer('mlcluster_qwen36_custom_inflation_politics_no_date_2016_2026_QS', 'data/SurveyResults')
+surveySerializer = SurveySerializer('mlcluster_qwen36_no_inflation_no_politics_no_date_2016_2026_QS', 'data/SurveyResults')
 runner = StandardSurveyRunner(surveySerializer, surveyExecutor, profilesProvider, logger)
 
 for surveyDate in surveyDates:
