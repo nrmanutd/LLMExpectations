@@ -1,14 +1,17 @@
-
+import pandas as pd
 from SurveyResultsAnalysis.InflationComparisonAnalyzer import InflationComparisonAnalyzer
-from SurveyResultsAnalysis.helpers import load_from_official_statistics, load_pdtable, aggregate_survey
+from SurveyResultsAnalysis.helpers import load_from_official_statistics, load_pdtable, aggregate_survey, \
+    load_pdtable_with_repeats
 
-folder = '../data/SurveyResults/mlcluster_qwen36_custom_inflation_politics_2016_2026_QS'
+folder = '../data/SurveyResults/mlcluster_qwen36_no_inflation_no_politics_no_date_2016_2026_QS'
 
 directEstimationsFileName = '../data/Direct_Inflation_Estimations_12m.xlsx'
 directEstimations = load_from_official_statistics(directEstimationsFileName)
 print(directEstimations.head())
 
-surveys = load_pdtable(folder)
+#surveys = load_pdtable(folder)
+surveys = load_pdtable_with_repeats(folder)
+
 surveys = aggregate_survey(surveys)
 
 analyzer = InflationComparisonAnalyzer(directEstimations, surveys)
