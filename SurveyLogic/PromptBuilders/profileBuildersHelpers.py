@@ -27,7 +27,7 @@ def createNewsPromptBuilder() -> (BasePromptBuilder, BasePromptBuilder):
     builders.append(NewsPromptBuilder())
     builders.append(TaskPromptBuilder(prompts.taskPrompt))
 
-    headers = ['Основные параметры опроса и респондента', 'Задача']
+    headers = ['Основные параметры опроса и респондента', 'Новости', 'Задача']
 
     return SystemPromptBuilder(prompts.systemPrompt), CompositePromptBuilder(builders, headers)
 

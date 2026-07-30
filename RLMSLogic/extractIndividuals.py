@@ -29,6 +29,12 @@ with open('column_names_households.txt', 'w', encoding='utf-8') as f:
     for col in df.columns:
         f.write(col + '\n')
 
+with open('questions_households.txt', 'w', encoding='utf-8') as f:
+    row = df.iloc[0]
+    for var, raw in row.items():
+        question = meta.column_names_to_labels.get(var, var)
+        f.write(f'Code = {var}, Question = {question}' + '\n')
+
 #print(df.columns)
 #print(f'{int(df['status'][0])}')
 #print(df)
