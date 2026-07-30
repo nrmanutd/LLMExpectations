@@ -12,7 +12,7 @@ from SurveyLogic.SurveyResultsSerialization.BatchesSerializer import BatchesSeri
 from SurveyLogic.Surveyers.BatchCollectingSurveyer import BatchCollectingSurveyer
 
 logger = SimpleLogger()
-profilesFolder = Path('.\\data\\Target profiles')
+profilesFolder = Path('../data/Target profiles')
 surveyDates = dates = pd.date_range(start='2020-01-01', end='2020-04-01', freq='QS', inclusive='both').tolist()
 
 systemPromptBuilder, promptBuilder = createSimplePromptBuilder()

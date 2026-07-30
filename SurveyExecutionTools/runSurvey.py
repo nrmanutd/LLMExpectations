@@ -11,7 +11,7 @@ from SurveyLogic.SurveyResultsSerialization.SurveySerializer import SurveySerial
 from SurveyLogic.Surveyers.BothubSurveyer import BothubSurveyer
 from SurveyLogic.Surveyers.StubSurveyer import StubSurveyer
 
-profilesFolder = Path('.\\data\\Target profiles')
+profilesFolder = Path('../data/Target profiles')
 surveyDate = date(2025, 7, 1)
 
 systemPromptBuilder, promptBuilder = createSimplePromptBuilder()

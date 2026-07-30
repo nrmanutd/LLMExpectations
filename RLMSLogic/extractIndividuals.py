@@ -1,12 +1,14 @@
-import pyreadstat
-from tqdm import tqdm
-from pathlib import Path
 import json
 import re
-import numpy as np
-import pandas as pd
+from pathlib import Path
 
-pathToIndivisuals = '..\\data\\r33iall_84_DTA\\r33iall_84.dta'
+import pandas as pd
+import pyreadstat
+from tqdm import tqdm
+
+from RLMSLogic.extractionHelpers import value_to_label, norm
+
+pathToIndivisuals = '..\\data\\RLMS waves\\r33h_os_83.dta'
 
 df, meta = pyreadstat.read_dta(
     pathToIndivisuals,
@@ -15,7 +17,7 @@ df, meta = pyreadstat.read_dta(
     user_missing=False
 )
 a = df.columns
-for s in ['ccj597_1']:
+for s in ['psu']:
     print(s)
     print(df[s][0])
 
@@ -23,39 +25,13 @@ for s in ['ccj597_1']:
     print(meta.column_names_to_labels[s])
     #print(meta.value_labels[s])
 
-with open('column_names.txt', 'w', encoding='utf-8') as f:
+with open('column_names_households.txt', 'w', encoding='utf-8') as f:
     for col in df.columns:
         f.write(col + '\n')
 
 #print(df.columns)
 #print(f'{int(df['status'][0])}')
 #print(df)
-
-
-def norm(x):
-    if pd.isna(x):
-        return None
-    if isinstance(x, (np.integer, np.floating)):
-        return x.item()
-    return x
-
-
-def value_to_label(var, value):
-    value = norm(value)
-    if value is None:
-        return None
-
-    labels = meta.variable_value_labels.get(var, {})
-    if not labels:
-        return value
-
-    if value in labels:
-        return labels[value]
-
-    if isinstance(value, float) and value.is_integer() and int(value) in labels:
-        return labels[int(value)]
-
-    return value
 
 def show_person(row_number=0, max_vars=80):
     row = df.iloc[row_number]
@@ -86,13 +62,13 @@ def show_person(row_number=0, max_vars=80):
         if shown >= max_vars:
             break
 
-def row_to_profile(row):
+def row_to_profile(row, meta):
     profile = {}
     excludedQuestions = ['номер индивида',
     'идентификационная переменная']
 
     for var, raw in row.items():
-        answer = value_to_label(var, raw)
+        answer = value_to_label(var, raw, meta)
 
         if answer is None:
             continue
@@ -116,21 +92,16 @@ def row_to_profile(row):
 
     return profile
 
-id_vars = ['idind', 'region']
+id_vars = ['ccid_h', 'ccredid_h']
 person = {
     "ids": {
         var: norm(df.iloc[0][var])
         for var in id_vars
     },
-    "profile": row_to_profile(df.iloc[0])
+    "profile": row_to_profile(df.iloc[0], meta)
 }
 
-def safe_filename_part(x):
-    x = str(x)
-    x = x.strip()
-    x = re.sub(r"[^\w\-]+", "_", x, flags=re.UNICODE)
-    x = re.sub(r"_+", "_", x)
-    return x.strip("_")
+print(person)
 
 def safe_filename_part(x):
     x = str(x)
@@ -193,7 +164,7 @@ def export_respondents_to_separate_json_files(
             "row_number": row_number,
             "source": "RLMS-HSE",
             "year": year,
-            "profile": row_to_profile(row),
+            "profile": row_to_profile(row, meta),
         }
 
         if include_ids:

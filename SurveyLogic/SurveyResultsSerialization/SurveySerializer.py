@@ -8,19 +8,16 @@ from SurveyLogic.SurveyResultsSerialization.BaseSurveySerializer import BaseSurv
 
 
 class SurveySerializer(BaseSurveySerializer):
-    def __init__(self, subFolderName: str, resultFolder: str):
+    def __init__(self, resultFolder: Path):
         self.resultFolder = resultFolder
-        self.subFolderName = subFolderName
 
     def saveSurvey(self, surveys: list[InflationSurveyRespond], surveyDate: date):
-        targetFolder = Path(f'{self.resultFolder}/{self.subFolderName}')
-
-        dir_path = Path(targetFolder)
+        dir_path = self.resultFolder
         dir_path.mkdir(parents=True, exist_ok=True)
 
         for survey in surveys:
             survey.target_date = surveyDate.strftime('%d.%m.%Y')
-            self.__saveSingleSurvey(survey, targetFolder)
+            self.__saveSingleSurvey(survey, self.resultFolder)
 
         return
 

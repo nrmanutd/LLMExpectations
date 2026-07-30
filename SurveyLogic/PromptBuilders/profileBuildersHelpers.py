@@ -1,6 +1,7 @@
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.PromptBuilders.CompositePromptBuilder import CompositePromptBuilder
 from SurveyLogic.PromptBuilders.ConstantPromptBuilder import ConstantPromptBuilder
+from SurveyLogic.PromptBuilders.ContextPromptBuilders.NewsPromptBuilder import NewsPromptBuilder
 from SurveyLogic.PromptBuilders.MonthlyFromFilePromptBuilder import MonthlyFromFilePromptBuilder
 from SurveyLogic.PromptBuilders.ProfileSepcificPromptBuilders.CommonProfilePromptBuilder import \
     CommonProfilePromptBuilder
@@ -13,6 +14,17 @@ def createSimplePromptBuilder() -> (BasePromptBuilder, BasePromptBuilder):
     builders = []
 
     builders.append(CommonProfilePromptBuilder(prompts.respondentPrompt))
+    builders.append(TaskPromptBuilder(prompts.taskPrompt))
+
+    headers = ['Основные параметры опроса и респондента', 'Задача']
+
+    return SystemPromptBuilder(prompts.systemPrompt), CompositePromptBuilder(builders, headers)
+
+def createNewsPromptBuilder() -> (BasePromptBuilder, BasePromptBuilder):
+    builders = []
+
+    builders.append(CommonProfilePromptBuilder(prompts.respondentPrompt))
+    builders.append(NewsPromptBuilder())
     builders.append(TaskPromptBuilder(prompts.taskPrompt))
 
     headers = ['Основные параметры опроса и респондента', 'Задача']

@@ -6,7 +6,7 @@ from RLMSLogic.SimpleRLMSProfileConverter import SimpleRLMSProfileConverter
 from RLMSLogic.RLMSProfileExtractor import RLMSProfileExtractor
 
 targetDirectory = 'data\\Target profiles'
-dtaSources = Path('data\\RLMS waves')
+dtaSources = Path('../data/RLMS waves')
 files = list(dtaSources.rglob("*.dta"))
 adultAge = 18
 
