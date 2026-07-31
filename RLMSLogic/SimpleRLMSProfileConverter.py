@@ -16,6 +16,7 @@ class SimpleRLMSProfileConverter:
             LocalityOfBirth=profile.LocalityOfBirth,
             currentLocality=profile.currentLocality,
             currentLocalityRegion=profile.currentLocalityRegion,
+            currentLocalityRegionCode=profile.currentLocalityRegionCode,
             typeOfLocality=profile.typeOfLocality,
             job=profile.job,
             jobSector=profile.jobSector,

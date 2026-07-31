@@ -18,6 +18,10 @@ wavesToYearMap = {wave: start_year - (start_wave - wave) for wave in range(start
 converter = SimpleRLMSProfileConverter()
 extractor = RLMSProfileExtractor(converter)
 
+folder = Path(targetDirectory)
+if folder.exists():
+    shutil.rmtree(folder)  # удаляем папку целиком
+
 for f in files:
     match = re.search(r'r(\d+)i', f.name)
     if not match:
@@ -37,6 +41,11 @@ for f in files:
     extractor.generateAndSaveProfilesFromRLMS(waveDirectory, targetProfileDirectory, 100, adultAge)
 
     archive_base = dtaSources / f'{waveYear}'
+    archivePath = dtaSources/f'{waveYear}.zip'
+
+    if archivePath.exists() and archivePath.is_file():
+        archivePath.unlink()  # удаляем файл
+
     archive_path = shutil.make_archive(str(archive_base), 'zip', str(waveDirectory))
     shutil.rmtree(waveDirectory)
 

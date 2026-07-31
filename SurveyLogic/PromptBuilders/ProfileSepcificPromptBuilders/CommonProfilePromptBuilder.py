@@ -53,6 +53,6 @@ class CommonProfilePromptBuilder(BasePromptBuilder):
         salaryInMrot = s / mrot
         salaryInAverages = s / averageExpenses
 
-        salary = f'{salaryInMrot: .1f} в терминах МРОТ (по всей России), {salaryInAverages: .1f} в терминах средних трат по региону прожинвания {profile.currentLocalityRegion}'
+        salary = f'{salaryInMrot: .1f} в терминах МРОТ (по всей России), {salaryInAverages: .1f} в терминах средних трат по региону проживания {profile.currentLocalityRegion}'
         return salary
 
