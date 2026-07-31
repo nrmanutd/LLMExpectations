@@ -11,6 +11,7 @@ class RLMSProfileData:
     LocalityOfBirth: str
     currentLocality: str
     currentLocalityRegion: str
+    currentLocalityRegionCode: str
     typeOfLocality: str
     currentStatus: str
     job: str

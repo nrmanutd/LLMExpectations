@@ -4,9 +4,7 @@ from SurveyLogic.PromptBuilders.Profiles.ProfileData import ProfileData
 
 class SimpleRLMSProfileConverter:
     def convert(self, profile: RLMSProfileData) -> ProfileData:
-        salary = profile.salary
-        if salary == "99999997.0":
-            salary = "Не указано"
+
 
         age = int(profile.age)
 
@@ -17,6 +15,7 @@ class SimpleRLMSProfileConverter:
             education=profile.education,
             LocalityOfBirth=profile.LocalityOfBirth,
             currentLocality=profile.currentLocality,
+            currentLocalityRegion=profile.currentLocalityRegion,
             typeOfLocality=profile.typeOfLocality,
             job=profile.job,
             jobSector=profile.jobSector,
@@ -24,7 +23,7 @@ class SimpleRLMSProfileConverter:
             nationality=profile.nationality,
             familyStatus=profile.familyStatus,
             economicsSourceOfKnowledge=profile.economicsSourceOfKnowledge,
-            salary=salary,
+            salary=profile.salary,
             hasCredit=profile.hasCredit,
             hasSavings=profile.hasSavings,
 

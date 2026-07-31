@@ -73,11 +73,14 @@ class RLMSProfileExtractor:
 
             # Текущее место жительства – используем переменную s_type (тип поселения)
             localityStatus = value_to_label('status', row.get('status'), meta)
-            psu = value_to_label('psu', row.get('psu'), meta)
+            psu_raw = str(int(row.get('psu')))
+
+            psu = value_to_label('psu', psu_raw, meta)
             region = value_to_label('region', row.get('region'), meta)
 
             currentLocality = f'{localityStatus}, {psu}, {region}'
             currentLocalityRegion = psu
+            currentLocalityRegionCode = psu_raw
             typeOfPlace = localityStatus
 
             # Должность/профессия (вопрос 3: CCJ2_3a – должность, CCJ2_3b – профессия)
@@ -125,6 +128,7 @@ class RLMSProfileExtractor:
                 LocalityOfBirth=LocalityOfBirth,
                 currentLocality=currentLocality,
                 currentLocalityRegion=currentLocalityRegion,
+                currentLocalityRegionCode=currentLocalityRegionCode,
                 typeOfLocality=typeOfPlace,
                 job=job,
                 jobSector=jobSector,

@@ -12,7 +12,7 @@ class RegionalInflationContextPromptBuilder(BasePromptBuilder):
         self.inflationProvider = provider
 
     def buildPrompt(self, surveyDate: date, profile: ProfileData):
-        region = profile.currentLocalityRegion
+        region = profile.currentLocalityRegionCode
         inflation1m = self.inflationProvider.getAverageRegionalYearInflationLastNMonth(surveyDate, region, 1)
         inflation3m = self.inflationProvider.getAverageRegionalYearInflationLastNMonth(surveyDate, region,3)
         inflation1Y = self.inflationProvider.getAverageRegionalYearInflationLastNMonth(surveyDate, region, 12)
@@ -20,5 +20,6 @@ class RegionalInflationContextPromptBuilder(BasePromptBuilder):
         prompt = self.prompt.replace(constants.inflation1M, f'{inflation1m*100: .1f}')
         prompt = prompt.replace(constants.inflation3M, f'{inflation3m * 100: .1f}')
         prompt = prompt.replace(constants.inflation1Y, f'{inflation1Y * 100: .1f}')
+        prompt = prompt.replace(constants.localityRegionTag, profile.currentLocalityRegion)
 
         return prompt

@@ -5,8 +5,8 @@ from pathlib import Path
 from RLMSLogic.SimpleRLMSProfileConverter import SimpleRLMSProfileConverter
 from RLMSLogic.RLMSProfileExtractor import RLMSProfileExtractor
 
-targetDirectory = 'data\\Target profiles'
-dtaSources = Path('../data/RLMS waves')
+targetDirectory = 'data/Target profiles'
+dtaSources = Path('data/RLMS waves')
 files = list(dtaSources.rglob("*.dta"))
 adultAge = 18
 
@@ -20,6 +20,8 @@ extractor = RLMSProfileExtractor(converter)
 
 for f in files:
     match = re.search(r'r(\d+)i', f.name)
+    if not match:
+        continue
     waveNumber = int(match.group(1))
 
     print(f'Parsing file: {f} for wave #{waveNumber}')

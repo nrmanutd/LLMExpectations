@@ -24,6 +24,7 @@ class ConvertingAverageExpensesProvider(BaseAverageExpensesProvider):
 
                 number, rlms, infl = m.groups()
 
-                mm[rlms] = infl
+                mm[number] = infl
 
+        print(mm)
         return mm

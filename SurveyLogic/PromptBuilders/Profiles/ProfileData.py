@@ -9,6 +9,7 @@ class ProfileData:
     education: str
     LocalityOfBirth: str
     currentLocality: str
+    currentLocalityRegionCode: str
     currentLocalityRegion: str
     typeOfLocality: str
     job: str

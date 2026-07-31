@@ -45,9 +45,7 @@ class ConvertingInflationProvider(BaseInflationProvider):
                 m = re.match(pattern, l.strip())
 
                 number, rlms, infl = m.groups()
-
-
-                mm[rlms] = infl
+                mm[number] = infl
 
         return mm
 

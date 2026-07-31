@@ -83,7 +83,7 @@ class InflationProvider(BaseInflationProvider):
         columns = []
 
         for i in range(lastMonth):
-            dateWithOffset = d - pd.DateOffset(months=i + 1)
+            dateWithOffset = (d - pd.DateOffset(months=i + 1)).date()
 
             column = self.year_to_col[dateWithOffset]
             columns.append(column)

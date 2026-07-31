@@ -10,6 +10,7 @@ class ProfileDataLoader:
 
     def loadProfile(self, filePath) -> ProfileData:
         with open(filePath, 'r', encoding='utf-8') as ff:
+            print(filePath)
             profile = json.load(ff)
 
         valid_field_names = {f.name for f in fields(ProfileData)}
