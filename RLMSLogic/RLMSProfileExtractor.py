@@ -19,7 +19,7 @@ class RLMSProfileExtractor:
         self.converter = converter
         self.prefix = {33: 'cc', 32: 'bb', 31: 'aa', 30: 'z', 29: 'y', 28: 'x', 27: 'w', 26: 'v', 25: 'u', 24: 't', 23: 's'}
 
-    def extractAndSaveRLMSProfiles(self, dta_path: Path, output_path: Path, sampleSize: int) -> List[RLMSProfileData]:
+    def extractAndSaveRLMSProfiles(self, dta_path: Path, hhFile: Path, output_path: Path, sampleSize: int) -> List[RLMSProfileData]:
         """
         Загружает данные RLMS, извлекает профиль каждого респондента и сохраняет JSON-файлы.
 
@@ -39,9 +39,19 @@ class RLMSProfileExtractor:
             user_missing=False
         )
 
+        dfhh, metahh = pyreadstat.read_dta(
+            str(hhFile),
+            apply_value_formats=False,
+            formats_as_category=False,
+            user_missing=False
+        )
+
         match = re.search(r'.*r(\d+)i.*', dta_path.name)
         waveNumber = int(match.group(1))
         p = self.prefix[waveNumber]
+
+        curId = f'{p}id_h' if p != 'z' else 'ZID_H'
+        dfhh_indexed = dfhh.set_index(curId)
 
         output_path.mkdir(parents=True, exist_ok=True)
 
@@ -58,6 +68,10 @@ class RLMSProfileExtractor:
             respondent_id = norm(row.get('idind'))
             if respondent_id is None:
                 continue  # пропускаем записи без id
+
+            hhRow = dfhh_indexed.loc[row[curId.lower()]]
+            numberOfFamilyMembers = norm(hhRow[f'{p}_nfm'])
+            allFamilyIncome = norm(hhRow[f'{p}f14'])
 
             # Возраст: вычисляем из года рождения (переменная CCJ69.0)
             age = norm(row.get(f'{p}_age'))
@@ -147,7 +161,9 @@ class RLMSProfileExtractor:
                 nationality=nationality,
                 lastMonthSalary=lastMonthSalary,
                 economicsSourceOfKnowledge=economicsSourceOfKnowledge,
-                moneyStatusLastThreeYears=moneyStatusLastThreeYears
+                moneyStatusLastThreeYears=moneyStatusLastThreeYears,
+                totalFamilyMembers=numberOfFamilyMembers,
+                allFamilyMonthIncome=allFamilyIncome,
             )
 
             # Сохраняем JSON

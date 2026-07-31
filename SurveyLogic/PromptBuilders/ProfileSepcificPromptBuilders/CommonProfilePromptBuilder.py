@@ -48,7 +48,7 @@ class CommonProfilePromptBuilder(BasePromptBuilder):
 
         s = float(profile.salary)
         mrot = self.mrotProvider.getMROT(surveyDate)
-        averageExpenses = self.averageExpensesProvider.getRegionAverageExpenses(profile.currentLocalityRegionCode, surveyDate)
+        averageExpenses = self.averageExpensesProvider.getRegionAverageExpenses(profile.currentLocalityRegionCode, surveyDate)/12
 
         salaryInMrot = s / mrot
         salaryInAverages = s / averageExpenses

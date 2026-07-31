@@ -23,13 +23,15 @@ folder = Path(targetDirectory)
 if folder.exists():
     shutil.rmtree(folder)  # удаляем папку целиком
 
-for f in files:
-    match = re.search(r'r(\d+)i', f.name)
+for iFile in files:
+    match = re.search(r'r(\d+)i', iFile.name)
     if not match:
         continue
-    waveNumber = int(match.group(1))
 
-    print(f'Parsing file: {f} for wave #{waveNumber}')
+    waveNumber = int(match.group(1))
+    hhFile = next((f for f in files if f'r{waveNumber}h' in f.name), None)
+
+    print(f'Parsing file: {iFile} for wave #{waveNumber}')
 
     waveYear = wavesToYearMap[waveNumber]
     waveDirectory = dtaSources / f'{waveYear}'
@@ -38,7 +40,7 @@ for f in files:
     targetProfileDirectory = Path(targetDirectory) / f'{waveYear}'
     targetProfileDirectory.mkdir(parents=True, exist_ok=True)
 
-    extractor.extractAndSaveRLMSProfiles(f, waveDirectory, sampleSize)
+    extractor.extractAndSaveRLMSProfiles(iFile, hhFile, waveDirectory, 2*sampleSize)
     extractor.generateAndSaveProfilesFromRLMS(waveDirectory, targetProfileDirectory, sampleSize, adultAge)
 
     archive_base = dtaSources / f'{waveYear}'

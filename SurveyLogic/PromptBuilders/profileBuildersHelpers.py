@@ -11,6 +11,8 @@ from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.StateI
 from SurveyLogic.PromptBuilders.MonthlyFromFilePromptBuilder import MonthlyFromFilePromptBuilder
 from SurveyLogic.PromptBuilders.ProfileSepcificPromptBuilders.CommonProfilePromptBuilder import \
     CommonProfilePromptBuilder
+from SurveyLogic.PromptBuilders.ProfileSepcificPromptBuilders.HouseholdProfilePromptBuilder import \
+    HouseholdProfilePromptBuilder
 from SurveyLogic.PromptBuilders.StatisticsProviders.AverageExpensesProvider import AverageExpensesProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.ConvertingAverageExpensesProvider import \
     ConvertingAverageExpensesProvider
@@ -43,7 +45,7 @@ def createNewsPromptBuilder() -> (BasePromptBuilder, BasePromptBuilder):
 
     return SystemPromptBuilder(prompts.systemPrompt), CompositePromptBuilder(builders, headers)
 
-def createCustomPromptBuilder(useEconomy: bool, usePolitics: bool, useStateInflation: bool, useRegionalInflation: bool) -> (BasePromptBuilder, BasePromptBuilder):
+def createCustomPromptBuilder(useEconomy: bool, usePolitics: bool, useStateInflation: bool, useRegionalInflation: bool, useFamilyInformation: bool) -> (BasePromptBuilder, BasePromptBuilder):
     builders = []
     headers = []
 
@@ -75,6 +77,11 @@ def createCustomPromptBuilder(useEconomy: bool, usePolitics: bool, useStateInfla
         regionInflationProvider = RegionalInflationContextPromptBuilder(prompts.regionInflationPrompt, inflationProvider)
         builders.append(regionInflationProvider)
         headers.append('Официальная государственная статистика по инфляции в регионе проживания индивида')
+
+    if useFamilyInformation:
+        householdInformationBuilder = HouseholdProfilePromptBuilder(prompts.househouldCommonPrompt, averageBuyingsProvider)
+        builders.append(householdInformationBuilder)
+        headers.append('Детальная информация о семье индивида')
 
     builders.append(TaskPromptBuilder(prompts.taskPrompt))
     headers.append('Задача')

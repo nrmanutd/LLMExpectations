@@ -19,3 +19,6 @@ inflation1M='{{1MInflation}}'
 inflation3M='{{3MInflation}}'
 inflation1Y='{{1YInflation}}'
 localityRegionTag='{{Region}}'
+
+familyTotalMembers='{{HouseholdMembers}}'
+familyTotalMonthExpenses='{{AllHouseholdIncome}}'

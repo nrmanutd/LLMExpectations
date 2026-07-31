@@ -28,6 +28,9 @@ class SimpleRLMSProfileConverter:
             hasCredit=profile.hasCredit,
             hasSavings=profile.hasSavings,
 
+            totalFamilyMembers=profile.totalFamilyMembers,
+            allFamilyMonthIncome=profile.allFamilyMonthIncome,
+
             newsSources=[],
             nonDurableGoods=[]
         )

@@ -8,7 +8,8 @@ from tqdm import tqdm
 
 from RLMSLogic.extractionHelpers import value_to_label, norm
 
-pathToIndivisuals = '..\\data\\RLMS waves\\r33h_os_83.dta'
+pathToIndivisuals = '..\\data\\RLMS waves\\r33i_os_84.dta'
+pathToHH = '..\\data\\RLMS waves\\r33h_os_83.dta'
 
 df, meta = pyreadstat.read_dta(
     pathToIndivisuals,
@@ -16,6 +17,38 @@ df, meta = pyreadstat.read_dta(
     formats_as_category=False,
     user_missing=False
 )
+
+dfhh, metahh = pyreadstat.read_dta(
+    pathToHH,
+    apply_value_formats=False,
+    formats_as_category=False,
+    user_missing=False
+)
+
+for __, irow in df.iterrows():
+    id = irow['ccid_h']
+
+    matched = False
+    for _, hhrow in dfhh.iterrows():
+        hhId = hhrow['ccid_h']
+        if id == hhId:
+            print(f'Id = {id} matched, member id = {irow['ccid_i']}, unique member = {irow['idind']}')
+            print(f'Individual: {irow['region']}, {irow['psu']}, {irow['site']}, family # {irow['cch3']}')
+            print(f'Household: answering {hhrow['cca8']}, {hhrow['region'], hhrow['psu'], hhrow['site']}, членов семьи {hhrow['cc_nfm']}, family # {hhrow['cca3']}')
+
+            members = hhrow['cc_nfm']
+            print(f'1 member: {hhrow['ccidind1']}')
+            if members >= 2:
+                print(f'2 member: {hhrow['ccidind2']}')
+            if members >= 3:
+                print(f'3 member: {hhrow['ccidind3']}')
+            if members >= 4:
+                print(f'4 member: {hhrow['ccidind4']}')
+
+            matched = True
+
+    print(f'Matched hh and ind: {matched}')
+
 a = df.columns
 for s in ['psu']:
     print(s)

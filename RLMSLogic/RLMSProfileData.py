@@ -27,3 +27,6 @@ class RLMSProfileData:
     moneyStatusLastThreeYears: str
     salary: str
     lastMonthSalary: str
+
+    totalFamilyMembers: float
+    allFamilyMonthIncome: float

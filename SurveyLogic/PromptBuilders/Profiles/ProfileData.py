@@ -23,5 +23,8 @@ class ProfileData:
 
     economicsSourceOfKnowledge: str
 
+    totalFamilyMembers: float
+    allFamilyMonthIncome: float
+
     nonDurableGoods: list[str]
     newsSources: list[str]
