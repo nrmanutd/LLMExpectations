@@ -4,6 +4,7 @@ from SurveyLogic.PromptBuilders import constants
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.PromptBuilders.Profiles.ProfileData import ProfileData
 from SurveyLogic.PromptBuilders.StatisticsProviders.BaseInflationProvider import BaseInflationProvider
+from SurveyLogic.PromptBuilders.commonHelpers import convertToPromptValue
 
 
 class RegionalInflationContextPromptBuilder(BasePromptBuilder):
@@ -17,9 +18,10 @@ class RegionalInflationContextPromptBuilder(BasePromptBuilder):
         inflation3m = self.inflationProvider.getAverageRegionalYearInflationLastNMonth(surveyDate, region,3)
         inflation1Y = self.inflationProvider.getAverageRegionalYearInflationLastNMonth(surveyDate, region, 12)
 
-        prompt = self.prompt.replace(constants.inflation1M, f'{inflation1m*100: .1f}')
-        prompt = prompt.replace(constants.inflation3M, f'{inflation3m * 100: .1f}')
-        prompt = prompt.replace(constants.inflation1Y, f'{inflation1Y * 100: .1f}')
+        prompt = self.prompt.replace(constants.inflation1M, convertToPromptValue(inflation1m))
+        prompt = prompt.replace(constants.inflation3M, convertToPromptValue(inflation3m))
+        prompt = prompt.replace(constants.inflation1Y, convertToPromptValue(inflation1Y))
         prompt = prompt.replace(constants.localityRegionTag, profile.currentLocalityRegion)
 
         return prompt
+

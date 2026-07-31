@@ -46,6 +46,9 @@ def getCategory(answeredCategory: str, type: str):
     if answeredCategory == 'снизились' or answeredCategory == 'снизлись' or answeredCategory == 'снизился' or answeredCategory == 'снизилась':
         return 'снизились'
 
+    if answeredCategory == 'снизился незначительно':
+        return 'снизились незначительно'
+
     if answeredCategory is None:
         return None
 

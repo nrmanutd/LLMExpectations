@@ -19,7 +19,7 @@ from SurveyLogic.surveyHelpers import createSurveyRunner
 logger = SimpleLogger()
 profilesFolder = Path('./data/Target profiles')
 resultsFolder = Path('data/SurveyResults/mlcluster_qwen36_official_inflation_avgbuyings_mrot_2016_2026_QS')
-surveyDates = pd.date_range(start='2016-04-01', end='2026-04-01', freq='QS', inclusive='both').tolist()
+surveyDates = pd.date_range(start='2020-01-01', end='2026-04-01', freq='QS', inclusive='both').tolist()
 
 #systemPromptBuilder, promptBuilder = createSimplePromptBuilder()
 systemPromptBuilder, promptBuilder = createCustomPromptBuilder(useEconomy=False, usePolitics=False, useStateInflation=True, useRegionalInflation=True)
