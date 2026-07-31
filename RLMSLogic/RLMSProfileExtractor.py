@@ -19,7 +19,7 @@ class RLMSProfileExtractor:
         self.converter = converter
         self.prefix = {33: 'cc', 32: 'bb', 31: 'aa', 30: 'z', 29: 'y', 28: 'x', 27: 'w', 26: 'v', 25: 'u', 24: 't', 23: 's'}
 
-    def extractAndSaveRLMSProfiles(self, dta_path: Path, output_path: Path) -> List[RLMSProfileData]:
+    def extractAndSaveRLMSProfiles(self, dta_path: Path, output_path: Path, sampleSize: int) -> List[RLMSProfileData]:
         """
         Загружает данные RLMS, извлекает профиль каждого респондента и сохраняет JSON-файлы.
 
@@ -47,7 +47,13 @@ class RLMSProfileExtractor:
 
         profiles = []
 
-        for _, row in df.iterrows():
+        totalElemets = len(df)
+        randomElements = set(random.sample(range(totalElemets), sampleSize))
+
+        for i, row in df.iterrows():
+            if i not in randomElements:
+                continue
+
             # Идентификатор респондента
             respondent_id = norm(row.get('idind'))
             if respondent_id is None:

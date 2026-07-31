@@ -17,6 +17,7 @@ start_year = 2024
 wavesToYearMap = {wave: start_year - (start_wave - wave) for wave in range(start_wave, end_wave - 1, -1)}
 converter = SimpleRLMSProfileConverter()
 extractor = RLMSProfileExtractor(converter)
+sampleSize = 100
 
 folder = Path(targetDirectory)
 if folder.exists():
@@ -37,8 +38,8 @@ for f in files:
     targetProfileDirectory = Path(targetDirectory) / f'{waveYear}'
     targetProfileDirectory.mkdir(parents=True, exist_ok=True)
 
-    extractor.extractAndSaveRLMSProfiles(f, waveDirectory)
-    extractor.generateAndSaveProfilesFromRLMS(waveDirectory, targetProfileDirectory, 100, adultAge)
+    extractor.extractAndSaveRLMSProfiles(f, waveDirectory, sampleSize)
+    extractor.generateAndSaveProfilesFromRLMS(waveDirectory, targetProfileDirectory, sampleSize, adultAge)
 
     archive_base = dtaSources / f'{waveYear}'
     archivePath = dtaSources/f'{waveYear}.zip'
