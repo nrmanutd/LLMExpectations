@@ -77,6 +77,7 @@ class RLMSProfileExtractor:
             region = value_to_label('region', row.get('region'), meta)
 
             currentLocality = f'{localityStatus}, {psu}, {region}'
+            currentLocalityRegion = psu
             typeOfPlace = localityStatus
 
             # Должность/профессия (вопрос 3: CCJ2_3a – должность, CCJ2_3b – профессия)
@@ -123,6 +124,7 @@ class RLMSProfileExtractor:
                 education=education,
                 LocalityOfBirth=LocalityOfBirth,
                 currentLocality=currentLocality,
+                currentLocalityRegion=currentLocalityRegion,
                 typeOfLocality=typeOfPlace,
                 job=job,
                 jobSector=jobSector,

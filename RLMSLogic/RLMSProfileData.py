@@ -10,6 +10,7 @@ class RLMSProfileData:
     education: str
     LocalityOfBirth: str
     currentLocality: str
+    currentLocalityRegion: str
     typeOfLocality: str
     currentStatus: str
     job: str

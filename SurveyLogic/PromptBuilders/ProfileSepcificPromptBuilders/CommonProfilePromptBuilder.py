@@ -3,10 +3,14 @@ from datetime import date
 from SurveyLogic.PromptBuilders import constants
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.PromptBuilders.Profiles.ProfileData import ProfileData
+from SurveyLogic.PromptBuilders.StatisticsProviders.BaseAverageExpensesProvider import BaseAverageExpensesProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.MROTProvider import MROTProvider
 
 
 class CommonProfilePromptBuilder(BasePromptBuilder):
-    def __init__(self, prompt: str):
+    def __init__(self, prompt: str, mrotProvider: MROTProvider, averageExpensesProvider: BaseAverageExpensesProvider):
+        self.averageExpensesProvider = averageExpensesProvider
+        self.mrotProvider = mrotProvider
         self.prompt = prompt
 
     def buildPrompt(self, surveyDate: date, profile: ProfileData):
@@ -23,16 +27,7 @@ class CommonProfilePromptBuilder(BasePromptBuilder):
         prompt = prompt.replace(constants.jobSectorTag, str(profile.jobSector))
         prompt = prompt.replace(constants.jobTag, str(profile.job))
 
-        if profile.salary is None or profile.salary == '':
-            salary = 'Нет ответа'
-        elif '99999998' in profile.salary:
-            salary = 'Отказ от ответа'
-        elif '99999997' in profile.salary:
-            salary = 'Затрудняюсь ответить'
-        elif '99999999' in profile.salary:
-            salary = 'Нет ответа'
-        else:
-            salary = f'{profile.salary} рублей в месяц'
+        salary = self._processSalary(surveyDate, profile)
 
         prompt = prompt.replace(constants.salaryTag, salary)
         prompt = prompt.replace(constants.economicsSourceOfKnowledge, str(profile.economicsSourceOfKnowledge))
@@ -40,3 +35,24 @@ class CommonProfilePromptBuilder(BasePromptBuilder):
         prompt = prompt.replace(constants.hasCreditsTag, "Да" if profile.hasCredit else "Нет")
 
         return prompt
+
+    def _processSalary(self, surveyDate: date, profile: ProfileData) -> str:
+        if profile.salary is None or profile.salary == '':
+            return 'Нет ответа'
+        elif '99999998' in profile.salary:
+            return 'Отказ от ответа'
+        elif '99999997' in profile.salary:
+            return 'Затрудняюсь ответить'
+        elif '99999999' in profile.salary:
+            return 'Нет ответа'
+
+        s = float(profile.salary)
+        mrot = self.mrotProvider.getMROT(surveyDate)
+        averageExpenses = self.averageExpensesProvider.getRegionAverageExpenses(profile.currentLocalityRegion, surveyDate)
+
+        salaryInMrot = s / mrot
+        salaryInAverages = s / averageExpenses
+
+        salary = f'{salaryInMrot: .1f} в терминах МРОТ (по всей России), {salaryInAverages: .1f} в терминах средних трат по региону прожинвания {profile.currentLocalityRegion}'
+        return salary
+

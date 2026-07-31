@@ -1,10 +1,11 @@
-from abc import ABC
-from datetime import datetime
+from datetime import datetime, date
 
 import pandas as pd
 
+from SurveyLogic.PromptBuilders.StatisticsProviders.BaseAverageExpensesProvider import BaseAverageExpensesProvider
 
-class AverageExpensesProvider(ABC):
+
+class AverageExpensesProvider(BaseAverageExpensesProvider):
     def __init__(self, path: str):
         self.df = pd.read_excel(path, sheet_name=0, header=None, skiprows=[0, 1])
 
@@ -35,7 +36,7 @@ class AverageExpensesProvider(ABC):
         # Сохраняем параметры
         self.data_start_col = data_start_col
 
-    def getRegionAverageExpenses(self, region: str, date: datetime) -> float:
+    def getRegionAverageExpenses(self, region: str, d: date) -> float:
         region_row = None
 
         for reg, row in self.region_to_row.items():
@@ -46,7 +47,7 @@ class AverageExpensesProvider(ABC):
         if region_row is None:
             raise KeyError(f"Регион '{region}' не найден")
 
-        year = date.year - 1
+        year = d.year - 1
         # Ищем год
         if year not in self.year_to_col:
             raise KeyError(f"Год {year} не найден")

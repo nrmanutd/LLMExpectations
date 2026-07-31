@@ -1,10 +1,22 @@
+from Configuration import configuration
+from SurveyLogic.PromptBuilders import constants
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.PromptBuilders.CompositePromptBuilder import CompositePromptBuilder
 from SurveyLogic.PromptBuilders.ConstantPromptBuilder import ConstantPromptBuilder
 from SurveyLogic.PromptBuilders.ContextPromptBuilders.NewsPromptBuilder import NewsPromptBuilder
+from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.RegionalInflationContextPromptBuilder import \
+    RegionalInflationContextPromptBuilder
+from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.StateInflationContextPromptBuilder import \
+    StateInflationContextPromptBuilder
 from SurveyLogic.PromptBuilders.MonthlyFromFilePromptBuilder import MonthlyFromFilePromptBuilder
 from SurveyLogic.PromptBuilders.ProfileSepcificPromptBuilders.CommonProfilePromptBuilder import \
     CommonProfilePromptBuilder
+from SurveyLogic.PromptBuilders.StatisticsProviders.AverageExpensesProvider import AverageExpensesProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.ConvertingAverageExpensesProvider import \
+    ConvertingAverageExpensesProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.ConvertingInflationProvider import ConvertingInflationProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProvider import InflationProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.MROTProvider import MROTProvider
 from SurveyLogic.PromptBuilders.SystemPromptBuilder import SystemPromptBuilder
 from SurveyLogic.PromptBuilders.Prompts import prompts
 from SurveyLogic.PromptBuilders.TaskPromptBuilder import TaskPromptBuilder
@@ -31,19 +43,38 @@ def createNewsPromptBuilder() -> (BasePromptBuilder, BasePromptBuilder):
 
     return SystemPromptBuilder(prompts.systemPrompt), CompositePromptBuilder(builders, headers)
 
-def createCustomPromptBuilder(useInflation: bool, usePolitics: bool) -> (BasePromptBuilder, BasePromptBuilder):
+def createCustomPromptBuilder(useEconomy: bool, usePolitics: bool, useStateInflation: bool, useRegionalInflation: bool) -> (BasePromptBuilder, BasePromptBuilder):
     builders = []
     headers = []
-    builders.append(CommonProfilePromptBuilder(prompts.respondentPrompt))
+
+    mrotProvider = MROTProvider(configuration.mrotStatisticsPath)
+    averageBuyingsProvider = AverageExpensesProvider(configuration.averageBuyingsDataPath)
+    averageBuyingsProvider = ConvertingAverageExpensesProvider(averageBuyingsProvider, configuration.rlmsToInflationRegionsPath)
+
+    builders.append(CommonProfilePromptBuilder(prompts.respondentPrompt, mrotProvider, averageBuyingsProvider))
     headers.append('Основные параметры опроса и респондента')
 
-    if useInflation:
+    if useEconomy:
         builders.append(MonthlyFromFilePromptBuilder(prompts.inflationPath))
         headers.append('Основная информация об инфляции по РФ в целом за предыдущий месяц')
 
     if usePolitics:
         builders.append(MonthlyFromFilePromptBuilder(prompts.politicsPath))
         headers.append('Основная политико-экономическая информация по РФ в целом')
+
+    inflationProvider = InflationProvider(configuration.inflationDataPath)
+    inflationProvider = ConvertingInflationProvider(inflationProvider, configuration.rlmsToInflationRegionsPath,
+                                                         configuration.rlmsToInflationProductsPath)
+
+    if useStateInflation:
+        stateInflationProvider = StateInflationContextPromptBuilder(prompts.stateInflationPrompt, inflationProvider)
+        builders.append(stateInflationProvider)
+        headers.append('Официальная государственная статистика по инфляции')
+
+    if useRegionalInflation:
+        regionInflationProvider = RegionalInflationContextPromptBuilder(prompts.regionInflationPrompt, inflationProvider)
+        builders.append(regionInflationProvider)
+        headers.append('Официальная государственная статистика по инфляции в регионе проживания индивида')
 
     builders.append(TaskPromptBuilder(prompts.taskPrompt))
     headers.append('Задача')

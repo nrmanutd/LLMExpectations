@@ -10,3 +10,6 @@ taskPrompt = Path(f'{promptsPath}/taskPromptTemplate.txt').read_text(encoding="u
 
 stateEconomyPrompt=Path(f'{promptsPath}/stateCommonEconomyPrompt_0625.txt').read_text(encoding="utf-8")
 stateCommonPoliticalPrompt=Path(f'{promptsPath}/stateCommonPoliticalPrompt_0625.txt').read_text(encoding="utf-8")
+
+stateInflationPrompt=Path(f'{promptsPath}/stateCommonInflationPrompt.txt').read_text(encoding="utf-8")
+regionInflationPrompt=Path(f'{promptsPath}/regionCommonInflationPrompt.txt').read_text(encoding="utf-8")

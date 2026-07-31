@@ -1,12 +1,14 @@
-import pandas as pd
-import numpy as np
 from abc import ABC
-from datetime import datetime
+from datetime import date
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
 
 
 class MROTProvider(ABC):
 
-    def __init__(self, excel_file_path: str):
+    def __init__(self, excel_file_path: Path):
         df = pd.read_excel(excel_file_path, sheet_name=1, header=None)
 
         # Первая строка - даты, вторая строка - числа
@@ -24,9 +26,9 @@ class MROTProvider(ABC):
         # Создаем словарь для быстрого доступа
         self.date_to_value = dict(zip(self.dates, self.values))
 
-    def getMROT(self, date: datetime) -> float:
+    def getMROT(self, d: date) -> float:
 
-        mask = self.dates < date
+        mask = self.dates < d
         valid_dates = self.dates[mask]
 
         if len(valid_dates) == 0:

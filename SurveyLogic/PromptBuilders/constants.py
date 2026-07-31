@@ -14,3 +14,7 @@ salaryTag='{{SALARY}}'
 economicsSourceOfKnowledge='{{ECONOMICS_KNOWLEDGE_SOURCE}}'
 hasSavingsTag='{{HAS_SAVINGS}}'
 hasCreditsTag='{{HAS_CREDITS}}'
+
+inflation1M='{{1MInflation}}'
+inflation3M='{{3MInflation}}'
+inflation1Y='{{1YInflation}}'

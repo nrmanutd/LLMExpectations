@@ -22,7 +22,7 @@ resultsFolder = Path('data/SurveyResults/mlcluster_qwen36_no_inflation_no_politi
 surveyDates = pd.date_range(start='2016-04-01', end='2026-04-01', freq='QS', inclusive='both').tolist()
 
 #systemPromptBuilder, promptBuilder = createSimplePromptBuilder()
-systemPromptBuilder, promptBuilder = createCustomPromptBuilder(useInflation=True, usePolitics=True)
+systemPromptBuilder, promptBuilder = createCustomPromptBuilder(useEconomy=False, usePolitics=False, useStateInflation=True, useRegionalInflation=True)
 
 #surveyer = BothubSurveyer(modelToUse='deepseek-v4-pro', key=bothub_key, logger=logger)
 #surveyer = MLClusterSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=mlcluster_key, logger=logger)
