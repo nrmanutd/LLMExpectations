@@ -23,8 +23,27 @@ class ProfileData:
 
     economicsSourceOfKnowledge: str
 
+    idIndividualrespondent: float
+    idHHrespondent: float
     totalFamilyMembers: float
     allFamilyMonthIncome: float
+
+    familyHasActiveCredits: str
+    totalFamilyCreditDebt: float
+
+    familyHouseType: str
+    familyHouseAllocationType: str
+    familyHouseTotalSquare: float
+
+    hasCountryHouse: str
+    hasOtherMortgage: str
+    hasLand: str
+    landOwner: str
+
+    hasRussianCar: str
+    yearsOfRussianCar: float
+    hasForeignCar: str
+    yearsOfForeignCar: float
 
     nonDurableGoods: list[str]
     newsSources: list[str]

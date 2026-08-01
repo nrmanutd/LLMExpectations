@@ -11,7 +11,7 @@ import pyreadstat
 
 from RLMSLogic.SimpleRLMSProfileConverter import SimpleRLMSProfileConverter
 from RLMSLogic.RLMSProfileData import RLMSProfileData
-from RLMSLogic.extractionHelpers import norm, value_to_label, safe_filename
+from RLMSLogic.extractionHelpers import norm, value_to_label, safe_filename, safe_value_to_label
 
 
 class RLMSProfileExtractor:
@@ -141,6 +141,27 @@ class RLMSProfileExtractor:
             economicsSourceOfKnowledge = ','.join(currentSources)
             moneyStatusLastThreeYears = value_to_label(f'{p}j60_5b', row.get(f'{p}j60_5b'), meta)
 
+            idHHrespondent = hhRow[f'{p}a8']
+            idIndividualrespondent = row[f'{p}h4']
+
+            familyHasActiveCredits = safe_value_to_label(f'{p}f14_8_1', hhRow, metahh)
+
+            totalFamilyCreditDebt = norm(hhRow[f'{p}f14_9'])
+
+            familyHouseType = value_to_label(f'{p}c1', hhRow[f'{p}c1'], metahh)
+            familyHouseAllocationType = value_to_label(f'{p}c3', hhRow[f'{p}c3'], metahh)
+            familyHouseTotalSquare = norm(hhRow[f'{p}c5'])
+
+            hasRussianCar = value_to_label(f'{p}c9_7_2a', hhRow[f'{p}c9_7_2a'], metahh)
+            yearsOfRussianCar = norm(hhRow[f'{p}c9_7_2b'])
+            hasForeignCar = value_to_label(f'{p}c9_7_3a', hhRow[f'{p}c9_7_3a'], metahh)
+            yearsOfForeignCar = norm(hhRow[f'{p}c9_7_3b'])
+
+            hasCountryHouse = value_to_label(f'{p}c9_101a', hhRow[f'{p}c9_101a'], metahh)
+            hasOtherMortgage = value_to_label(f'{p}c9_12a', hhRow[f'{p}c9_12a'], metahh)
+            hasLand = value_to_label(f'{p}d2', hhRow[f'{p}d2'], metahh)
+            landOwner = value_to_label(f'{p}d4', hhRow[f'{p}d4'], metahh)
+
             profile = RLMSProfileData(
                 respondentId=str(respondent_id),
                 age=age,
@@ -162,8 +183,25 @@ class RLMSProfileExtractor:
                 lastMonthSalary=lastMonthSalary,
                 economicsSourceOfKnowledge=economicsSourceOfKnowledge,
                 moneyStatusLastThreeYears=moneyStatusLastThreeYears,
+                idIndividualrespondent=idIndividualrespondent,
+                idHHrespondent=idHHrespondent,
                 totalFamilyMembers=numberOfFamilyMembers,
                 allFamilyMonthIncome=allFamilyIncome,
+                familyHasActiveCredits=familyHasActiveCredits,
+                totalFamilyCreditDebt=totalFamilyCreditDebt,
+                familyHouseType=familyHouseType,
+                familyHouseAllocationType=familyHouseAllocationType,
+                familyHouseTotalSquare=familyHouseTotalSquare,
+
+                hasRussianCar=hasRussianCar,
+                yearsOfRussianCar=yearsOfRussianCar,
+                hasForeignCar=hasForeignCar,
+                yearsOfForeignCar=yearsOfForeignCar,
+
+                hasCountryHouse=hasCountryHouse,
+                hasOtherMortgage=hasOtherMortgage,
+                hasLand=hasLand,
+                landOwner=landOwner
             )
 
             # Сохраняем JSON

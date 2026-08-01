@@ -28,8 +28,26 @@ class SimpleRLMSProfileConverter:
             hasCredit=profile.hasCredit,
             hasSavings=profile.hasSavings,
 
+            idIndividualrespondent=profile.idIndividualrespondent,
+            idHHrespondent=profile.idHHrespondent,
             totalFamilyMembers=profile.totalFamilyMembers,
             allFamilyMonthIncome=profile.allFamilyMonthIncome,
+
+            familyHasActiveCredits=profile.familyHasActiveCredits,
+            totalFamilyCreditDebt=profile.totalFamilyCreditDebt,
+            familyHouseType=profile.familyHouseType,
+            familyHouseAllocationType=profile.familyHouseAllocationType,
+            familyHouseTotalSquare=profile.familyHouseTotalSquare,
+
+            hasRussianCar=profile.hasRussianCar,
+            yearsOfRussianCar=profile.yearsOfRussianCar,
+            hasForeignCar=profile.hasForeignCar,
+            yearsOfForeignCar=profile.yearsOfForeignCar,
+
+            hasCountryHouse=profile.hasCountryHouse,
+            hasOtherMortgage=profile.hasOtherMortgage,
+            hasLand=profile.hasLand,
+            landOwner=profile.landOwner,
 
             newsSources=[],
             nonDurableGoods=[]

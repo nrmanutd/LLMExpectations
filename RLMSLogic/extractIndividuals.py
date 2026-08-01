@@ -26,6 +26,7 @@ dfhh, metahh = pyreadstat.read_dta(
 )
 
 for __, irow in df.iterrows():
+    continue
     id = irow['ccid_h']
 
     matched = False
@@ -33,7 +34,7 @@ for __, irow in df.iterrows():
         hhId = hhrow['ccid_h']
         if id == hhId:
             print(f'Id = {id} matched, member id = {irow['ccid_i']}, unique member = {irow['idind']}')
-            print(f'Individual: {irow['region']}, {irow['psu']}, {irow['site']}, family # {irow['cch3']}')
+            print(f'Individual: {irow['region']}, {irow['psu']}, {irow['site']}, family # {irow['cch3']}, individual # {irow['cch4']}')
             print(f'Household: answering {hhrow['cca8']}, {hhrow['region'], hhrow['psu'], hhrow['site']}, членов семьи {hhrow['cc_nfm']}, family # {hhrow['cca3']}')
 
             members = hhrow['cc_nfm']
@@ -59,11 +60,11 @@ for s in ['psu']:
     #print(meta.value_labels[s])
 
 with open('column_names_households.txt', 'w', encoding='utf-8') as f:
-    for col in df.columns:
+    for col in dfhh.columns:
         f.write(col + '\n')
 
 with open('questions_households.txt', 'w', encoding='utf-8') as f:
-    row = df.iloc[0]
+    row = dfhh.iloc[0]
     for var, raw in row.items():
         question = meta.column_names_to_labels.get(var, var)
         f.write(f'Code = {var}, Question = {question}' + '\n')

@@ -14,6 +14,11 @@ def norm(x):
         return x.item()
     return x
 
+def safe_value_to_label(var: str, row, meta):
+    if var in row:
+        return value_to_label(var, row[var], meta)
+
+    return 'Нет ответа'
 
 def value_to_label(var: str, value, meta):
     """Возвращает текстовую метку для закодированного значения переменной."""

@@ -22,3 +22,8 @@ localityRegionTag='{{Region}}'
 
 familyTotalMembers='{{HouseholdMembers}}'
 familyTotalMonthExpenses='{{AllHouseholdIncome}}'
+
+individualAndHouseholdRespndent= '{{IndividualAndHouseholdRespondent}}'
+mortgageInformation='{{MortgageInformation}}'
+creditDebt='{{Credits}}'
+householdCars='{{HouseholdCars}}'
