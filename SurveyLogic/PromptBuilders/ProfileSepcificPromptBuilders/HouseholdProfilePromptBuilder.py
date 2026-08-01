@@ -31,4 +31,4 @@ class HouseholdProfilePromptBuilder(BasePromptBuilder):
             return 'нет информации'
 
         ratio = profile.allFamilyMonthIncome / (expenses * profile.totalFamilyMembers / 12)
-        return f'{ratio: .1f} в терминах средних трат по региону проживания с учетом численности домохозйяства в регионе {profile.currentLocalityRegion} (т.е. если близко к 1 - значит в среднем по региону)'
+        return f'{ratio: .1f} в регионе {profile.currentLocalityRegion}'
