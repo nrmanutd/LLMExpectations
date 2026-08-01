@@ -15,7 +15,7 @@ class CommonProfilePromptBuilder(BasePromptBuilder):
 
     def buildPrompt(self, surveyDate: date, profile: ProfileData):
 
-        prompt = self.prompt.replace(constants.surveyDateTag, surveyDate.strftime('%d.%m.%Y'))
+        prompt = self.prompt.replace(constants.surveyDateTag, self._getMonth(surveyDate.month))
         prompt = prompt.replace(constants.ageTag, str(profile.age))
         prompt = prompt.replace(constants.sexTag, str(profile.sex))
         prompt = prompt.replace(constants.localityTag, str(profile.currentLocality))
@@ -35,6 +35,15 @@ class CommonProfilePromptBuilder(BasePromptBuilder):
         prompt = prompt.replace(constants.hasCreditsTag, "Да" if profile.hasCredit else "Нет")
 
         return prompt
+
+    def _getMonth(self, month: int):
+        months = {
+            1: 'январь', 2: 'февраль', 3: 'март', 4: 'апрель',
+            5: 'май', 6: 'июнь', 7: 'июль', 8: 'август',
+            9: 'сентябрь', 10: 'октябрь', 11: 'ноябрь', 12: 'декабрь'
+        }
+
+        return months[month]
 
     def _processSalary(self, surveyDate: date, profile: ProfileData) -> str:
         if profile.salary is None or profile.salary == '':
