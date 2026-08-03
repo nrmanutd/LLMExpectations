@@ -45,5 +45,9 @@ class ProfileData:
     hasForeignCar: str
     yearsOfForeignCar: float
 
+    regular: dict[str, float]
+    durable: dict[str, float]
+    services: dict[str, float]
+
     nonDurableGoods: list[str]
     newsSources: list[str]

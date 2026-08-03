@@ -50,13 +50,15 @@ for __, irow in df.iterrows():
 
     print(f'Matched hh and ind: {matched}')
 
-a = df.columns
-for s in ['psu']:
-    print(s)
-    print(df[s][0])
+a = dfhh.columns
+for x in range(1, 58):
+    s0 = f'cce1_{x}a'
+    s1 = f'cce1_{x}c'
 
-    print(meta.variable_value_labels[s])
-    print(meta.column_names_to_labels[s])
+    print(f'{s1}: {dfhh[s0][0]} - {dfhh[s1][0]}' )
+
+    #print(metahh.variable_value_labels[s])
+    #print(metahh.column_names_to_labels[s])
     #print(meta.value_labels[s])
 
 with open('column_names_households.txt', 'w', encoding='utf-8') as f:

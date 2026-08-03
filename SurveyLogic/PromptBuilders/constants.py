@@ -27,3 +27,7 @@ individualAndHouseholdRespndent= '{{IndividualAndHouseholdRespondent}}'
 mortgageInformation='{{MortgageInformation}}'
 creditDebt='{{Credits}}'
 householdCars='{{HouseholdCars}}'
+
+regularTag='{{RegularGoods}}'
+durableTag='{{DurableGoods}}'
+servicesTag='{{Services}}'

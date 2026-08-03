@@ -11,6 +11,8 @@ from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.StateI
 from SurveyLogic.PromptBuilders.MonthlyFromFilePromptBuilder import MonthlyFromFilePromptBuilder
 from SurveyLogic.PromptBuilders.ProfileSepcificPromptBuilders.CommonProfilePromptBuilder import \
     CommonProfilePromptBuilder
+from SurveyLogic.PromptBuilders.ProfileSepcificPromptBuilders.ExpensesProfilePromptBuilder import \
+    ExpensesProfilePromptBuilder
 from SurveyLogic.PromptBuilders.ProfileSepcificPromptBuilders.HouseholdProfilePromptBuilder import \
     HouseholdProfilePromptBuilder
 from SurveyLogic.PromptBuilders.StatisticsProviders.AverageExpensesProvider import AverageExpensesProvider
@@ -45,7 +47,7 @@ def createNewsPromptBuilder() -> (BasePromptBuilder, BasePromptBuilder):
 
     return SystemPromptBuilder(prompts.systemPrompt), CompositePromptBuilder(builders, headers)
 
-def createCustomPromptBuilder(useEconomy: bool, usePolitics: bool, useStateInflation: bool, useRegionalInflation: bool, useFamilyInformation: bool) -> (BasePromptBuilder, BasePromptBuilder):
+def createCustomPromptBuilder(useEconomy: bool, usePolitics: bool, useStateInflation: bool, useRegionalInflation: bool, useFamilyInformation: bool, useFamilyExpenses: bool) -> (BasePromptBuilder, BasePromptBuilder):
     builders = []
     headers = []
 
@@ -82,6 +84,11 @@ def createCustomPromptBuilder(useEconomy: bool, usePolitics: bool, useStateInfla
         householdInformationBuilder = HouseholdProfilePromptBuilder(prompts.househouldCommonPrompt, averageBuyingsProvider)
         builders.append(householdInformationBuilder)
         headers.append('Детальная информация о семье индивида')
+
+    if useFamilyExpenses:
+        expensesProfilePromptBuilder = ExpensesProfilePromptBuilder(prompts.expensesPrompt, inflationProvider, [configuration.regularGoods, configuration.durableGoods, configuration.services])
+        builders.append(expensesProfilePromptBuilder)
+        headers.append('Детальная информация о расходах семьи индивида (регулярные траты, товары длительного использования, услуги)')
 
     builders.append(TaskPromptBuilder(prompts.taskPrompt))
     headers.append('Задача')

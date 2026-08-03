@@ -3,7 +3,7 @@ from SurveyResultsAnalysis.InflationComparisonAnalyzer import InflationCompariso
 from SurveyResultsAnalysis.helpers import load_from_official_statistics, load_pdtable, aggregate_survey, \
     load_pdtable_with_repeats
 
-folder = '../data/SurveyResults/mlcluster_qwen36_official_inflation_avgbuyings_mrot_hh_2016_2026_QS'
+folder = '../data/SurveyResults/mlcluster_qwen36_hh_detailed_2016_2026_QS'
 
 directEstimationsFileName = '../data/Direct_Inflation_Estimations_12m.xlsx'
 directEstimations = load_from_official_statistics(directEstimationsFileName)

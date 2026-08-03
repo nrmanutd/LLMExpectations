@@ -48,3 +48,7 @@ class RLMSProfileData:
     hasOtherMortgage: str
     hasLand: str
     landOwner: str
+
+    regular: dict[str, float]
+    durable: dict[str, float]
+    services: dict[str, float]

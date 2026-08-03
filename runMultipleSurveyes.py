@@ -18,11 +18,11 @@ from SurveyLogic.surveyHelpers import createSurveyRunner
 
 logger = SimpleLogger()
 profilesFolder = Path('./data/Target profiles')
-resultsFolder = Path('data/SurveyResults/mlcluster_qwen36_hh_detailed_2016_2026_QS')
+resultsFolder = Path('data/SurveyResults/mlcluster_qwen36_hh_detailed_with_personal_prices_2016_2026_QS')
 surveyDates = pd.date_range(start='2016-01-01', end='2026-04-01', freq='QS', inclusive='both').tolist()
 
 #systemPromptBuilder, promptBuilder = createSimplePromptBuilder()
-systemPromptBuilder, promptBuilder = createCustomPromptBuilder(useEconomy=False, usePolitics=False, useStateInflation=True, useRegionalInflation=True, useFamilyInformation=True)
+systemPromptBuilder, promptBuilder = createCustomPromptBuilder(useEconomy=False, usePolitics=False, useStateInflation=False, useRegionalInflation=False, useFamilyInformation=True, useFamilyExpenses=True)
 
 #surveyer = BothubSurveyer(modelToUse='deepseek-v4-pro', key=bothub_key, logger=logger)
 surveyer = MLClusterSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=mlcluster_key, logger=logger)

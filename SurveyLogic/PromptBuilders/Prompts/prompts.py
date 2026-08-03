@@ -13,3 +13,5 @@ stateCommonPoliticalPrompt=Path(f'{promptsPath}/stateCommonPoliticalPrompt_0625.
 stateInflationPrompt=Path(f'{promptsPath}/stateCommonInflationPrompt.txt').read_text(encoding="utf-8")
 regionInflationPrompt=Path(f'{promptsPath}/regionCommonInflationPrompt.txt').read_text(encoding="utf-8")
 househouldCommonPrompt=Path(f'{promptsPath}/householdCommonPrompt.txt').read_text(encoding="utf-8")
+
+expensesPrompt=Path(f'{promptsPath}/expensesPromptTemplate.txt').read_text(encoding="utf-8")

@@ -49,6 +49,10 @@ class SimpleRLMSProfileConverter:
             hasLand=profile.hasLand,
             landOwner=profile.landOwner,
 
+            regular=profile.regular,
+            durable=profile.durable,
+            services=profile.services,
+
             newsSources=[],
             nonDurableGoods=[]
         )

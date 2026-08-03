@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 from unittest import TestCase
 
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProvider import InflationProvider
@@ -8,7 +9,8 @@ class TestInflationProvider(TestCase):
     @classmethod
     def setUpClass(cls):
         """Метод вызывается ОДИН раз перед всеми тестами"""
-        path = '../data/Inflation weekly by regions 2015 - 2026.xlsx'
+        #path = Path('../data/Inflation weekly by regions 2015 - 2026.xlsx')
+        path = Path('../data/Monthly Inflation for goods and services in regions_2015_2026_v1.xlsx')
         cls.inflationProvider = InflationProvider(path)
 
     def test_get_average_common_year_inflation_last_nmonth(self):
@@ -28,13 +30,14 @@ class TestInflationProvider(TestCase):
 
     def test_get_average_regional_year_inflation_last_nmonth(self):
         format = '%d.%m.%Y'
-        dates = ['01.01.2016', '01.01.2017', '01.09.2021', '01.07.2026', '01.06.2020']
-        expectedValues = [(1 + 0.0064) ** 12 - 1, (1 + 0.0043) ** 12 - 1, (1 + 0.0032) ** 12 - 1,
-                          (1 + 0.0056) ** 12 - 1, None]
+        dates = ['01.01.2016', '01.01.2017', '01.09.2021', '01.07.2026']
+        expectedValues = [(1 + 0.0107) ** 12 - 1, (1 + 0.0022) ** 12 - 1, (1 + 0.0044) ** 12 - 1,
+                          (1 + 0.0114) ** 12 - 1]
 
         for i in range(len(dates)):
             inflation = self.inflationProvider.getAverageRegionalYearInflationLastNMonth(datetime.strptime(dates[i], format),
-                                                                                    'Белгородская область', lastMonth=1)
+                                                                                    'Липецкая область', lastMonth=1)
+            print(f'Expected: {expectedValues[i]}, actual: {inflation}')
             if expectedValues[i] is not None:
                 assert abs(expectedValues[i] - inflation) < 0.00001
             else:
@@ -45,12 +48,13 @@ class TestInflationProvider(TestCase):
 
         format = '%d.%m.%Y'
         dates = ['01.01.2016', '01.01.2017', '01.07.2026', '01.06.2020']
-        expectedValues = [((1 + 0.0064) * (1 + 0.005) * (1 + 0.0083)) ** 4 - 1, ((1 + 0.0043) * (1+0.003) * (1 + 0.0014)) ** 4 - 1,
-                          ((1 + 0.0056) * (1 + 0.003) * (1 + 0.0001)) ** 4 - 1, None]
+        expectedValues = [((1 + 0.0082) * (1 + 0.007) * (1 + 0.0107)) ** 4 - 1, ((1 + 0.0064) * (1+0.0031) * (1 + 0.0022)) ** 4 - 1,
+                          ((1 + 0.0007) * (1 + 0.0006) * (1 + 0.0114)) ** 4 - 1, ((1 + 0.0053) * (1 + 0.0104) * (1 + 0.0024)) ** 4 - 1]
 
         for i in range(len(dates)):
             inflation = self.inflationProvider.getAverageRegionalYearInflationLastNMonth(datetime.strptime(dates[i], format),
-                                                                                    'Белгородская область', lastMonth=3)
+                                                                                    'Липецкая область', lastMonth=3)
+            print(f'Expected: {expectedValues[i]}, actual: {inflation}')
             if expectedValues[i] is not None:
                 assert abs(expectedValues[i] - inflation) < 0.00001
             else:
@@ -58,15 +62,16 @@ class TestInflationProvider(TestCase):
 
     def test_get_products_common_year_inflation_last_nmonth(self):
         format = '%d.%m.%Y'
-        dates = ['01.01.2023', '01.07.2026', '01.06.2020']
-        expectedValues1 = [None, (1 + 0.0044) ** 12 - 1, None]
-        expectedValues2 = [(1 + 0.0027) ** 12 - 1, (1 + 0.0076) ** 12 - 1, (1 + 0.0049)**12 - 1]
-        products = ['Хлеб и хлебобулочные изделия (НД)', 'Хлеб пшеничный']
+        dates = ['01.08.2016', '01.09.2016', '01.11.2016']
+        expectedValues1 = [None, (1 + 0.0021) ** 12 - 1, (1 + 0.0027)**12 - 1]
+        expectedValues2 = [(1 + 0.0020) ** 12 - 1, None, (1 + 0.0088)**12 - 1]
+        products = ['Электротовары и другие бытовые приборы', 'Одежда и белье']
 
         for i in range(len(dates)):
             inflation = self.inflationProvider.getProductsCommonYearInflationLastNMonth(
                 datetime.strptime(dates[i], format), products, lastMonth=1)
 
+            print(f'Expected: {expectedValues1[i]}, {expectedValues2[i]}, actual: {inflation}')
             if expectedValues1[i] is not None:
                 assert abs(expectedValues1[i] - inflation[0]) < 0.00001
             else:
@@ -79,22 +84,22 @@ class TestInflationProvider(TestCase):
 
     def test_get_products_regional_year_inflation_last_nmonth(self):
         format = '%d.%m.%Y'
-        dates = ['01.02.2023', '01.07.2026', '01.06.2020']
-        expectedValues1 = [None, (100.24 * 99.04/10000) ** 6 - 1, None]
-        expectedValues2 = [((100.68/100) *(99.13/100)) ** 6 - 1, (100.33*97.54/10000) ** 6 - 1, None]
-        products = ['Хлеб и хлебобулочные изделия (НД)', 'Хлеб пшеничный']
+        dates = ['01.03.2016', '01.07.2026', '01.06.2020', '01.05.2016']
+        expectedValues1 = [None, (100.31 * 115.75/10000) ** 6 - 1, (101.1*100.96/10000)**6-1, None]
+        expectedValues2 = [None, (100*100/10000) ** 6 - 1, 0, 0]
+        products = ['Беспроводная радиосвязь', 'Услуги телевещания']
         region = 'Республика Татарстан (Татарстан)'
 
         for i in range(len(dates)):
             inflation = self.inflationProvider.getProductsRegionalYearInflationLastNMonth(
                 datetime.strptime(dates[i], format), region, products, lastMonth=2)
 
+            print(f'Expected: {expectedValues1[i]}, {expectedValues2[i]}, actual: {inflation}')
             if expectedValues1[i] is not None:
                 assert abs(expectedValues1[i] - inflation[0]) < 0.00001
             else:
                 assert inflation[0] is None
 
-            print(f'Expected2: {expectedValues2[i]}, actual: {inflation[1]}')
             if expectedValues2[i] is not None:
                 assert abs(expectedValues2[i] - inflation[1]) < 0.00001
             else:

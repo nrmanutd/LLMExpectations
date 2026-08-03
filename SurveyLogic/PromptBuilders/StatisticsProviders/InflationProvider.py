@@ -9,7 +9,77 @@ from SurveyLogic.PromptBuilders.StatisticsProviders.BaseInflationProvider import
 
 class InflationProvider(BaseInflationProvider):
     def __init__(self, path: Path):
-        self.df = pd.read_excel(path, sheet_name=0, header=None, skiprows=[0])
+        #year_to_col, region_to_row = self._getMapsVersion1(self.df)
+        year_to_col, region_to_row = self._getMapsVersion2(path)
+        self.year_to_col = year_to_col
+        self.region_to_row = region_to_row
+
+    def _getMapsVersion2(self, path):
+        df = pd.read_excel(path, sheet_name=0, header=None, skiprows=[0, 1])
+        self.df = df
+
+        data_start_col = 2
+        year_row = 0
+        month_row = 1
+
+        data_start_row = 3
+        region_col = 0
+        goodCategory_col = 1
+
+        # Строим словарь: год -> номер колонки
+        year_to_col = dict()
+        curYear = None
+        for col in range(data_start_col, len(df.columns)):
+            year = df.iloc[year_row, col]
+            if pd.notna(year):
+                curYear = year
+
+            month = df.iloc[month_row, col]
+
+            val = f'{month.lower()} {curYear} г.'
+            # dateVal = pd.to_datetime(val)
+            dateVal = InflationProvider._parse_russian_date(val)
+
+            if pd.notna(dateVal):
+                try:
+                    year_to_col[dateVal] = col
+                except (ValueError, TypeError):
+                    pass
+
+        # Строим словарь: регион -> номер строки
+        region_to_row = {}
+        for row in range(data_start_row, len(self.df)):
+            val = self.df.iloc[row, region_col]
+            if pd.notna(val):
+                region = str(val).strip()
+                if region not in region_to_row:
+                    region_to_row[region] = {'row': row, 'count': 1}
+                else:
+                    region_to_row[region]['count'] += 1
+
+        regions = {}
+        for k, v in region_to_row.items():
+            if v['count'] == 1:
+                regions[k] = v['row']
+
+        currentRegion = None
+        region_to_row = {}
+        for row in range(data_start_row, len(self.df)):
+            val = df.iloc[row, region_col]
+            category = df.iloc[row, goodCategory_col]
+            if pd.notna(val):
+                currentRegion = str(val).strip()
+
+            category = str(category).strip()
+
+            key = f'{currentRegion}_{category}'
+            region_to_row[key] = row
+
+        return year_to_col, region_to_row
+
+    def _getMapsVersion1(self, path):
+        df = pd.read_excel(path, sheet_name=0, header=None, skiprows=[0])
+        self.df = df
 
         data_start_col = 2
         year_row = 0
@@ -17,54 +87,56 @@ class InflationProvider(BaseInflationProvider):
         region_col = 0
 
         # Строим словарь: год -> номер колонки
-        self.year_to_col = dict()
-        for col in range(data_start_col, len(self.df.columns)):
-            val = self.df.iloc[year_row, col]
-            #dateVal = pd.to_datetime(val)
+        year_to_col = dict()
+        for col in range(data_start_col, len(df.columns)):
+            val = df.iloc[year_row, col]
+            # dateVal = pd.to_datetime(val)
             dateVal = InflationProvider._parse_russian_date(val)
 
             if pd.notna(dateVal):
                 try:
-                    self.year_to_col[dateVal] = col
+                    year_to_col[dateVal] = col
                 except (ValueError, TypeError):
                     pass
 
         # Строим словарь: регион -> номер строки
-        self.region_to_row = {}
+        region_to_row = {}
         for row in range(data_start_row, len(self.df)):
             val = self.df.iloc[row, region_col]
             if pd.notna(val):
                 region = str(val).strip()
-                if region not in self.region_to_row:
-                    self.region_to_row[region] = {'row': row, 'count': 1}
+                if region not in region_to_row:
+                    region_to_row[region] = {'row': row, 'count': 1}
                 else:
-                    self.region_to_row[region]['count'] += 1
+                    region_to_row[region]['count'] += 1
 
-        self.regions = {}
-        for k, v in self.region_to_row.items():
+        regions = {}
+        for k, v in region_to_row.items():
             if v['count'] == 1:
-                self.regions[k] = v['row']
+                regions[k] = v['row']
 
         currentRegion = None
-        self.region_to_row = {}
+        region_to_row = {}
         for row in range(data_start_row, len(self.df)):
-            val = self.df.iloc[row, region_col]
+            val = df.iloc[row, region_col]
             if pd.notna(val):
                 region = str(val).strip()
 
-                if region in self.regions:
-                    self.region_to_row[region] = row
+                if region in regions:
+                    region_to_row[region] = row
                     currentRegion = region
                     continue
 
                 key = f'{currentRegion}_{region}'
-                self.region_to_row[key] = row
+                region_to_row[key] = row
+
+        return year_to_col, region_to_row
 
     def getAverageCommonYearInflationLastNMonth(self, d: date, lastMonth: int = 1) -> float:
         return self.getAverageRegionalYearInflationLastNMonth(d, 'Российская Федерация', lastMonth)
 
     def getAverageRegionalYearInflationLastNMonth(self, d: date, region: str, lastMonth: int = 1) -> float:
-        allGoodsInflation = self.getProductsRegionalYearInflationLastNMonth(d, region, ['ВСЕ ТОВАРЫ И УСЛУГИ'], lastMonth)
+        allGoodsInflation = self.getProductsRegionalYearInflationLastNMonth(d, region, ['Все товары и услуги'], lastMonth)
         return allGoodsInflation[0]
 
     def getProductsCommonYearInflationLastNMonth(self, d: date, products: list[str], lastMonth: int = 1) -> list[float]:
@@ -89,6 +161,9 @@ class InflationProvider(BaseInflationProvider):
             columns.append(column)
 
         rowKey = f'{region}_{product}'
+        if rowKey not in self.region_to_row:
+            return None
+
         row = self.region_to_row[rowKey]
 
         inflation = 1

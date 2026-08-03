@@ -2,6 +2,7 @@ import glob
 import json
 import os
 import re
+import pandas as pd
 import random
 from dataclasses import asdict, fields
 from pathlib import Path
@@ -14,10 +15,30 @@ from RLMSLogic.RLMSProfileData import RLMSProfileData
 from RLMSLogic.extractionHelpers import norm, value_to_label, safe_filename, safe_value_to_label
 
 
+def _checkIfAnswerIsNotEmpty(answer):
+    if answer is None or pd.isna(answer):
+        return False
+
+    if answer > 99999990:
+        return False
+
+    return True
+
+
 class RLMSProfileExtractor:
-    def __init__(self, converter: SimpleRLMSProfileConverter):
+    def __init__(self, converter: SimpleRLMSProfileConverter, regularGoods: Path, durableGoods: Path, services: Path):
+        self.prefixConstant = '{{prefix}}'
+        self.questionCodeSeparator = '_'
+        self.sourcePrefixConstant = 'cc'
+
         self.converter = converter
         self.prefix = {33: 'cc', 32: 'bb', 31: 'aa', 30: 'z', 29: 'y', 28: 'x', 27: 'w', 26: 'v', 25: 'u', 24: 't', 23: 's'}
+
+        self.regular = self._parseMapFileAndInitialize(regularGoods)
+        self.durable = self._parseMapFileAndInitialize(durableGoods)
+        self.services = self._parseMapFileAndInitialize(services)
+
+
 
     def extractAndSaveRLMSProfiles(self, dta_path: Path, hhFile: Path, output_path: Path, sampleSize: int) -> List[RLMSProfileData]:
         """
@@ -162,6 +183,10 @@ class RLMSProfileExtractor:
             hasLand = value_to_label(f'{p}d2', hhRow[f'{p}d2'], metahh)
             landOwner = value_to_label(f'{p}d4', hhRow[f'{p}d4'], metahh)
 
+            regular = self._processMap(self.regular, hhRow, p)
+            durable = self._processMap(self.durable, hhRow, p)
+            services = self._processMap(self.services, hhRow, p)
+
             profile = RLMSProfileData(
                 respondentId=str(respondent_id),
                 age=age,
@@ -201,7 +226,11 @@ class RLMSProfileExtractor:
                 hasCountryHouse=hasCountryHouse,
                 hasOtherMortgage=hasOtherMortgage,
                 hasLand=hasLand,
-                landOwner=landOwner
+                landOwner=landOwner,
+
+                regular=regular,
+                durable=durable,
+                services=services
             )
 
             # Сохраняем JSON
@@ -253,3 +282,28 @@ class RLMSProfileExtractor:
 
             counter = counter + 1
 
+    def _parseMapFileAndInitialize(self, path: Path) -> set:
+        result = set()
+        pattern = r'^[^\s]+'
+        with open(path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            for line in lines:
+                parsed = re.match(pattern, line).group().replace(self.sourcePrefixConstant, f'{self.prefixConstant}').replace('.', f'{self.questionCodeSeparator}')
+                result.add(parsed)
+
+        return result
+
+    def _processMap(self, map: set, row, prefix: str) -> dict[str, float]:
+        result = dict[str, float]()
+        for item in map:
+
+            curQuestion = item.replace(self.prefixConstant, prefix)
+            if curQuestion not in row:
+                continue
+
+            answer = row[curQuestion]
+
+            if _checkIfAnswerIsNotEmpty(answer):
+                result[item.replace(self.prefixConstant, self.sourcePrefixConstant)] = answer
+
+        return result

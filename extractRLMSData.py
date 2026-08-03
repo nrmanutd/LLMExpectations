@@ -2,6 +2,7 @@ import re
 import shutil
 from pathlib import Path
 
+from Configuration import configuration
 from RLMSLogic.SimpleRLMSProfileConverter import SimpleRLMSProfileConverter
 from RLMSLogic.RLMSProfileExtractor import RLMSProfileExtractor
 
@@ -16,7 +17,7 @@ start_year = 2024
 
 wavesToYearMap = {wave: start_year - (start_wave - wave) for wave in range(start_wave, end_wave - 1, -1)}
 converter = SimpleRLMSProfileConverter()
-extractor = RLMSProfileExtractor(converter)
+extractor = RLMSProfileExtractor(converter, configuration.regularGoods, configuration.durableGoods, configuration.services)
 sampleSize = 100
 
 folder = Path(targetDirectory)
