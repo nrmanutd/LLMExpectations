@@ -13,7 +13,7 @@ from SurveyLogic.SurveyResultsSerialization.BaseSurveySerializer import BaseSurv
 
 
 class AsyncSurveyRunner(BaseSurveyRunner):
-    def __init__(self, serializer: BaseSurveySerializer, surveyExecutor: StandardAsyncSurveyExecutor, profilesProvider: BaseProfilesProvider, logger: BaseLogger, maxConnectionsLimit: int = 5):
+    def __init__(self, serializer: BaseSurveySerializer, surveyExecutor: StandardAsyncSurveyExecutor, profilesProvider: BaseProfilesProvider, logger: BaseLogger, maxConnectionsLimit: int = 10):
         self.logger = logger
         self.surveyExecutor = surveyExecutor
         self.serializer = serializer
