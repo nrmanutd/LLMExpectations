@@ -7,13 +7,13 @@ from SurveyLogic.BaseSurveyRunner import BaseSurveyRunner
 from SurveyLogic.PromptBuilders.Profiles.BaseProfilesProvider import BaseProfilesProvider
 from SurveyLogic.PromptBuilders.Profiles.ProfileData import ProfileData
 from SurveyLogic.SurveyExecution.BaseSurveyExecutor import BaseSurveyExecutor
-from SurveyLogic.SurveyExecution.StandardSurveyExecutor import StandardSurveyExecutor
+from SurveyLogic.SurveyExecution.StandardAsyncSurveyExecutor import StandardAsyncSurveyExecutor
 from SurveyLogic.SurveyResults.InflationSurveyRespond import InflationSurveyRespond
 from SurveyLogic.SurveyResultsSerialization.BaseSurveySerializer import BaseSurveySerializer
 
 
 class AsyncSurveyRunner(BaseSurveyRunner):
-    def __init__(self, serializer: BaseSurveySerializer, surveyExecutor: StandardSurveyExecutor, profilesProvider: BaseProfilesProvider, logger: BaseLogger, maxConnectionsLimit: int = 5):
+    def __init__(self, serializer: BaseSurveySerializer, surveyExecutor: StandardAsyncSurveyExecutor, profilesProvider: BaseProfilesProvider, logger: BaseLogger, maxConnectionsLimit: int = 5):
         self.logger = logger
         self.surveyExecutor = surveyExecutor
         self.serializer = serializer
@@ -55,7 +55,7 @@ class AsyncSurveyRunner(BaseSurveyRunner):
                 results.append((index, result))
 
             self.logger.logDebug(f'Surveyed profile # {index}.')
-            results.append(result)
+            results.append((index, result))
             completed += 1
 
             if completed % 10 == 0 or completed == total:

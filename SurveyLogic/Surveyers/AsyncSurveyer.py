@@ -12,18 +12,21 @@ from SurveyLogic.Surveyers.BaseSurveyer import BaseSurveyer
 
 
 class AsyncSurveyer(BaseSurveyer):
-    def __init__(self, modelToUse: str, key: str, logger: BaseLogger, maxAttempts: int = 30, delaySeconds: int = 10):
+    def __init__(self, modelToUse: str, key: str, logger: BaseLogger, baseUrl: str, maxAttempts: int = 30, delaySeconds: int = 10):
+        self.baseUrl = baseUrl
         self.delaySeconds = delaySeconds
         self.maxAttempts = maxAttempts
         self.logger = logger
         self.modelToUse = modelToUse
         self.key=key
-        self.baseUrl="https://litellm.mlcluster.ru"  # Or https://openai.bothub.chat/v1
 
         self.client=AsyncOpenAI(
             api_key=self.key,  # Replace with your actual BotHub key
             base_url=self.baseUrl
         )
+
+        self.logger.logDebug(f'Initialized OpenAI async surveyer on url {baseUrl}')
+
     async def askSurvey(self, systemPrompt: str, prompt: str, respondentId: str, surveyDate: date):
         for iAttempt in range(self.maxAttempts):
             try:

@@ -7,8 +7,8 @@ from SurveyLogic.Surveyers.AsyncSurveyer import AsyncSurveyer
 from SurveyLogic.Surveyers.BaseSurveyer import BaseSurveyer
 
 
-class StandardSurveyExecutor(BaseSurveyExecutor):
-    def __init__(self, systemPromptBuilder: BasePromptBuilder, promptBuilder: BasePromptBuilder, surveyer: BaseSurveyer):
+class StandardAsyncSurveyExecutor(BaseSurveyExecutor):
+    def __init__(self, systemPromptBuilder: BasePromptBuilder, promptBuilder: BasePromptBuilder, surveyer: AsyncSurveyer):
         self.systemPromptBuilder = systemPromptBuilder
         self.surveyer = surveyer
         self.promptBuilder = promptBuilder
@@ -17,6 +17,9 @@ class StandardSurveyExecutor(BaseSurveyExecutor):
         systemPrompt = self.systemPromptBuilder.buildPrompt(surveyDate, profile)
         prompt = self.promptBuilder.buildPrompt(surveyDate, profile)
 
-        respond = self.surveyer.askSurvey(systemPrompt, prompt, profile.respondentId, surveyDate)
+        respond = await self.surveyer.askSurvey(systemPrompt, prompt, profile.respondentId, surveyDate)
+
+        respond.hasCredit = profile.hasCredit
+        respond.hasSavings = profile.hasSavings
 
         return respond

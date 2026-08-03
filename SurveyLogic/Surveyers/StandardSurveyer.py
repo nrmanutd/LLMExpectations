@@ -10,26 +10,25 @@ from SurveyLogic.SurveyResults.InflationSurveyRespond import InflationSurveyResp
 from SurveyLogic.Surveyers.BaseSurveyer import BaseSurveyer
 
 
-class MLClusterSurveyer(BaseSurveyer):
-    def __init__(self, modelToUse: str, key: str, logger: BaseLogger, maxAttempts: int = 30, delaySeconds: int = 10):
+class StandardSurveyer(BaseSurveyer):
+    def __init__(self, modelToUse: str, key: str, logger: BaseLogger, baseUrl: str, maxAttempts: int = 30, delaySeconds: int = 10):
         self.delaySeconds = delaySeconds
         self.maxAttempts = maxAttempts
         self.logger = logger
         self.modelToUse = modelToUse
         self.key=key
-        self.baseUrl="https://litellm.mlcluster.ru"  # Or https://openai.bothub.chat/v1
+        self.baseUrl=baseUrl  # Or https://openai.bothub.chat/v1
 
         self.client=OpenAI(
             api_key=self.key,  # Replace with your actual BotHub key
             base_url=self.baseUrl
         )
 
+        self.logger.logDebug(f'Initialized OpenAI sync surveyer on url {baseUrl}')
+
     def askSurvey(self, systemPrompt: str, prompt: str, respondentId: str, surveyDate: date):
         for iAttempt in range(self.maxAttempts):
             try:
-                #self.logger.logDebug(systemPrompt)
-                #self.logger.logDebug(prompt)
-
                 response = self.client.chat.completions.create(
                     model=self.modelToUse,  # Specify any model available on your BotHub account
                     messages=[
