@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from Logging.BaseLogger import BaseLogger
+from SurveyLogic.AsyncSurveyRunner import AsyncSurveyRunner
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.PromptBuilders.Profiles.ProfileDataLoader import ProfileDataLoader
 from SurveyLogic.PromptBuilders.Profiles.StandardProfilesProvider import StandardProfilesProvider
@@ -17,4 +18,12 @@ def createSurveyRunner(profilesFolder: Path, systemPromptBuilder: BasePromptBuil
     surveyExecutor = AdditionalInformationSurveyExecutor(surveyExecutor)
 
     runner = StandardSurveyRunner(surveySerializer, surveyExecutor, profilesProvider, logger)
+    return runner
+
+def createAsyncSurveyRunner(profilesFolder: Path, systemPromptBuilder: BasePromptBuilder, promptBuilder: BasePromptBuilder, surveySerializer: BaseSurveySerializer, surveyer: BaseSurveyer, logger: BaseLogger) -> AsyncSurveyRunner:
+    profilesProvider = StandardProfilesProvider(profilesFolder, ProfileDataLoader())
+    surveyExecutor = StandardSurveyExecutor(systemPromptBuilder, promptBuilder, surveyer)
+    #surveyExecutor = AdditionalInformationSurveyExecutor(surveyExecutor)
+
+    runner = AsyncSurveyRunner(surveySerializer, surveyExecutor, profilesProvider, logger)
     return runner
