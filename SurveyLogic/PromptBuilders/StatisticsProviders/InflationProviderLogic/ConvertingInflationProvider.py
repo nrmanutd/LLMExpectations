@@ -2,7 +2,7 @@ import re
 from datetime import date
 from pathlib import Path
 
-from SurveyLogic.PromptBuilders.StatisticsProviders.BaseInflationProvider import BaseInflationProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseInflationProvider import BaseInflationProvider
 
 
 class ConvertingInflationProvider(BaseInflationProvider):

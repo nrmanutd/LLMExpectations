@@ -1,15 +1,15 @@
 import re
+import pandas as pd
 from datetime import date
 from pathlib import Path
 
-import pandas as pd
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseSingleMonthInflationProvider import \
+    BaseSingleMonthInflationProvider
 
-from SurveyLogic.PromptBuilders.StatisticsProviders.BaseInflationProvider import BaseInflationProvider
 
-
-class InflationProvider(BaseInflationProvider):
+class EMISSWebSingleMonthInflationProvider(BaseSingleMonthInflationProvider):
     def __init__(self, path: Path):
-        #year_to_col, region_to_row = self._getMapsVersion1(self.df)
+        # year_to_col, region_to_row = self._getMapsVersion1(self.df)
         year_to_col, region_to_row = self._getMapsVersion2(path)
         self.year_to_col = year_to_col
         self.region_to_row = region_to_row
@@ -38,7 +38,7 @@ class InflationProvider(BaseInflationProvider):
 
             val = f'{month.lower()} {curYear} г.'
             # dateVal = pd.to_datetime(val)
-            dateVal = InflationProvider._parse_russian_date(val)
+            dateVal = EMISSWebSingleMonthInflationProvider._parse_russian_date(val)
 
             if pd.notna(dateVal):
                 try:
@@ -91,7 +91,7 @@ class InflationProvider(BaseInflationProvider):
         for col in range(data_start_col, len(df.columns)):
             val = df.iloc[year_row, col]
             # dateVal = pd.to_datetime(val)
-            dateVal = InflationProvider._parse_russian_date(val)
+            dateVal = EMISSWebSingleMonthInflationProvider._parse_russian_date(val)
 
             if pd.notna(dateVal):
                 try:
@@ -132,52 +132,6 @@ class InflationProvider(BaseInflationProvider):
 
         return year_to_col, region_to_row
 
-    def getAverageCommonYearInflationLastNMonth(self, d: date, lastMonth: int = 1) -> float:
-        return self.getAverageRegionalYearInflationLastNMonth(d, 'Российская Федерация', lastMonth)
-
-    def getAverageRegionalYearInflationLastNMonth(self, d: date, region: str, lastMonth: int = 1) -> float:
-        allGoodsInflation = self.getProductsRegionalYearInflationLastNMonth(d, region, ['Все товары и услуги'], lastMonth)
-        return allGoodsInflation[0]
-
-    def getProductsCommonYearInflationLastNMonth(self, d: date, products: list[str], lastMonth: int = 1) -> list[float]:
-        return self.getProductsRegionalYearInflationLastNMonth(d, 'Российская Федерация', products, lastMonth)
-
-    def getProductsRegionalYearInflationLastNMonth(self, d: date, region: str, products: list[str], lastMonth: int = 1) -> list[float]:
-        resultInflation = []
-
-        for p in products:
-            inflation = self._getInflation(d, region, p, lastMonth)
-            resultInflation.append(inflation)
-
-        return resultInflation
-
-    def _getInflation(self, d: date, region: str, product: str, lastMonth: int = 1):
-        columns = []
-
-        for i in range(lastMonth):
-            dateWithOffset = (d - pd.DateOffset(months=i + 1)).date()
-
-            column = self.year_to_col[dateWithOffset]
-            columns.append(column)
-
-        rowKey = f'{region}_{product}'
-        if rowKey not in self.region_to_row:
-            return None
-
-        row = self.region_to_row[rowKey]
-
-        inflation = 1
-
-        for col in columns:
-            value = float(self.df.iloc[row, col])
-            if pd.isna(value):
-                return None
-
-            inflation = inflation * value / 100
-
-        yearInflation = inflation ** (12 / len(columns)) - 1
-        return yearInflation
-
     @staticmethod
     def _parse_russian_date(date_str):
         """
@@ -208,3 +162,13 @@ class InflationProvider(BaseInflationProvider):
             raise ValueError(f"Неизвестный месяц: {month_name}")
 
         return pd.Timestamp(year=int(year), month=months[month_name], day=1).date()
+    def getInflation(self, region: str, product: str, d: date):
+        column = self.year_to_col[d]
+
+        rowKey = f'{region}_{product}'
+        if rowKey not in self.region_to_row:
+            return None
+
+        row = self.region_to_row[rowKey]
+        value = float(self.df.iloc[row, column])
+        return value

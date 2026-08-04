@@ -1,8 +1,6 @@
 from Configuration import configuration
-from SurveyLogic.PromptBuilders import constants
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.PromptBuilders.CompositePromptBuilder import CompositePromptBuilder
-from SurveyLogic.PromptBuilders.ConstantPromptBuilder import ConstantPromptBuilder
 from SurveyLogic.PromptBuilders.ContextPromptBuilders.NewsPromptBuilder import NewsPromptBuilder
 from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.RegionalInflationContextPromptBuilder import \
     RegionalInflationContextPromptBuilder
@@ -18,8 +16,14 @@ from SurveyLogic.PromptBuilders.ProfileSepcificPromptBuilders.HouseholdProfilePr
 from SurveyLogic.PromptBuilders.StatisticsProviders.AverageExpensesProvider import AverageExpensesProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.ConvertingAverageExpensesProvider import \
     ConvertingAverageExpensesProvider
-from SurveyLogic.PromptBuilders.StatisticsProviders.ConvertingInflationProvider import ConvertingInflationProvider
-from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProvider import InflationProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseSingleMonthInflationProvider import \
+    BaseSingleMonthInflationProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.ConvertingInflationProvider import ConvertingInflationProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.EMISSWebSingleMonthInflationProvider import \
+    EMISSWebSingleMonthInflationProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.InflationProvider import InflationProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.MultipleEMISSFilesInflationProvider import \
+    MultipleEMISSFilesInflationProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.MROTProvider import MROTProvider
 from SurveyLogic.PromptBuilders.SystemPromptBuilder import SystemPromptBuilder
 from SurveyLogic.PromptBuilders.Prompts import prompts
@@ -66,7 +70,8 @@ def createCustomPromptBuilder(useEconomy: bool, usePolitics: bool, useStateInfla
         builders.append(MonthlyFromFilePromptBuilder(prompts.politicsPath))
         headers.append('Основная политико-экономическая информация по РФ в целом')
 
-    inflationProvider = InflationProvider(configuration.inflationDataPath)
+    singleMonthInflationProvider = createSingleMonthInflationProvider()
+    inflationProvider = InflationProvider(singleMonthInflationProvider)
     inflationProvider = ConvertingInflationProvider(inflationProvider, configuration.rlmsToInflationRegionsPath)
 
     if useStateInflation:
@@ -93,3 +98,12 @@ def createCustomPromptBuilder(useEconomy: bool, usePolitics: bool, useStateInfla
     headers.append('Задача')
 
     return SystemPromptBuilder(prompts.systemPrompt), CompositePromptBuilder(builders, headers)
+
+def createSingleMonthInflationProvider() -> BaseSingleMonthInflationProvider:
+    files = [configuration.inflation20092014DataPath, configuration.inflation20152020DataPath,
+             configuration.inflation20212026DataPath]
+    yearsSets = [configuration.years20092014, configuration.years20152020, configuration.years20212026]
+    providers = [EMISSWebSingleMonthInflationProvider(x) for x in files]
+
+    singleMonthInflationProvider = MultipleEMISSFilesInflationProvider(providers, yearsSets)
+    return singleMonthInflationProvider

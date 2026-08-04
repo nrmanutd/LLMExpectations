@@ -2,7 +2,12 @@ from datetime import datetime
 from pathlib import Path
 from unittest import TestCase
 
-from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProvider import InflationProvider
+from Configuration import configuration
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.EMISSWebSingleMonthInflationProvider import \
+    EMISSWebSingleMonthInflationProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.InflationProvider import InflationProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.MultipleEMISSFilesInflationProvider import \
+    MultipleEMISSFilesInflationProvider
 
 
 class TestInflationProvider(TestCase):
@@ -10,8 +15,16 @@ class TestInflationProvider(TestCase):
     def setUpClass(cls):
         """Метод вызывается ОДИН раз перед всеми тестами"""
         #path = Path('../data/Inflation weekly by regions 2015 - 2026.xlsx')
-        path = Path('../data/Monthly Inflation for goods and services in regions_2015_2026_v1.xlsx')
-        cls.inflationProvider = InflationProvider(path)
+        path1 = Path('../data/Monthly Inflation for goods and services in regions_2009_2014_v0.xlsx')
+        path2 = Path('../data/Monthly Inflation for goods and services in regions_2015_2020_v0.xlsx')
+        path3 = Path('../data/Monthly Inflation for goods and services in regions_2021_2026_v0.xlsx')
+
+        files = [path1, path2, path3]
+        yearsSets = [configuration.years20092014, configuration.years20152020, configuration.years20212026]
+        providers = [EMISSWebSingleMonthInflationProvider(x) for x in files]
+
+        singleMonthInflationProvider = MultipleEMISSFilesInflationProvider(providers, yearsSets)
+        cls.inflationProvider = InflationProvider(singleMonthInflationProvider)
 
     def test_get_average_common_year_inflation_last_nmonth(self):
         format = '%d.%m.%Y'
