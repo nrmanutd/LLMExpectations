@@ -52,8 +52,29 @@ class ExpensesProfilePromptBuilder(BasePromptBuilder):
         result = '\n'
 
         for i in range(len(top5Goods)):
-            result += f'#{i}. {top5Goods[i]}, инфляция за 1, 3 и 6 месяцев (приведенная к году) = {showInflation(inflation1m[i])}%, {showInflation(inflation3m[i])}%, {showInflation(inflation6m[i])}%\n'
+            inflation1mDescription = self._getDescription(inflation1m[i], 1)
+            inflation3mDescription = self._getDescription(inflation3m[i], 3)
+            inflation6mDescription = self._getDescription(inflation6m[i], 6)
+
+            result += f'#{i}. {top5Goods[i]}: {inflation1mDescription}, {inflation3mDescription}, {inflation6mDescription}\n'
 
         return result
+
+    def _getDescription(self, inflation: float, month: int):
+        direction = self._getDirection(inflation)
+        if abs(inflation) < 0.00001:
+            return f"за последние {month} месяцев не изменилась"
+
+        clearInflation = (inflation + 1)**(month/12) - 1
+        return f'{direction} на {showInflation(abs(clearInflation))}% за последние {month} месяцев'
+
+    def _getDirection(self, inflation: float):
+        if inflation > 0.0:
+            return "подорожал"
+
+        if inflation < 0.0:
+            return "подешевел"
+
+        return "цена не изменилась"
 
 

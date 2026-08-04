@@ -74,10 +74,10 @@ class TestInflationProvider(TestCase):
 
     def test_get_products_common_year_inflation_last_nmonth(self):
         format = '%d.%m.%Y'
-        dates = ['01.08.2016', '01.09.2016', '01.11.2016']
-        expectedValues1 = [None, (1 + 0.0021) ** 12 - 1, (1 + 0.0027)**12 - 1]
-        expectedValues2 = [(1 + 0.0020) ** 12 - 1, None, (1 + 0.0088)**12 - 1]
-        products = ['Электротовары и другие бытовые приборы', 'Одежда и белье']
+        dates = ['01.08.2016', '01.02.2016', '01.11.2016']
+        expectedValues1 = [None, (1 + 0.0100) ** 12 - 1, (1 + 0.0027)**12 - 1]
+        expectedValues2 = [(1 + 0.0018) ** 12 - 1, None, (1 + 0.009)**12 - 1]
+        products = ['Электротовары и другие бытовые приборы', 'Одежда']
 
         for i in range(len(dates)):
             inflation = self.inflationProvider.getProductsCommonYearInflationLastNMonth(
@@ -116,3 +116,20 @@ class TestInflationProvider(TestCase):
                 assert abs(expectedValues2[i] - inflation[1]) < 0.00001
             else:
                 assert inflation[1] is None
+
+    def test_get_products_regional_year_inflation_last_nmonth_on_boarder(self):
+        format = '%d.%m.%Y'
+        dates = ['01.02.2015', '01.02.2021']
+        expectedValues1 = [(99.69 * 100/10000) ** 6 - 1, (100*100/10000)**6-1, None]
+        products = ['Беспроводная радиосвязь']
+        region = 'Республика Татарстан (Татарстан)'
+
+        for i in range(len(dates)):
+            inflation = self.inflationProvider.getProductsRegionalYearInflationLastNMonth(
+                datetime.strptime(dates[i], format), region, products, lastMonth=2)
+
+            print(f'Expected: {expectedValues1[i]}, actual: {inflation}')
+            if expectedValues1[i] is not None:
+                assert abs(expectedValues1[i] - inflation[0]) < 0.00001
+            else:
+                assert inflation[0] is None

@@ -31,6 +31,7 @@ class AsyncSurveyRunner(BaseSurveyRunner):
                 return (index, None, str(e))
 
     async def RunSurvey(self, surveyDate: date) -> list[InflationSurveyRespond]:
+        self.logger.logDebug(f'Executing survey for date {surveyDate}')
         profiles = self.profilesProvider.getProfiles(surveyDate)
 
         tasks = []

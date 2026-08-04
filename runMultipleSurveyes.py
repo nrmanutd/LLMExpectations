@@ -11,13 +11,13 @@ from SurveyLogic.Surveyers.StubSurveyer import StubSurveyer
 from SurveyLogic.surveyHelpers import createAsyncSurveyRunner, extractDatesFromFile, copyPromptTemplatesToFolder, \
     getDatesRowWithMonthlyStep
 
-experimentUniqueName='mlcluster_qwen36_async_hh_detailed_with_personal_prices_2021_2022_MS'
+experimentUniqueName='mlcluster_qwen36_async_hh_detailed_with_personal_prices_2010_2026_AS'
 profilesFolder = Path('./data/Target profiles')
 resultsFolder = Path('data/SurveyResults/')/experimentUniqueName
 copyPromptTemplatesToFolder(Path('SurveyLogic/PromptBuilders/Prompts/'), resultsFolder/'Prompts')
 
-#surveyDates = extractDatesFromFile(configuration.inflationSurveysDates)
-surveyDates = getDatesRowWithMonthlyStep('2021.12.01', '2022.12.01')
+surveyDates = extractDatesFromFile(configuration.inflationSurveysDates)
+#surveyDates = getDatesRowWithMonthlyStep('2020.12.01', '2021.01.01')
 systemPromptBuilder, promptBuilder = createCustomPromptBuilder(useEconomy=False, usePolitics=False, useStateInflation=False, useRegionalInflation=False, useFamilyInformation=True, useFamilyExpenses=True)
 logger = SimpleLogger()
 

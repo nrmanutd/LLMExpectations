@@ -173,9 +173,11 @@ class EMISSWebSingleMonthInflationProvider(BaseSingleMonthInflationProvider):
             return None
 
         row = self.region_to_row[rowKey]
-        print(f'Column = {column}, row = {row}, column key = {d}, row key = {rowKey}')
 
         value = float(self.df.iloc[row, column])
+        if pd.isna(value):
+            return None
+
         return value
 
     def _updateRegionName(self, region: str, d: date):
