@@ -12,7 +12,7 @@ import pyreadstat
 
 from RLMSLogic.SimpleRLMSProfileConverter import SimpleRLMSProfileConverter
 from RLMSLogic.RLMSProfileData import RLMSProfileData
-from RLMSLogic.extractionHelpers import norm, value_to_label, safe_filename, safe_value_to_label
+from RLMSLogic.extractionHelpers import norm, value_to_label, safe_filename, safe_value_to_label, safe_norm
 
 
 def _checkIfAnswerIsNotEmpty(answer):
@@ -157,21 +157,21 @@ class RLMSProfileExtractor:
 
             familyHasActiveCredits = safe_value_to_label(f'{p}f14_8_1', hhRow, metahh)
 
-            totalFamilyCreditDebt = norm(hhRow[f'{p}f14_9'])
+            totalFamilyCreditDebt = safe_norm(f'{p}f14_9', hhRow)
 
             familyHouseType = value_to_label(f'{p}c1', hhRow[f'{p}c1'], metahh)
             familyHouseAllocationType = value_to_label(f'{p}c3', hhRow[f'{p}c3'], metahh)
-            familyHouseTotalSquare = norm(hhRow[f'{p}c5'])
+            familyHouseTotalSquare = safe_norm(f'{p}c5', hhRow)
 
-            hasRussianCar = value_to_label(f'{p}c9_7_2a', hhRow[f'{p}c9_7_2a'], metahh)
-            yearsOfRussianCar = norm(hhRow[f'{p}c9_7_2b'])
-            hasForeignCar = value_to_label(f'{p}c9_7_3a', hhRow[f'{p}c9_7_3a'], metahh)
-            yearsOfForeignCar = norm(hhRow[f'{p}c9_7_3b'])
+            hasRussianCar = safe_value_to_label(f'{p}c9_7_2a', hhRow, metahh)
+            yearsOfRussianCar = safe_norm(f'{p}c9_7_2b', hhRow)
+            hasForeignCar = safe_value_to_label(f'{p}c9_7_3a', hhRow, metahh)
+            yearsOfForeignCar = safe_norm(f'{p}c9_7_3b', hhRow)
 
-            hasCountryHouse = value_to_label(f'{p}c9_101a', hhRow[f'{p}c9_101a'], metahh)
-            hasOtherMortgage = value_to_label(f'{p}c9_12a', hhRow[f'{p}c9_12a'], metahh)
-            hasLand = value_to_label(f'{p}d2', hhRow[f'{p}d2'], metahh)
-            landOwner = value_to_label(f'{p}d4', hhRow[f'{p}d4'], metahh)
+            hasCountryHouse = safe_value_to_label(f'{p}c9_101a', hhRow, metahh)
+            hasOtherMortgage = safe_value_to_label(f'{p}c9_12a', hhRow, metahh)
+            hasLand = safe_value_to_label(f'{p}d2', hhRow, metahh)
+            landOwner = safe_value_to_label(f'{p}d4', hhRow, metahh)
 
             regular = self._processMap(self.regular, hhRow, p)
             durable = self._processMap(self.durable, hhRow, p)

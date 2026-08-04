@@ -6,6 +6,11 @@ def safe_filename(respondent_id: str) -> str:
     """Очищает идентификатор для использования в имени файла."""
     return re.sub(r'[^\w\-]', '_', str(respondent_id))
 
+def safe_norm(var: str, row):
+    if var not in row:
+        return None
+    return norm(row[var])
+
 def norm(x):
     """Преобразует pandas-значение в стандартный Python-тип, заменяя NaN на None."""
     if pd.isna(x):

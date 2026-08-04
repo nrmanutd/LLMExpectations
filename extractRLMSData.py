@@ -9,14 +9,13 @@ from RLMSLogic.RLMSProfileExtractor import RLMSProfileExtractor
 targetDirectory = 'data/Target profiles'
 dtaSources = Path('data/RLMS waves')
 
-files = list(dtaSources.rglob("*.dta"))
-sav_files = list(dtaSources.rglob("*.sav"))
-files.extend(sav_files)  # или files = files + sav_files
+files = list(dtaSources.rglob("*.sav"))
+files.extend(list(dtaSources.rglob("*.dta")))
 
 adultAge = 18
 
 start_wave = 33
-end_wave = 20          # например, до 20-й волны
+end_wave = 18          # например, до 20-й волны
 start_year = 2024
 
 wavesToYearMap = {wave: start_year - (start_wave - wave) for wave in range(start_wave, end_wave - 1, -1)}
