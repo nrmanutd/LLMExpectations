@@ -67,8 +67,7 @@ def createCustomPromptBuilder(useEconomy: bool, usePolitics: bool, useStateInfla
         headers.append('Основная политико-экономическая информация по РФ в целом')
 
     inflationProvider = InflationProvider(configuration.inflationDataPath)
-    inflationProvider = ConvertingInflationProvider(inflationProvider, configuration.rlmsToInflationRegionsPath,
-                                                         configuration.rlmsToInflationProductsPath)
+    inflationProvider = ConvertingInflationProvider(inflationProvider, configuration.rlmsToInflationRegionsPath)
 
     if useStateInflation:
         stateInflationProvider = StateInflationContextPromptBuilder(prompts.stateInflationPrompt, inflationProvider)

@@ -6,7 +6,7 @@ from SurveyLogic.PromptBuilders.StatisticsProviders.BaseInflationProvider import
 
 
 class ConvertingInflationProvider(BaseInflationProvider):
-    def __init__(self, provider: BaseInflationProvider, regionMapPath: Path, productMapPath: Path):
+    def __init__(self, provider: BaseInflationProvider, regionMapPath: Path):
         self.provider = provider
         self.regionMap = self._getRegionMap(regionMapPath)
 
