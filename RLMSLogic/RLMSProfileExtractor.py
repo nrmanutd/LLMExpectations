@@ -32,7 +32,7 @@ class RLMSProfileExtractor:
         self.sourcePrefixConstant = 'cc'
 
         self.converter = converter
-        self.prefix = {33: 'cc', 32: 'bb', 31: 'aa', 30: 'z', 29: 'y', 28: 'x', 27: 'w', 26: 'v', 25: 'u', 24: 't', 23: 's'}
+        self.prefix = {33: 'cc', 32: 'bb', 31: 'aa', 30: 'z', 29: 'y', 28: 'x', 27: 'w', 26: 'v', 25: 'u', 24: 't', 23: 's', 22: 'r', 21: 'q', 20: 'p', 19: 'o', 18: 'n'}
 
         self.regular = self._parseMapFileAndInitialize(regularGoods)
         self.durable = self._parseMapFileAndInitialize(durableGoods)
@@ -53,23 +53,13 @@ class RLMSProfileExtractor:
             List[RLMSProfileData]: список объектов для всех респондентов.
         """
         # Чтение данных без применения меток (чтобы получить числовые коды)
-        df, meta = pyreadstat.read_dta(
-            str(dta_path),
-            apply_value_formats=False,
-            formats_as_category=False,
-            user_missing=False
-        )
-
-        dfhh, metahh = pyreadstat.read_dta(
-            str(hhFile),
-            apply_value_formats=False,
-            formats_as_category=False,
-            user_missing=False
-        )
 
         match = re.search(r'.*r(\d+)i.*', dta_path.name)
         waveNumber = int(match.group(1))
         p = self.prefix[waveNumber]
+
+        df, meta = self._readConcreteWaveData(str(dta_path), waveNumber)
+        dfhh, metahh = self._readConcreteWaveData(str(hhFile), waveNumber)
 
         curId = f'{p}id_h' if p != 'z' else 'ZID_H'
         dfhh_indexed = dfhh.set_index(curId)
@@ -307,3 +297,21 @@ class RLMSProfileExtractor:
                 result[item.replace(self.prefixConstant, self.sourcePrefixConstant)] = answer
 
         return result
+
+    def _readConcreteWaveData(self, path: str, waveNumber: int):
+        if waveNumber >= 25:
+            df, meta = pyreadstat.read_dta(
+                path,
+                apply_value_formats=False,
+                formats_as_category=False,
+                user_missing=False
+            )
+            return df, meta
+
+        df, meta = pyreadstat.read_sav(
+            path,
+            apply_value_formats=False,
+            formats_as_category=False,
+            user_missing=False
+        )
+        return df, meta

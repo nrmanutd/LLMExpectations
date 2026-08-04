@@ -8,7 +8,11 @@ from RLMSLogic.RLMSProfileExtractor import RLMSProfileExtractor
 
 targetDirectory = 'data/Target profiles'
 dtaSources = Path('data/RLMS waves')
+
 files = list(dtaSources.rglob("*.dta"))
+sav_files = list(dtaSources.rglob("*.sav"))
+files.extend(sav_files)  # или files = files + sav_files
+
 adultAge = 18
 
 start_wave = 33
