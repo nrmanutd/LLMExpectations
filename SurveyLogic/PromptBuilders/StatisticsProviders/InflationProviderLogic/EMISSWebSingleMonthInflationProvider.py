@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import date
 from pathlib import Path
 
+from SurveyLogic.PromptBuilders import constants
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseSingleMonthInflationProvider import \
     BaseSingleMonthInflationProvider
 
@@ -165,10 +166,23 @@ class EMISSWebSingleMonthInflationProvider(BaseSingleMonthInflationProvider):
     def getInflation(self, region: str, product: str, d: date):
         column = self.year_to_col[d]
 
+        region = self._updateRegionName(region, d)
+
         rowKey = f'{region}_{product}'
         if rowKey not in self.region_to_row:
             return None
 
         row = self.region_to_row[rowKey]
+        print(f'Column = {column}, row = {row}, column key = {d}, row key = {rowKey}')
+
         value = float(self.df.iloc[row, column])
         return value
+
+    def _updateRegionName(self, region: str, d: date):
+        if region != constants.commonRegionName:
+            return region
+
+        if d < date(2023, 1, 1):
+            return region
+
+        return constants.commonRegionNameAlias

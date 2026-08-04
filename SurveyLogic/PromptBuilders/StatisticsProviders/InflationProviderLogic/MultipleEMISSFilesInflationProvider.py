@@ -14,6 +14,7 @@ class MultipleEMISSFilesInflationProvider(BaseSingleMonthInflationProvider):
 
         for i in range(len(self.allowedYears)):
             if currentYear in self.allowedYears[i]:
+                print(f'Current year and date: {currentYear}, {self.allowedYears[i]}, index = {i}')
                 return self.providers[i].getInflation(region, product, d)
 
         raise ValueError(f'Date out of range: {d}, allowed years: {[x for x in self.allowedYears]}')

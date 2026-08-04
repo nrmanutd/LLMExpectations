@@ -2,7 +2,6 @@ from datetime import datetime
 from pathlib import Path
 from unittest import TestCase
 
-from Configuration import configuration
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.EMISSWebSingleMonthInflationProvider import \
     EMISSWebSingleMonthInflationProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.InflationProvider import InflationProvider
@@ -20,7 +19,7 @@ class TestInflationProvider(TestCase):
         path3 = Path('../data/Monthly Inflation for goods and services in regions_2021_2026_v0.xlsx')
 
         files = [path1, path2, path3]
-        yearsSets = [configuration.years20092014, configuration.years20152020, configuration.years20212026]
+        yearsSets = [set(range(2009, 2015)), set(range(2015, 2021)), set(range(2021, 2027))]
         providers = [EMISSWebSingleMonthInflationProvider(x) for x in files]
 
         singleMonthInflationProvider = MultipleEMISSFilesInflationProvider(providers, yearsSets)
