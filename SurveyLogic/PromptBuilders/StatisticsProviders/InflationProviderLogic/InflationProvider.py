@@ -7,11 +7,17 @@ from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseI
     BaseInflationProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseSingleMonthInflationProvider import \
     BaseSingleMonthInflationProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseWeeklyInflationProvider import \
+    BaseWeeklyInflationProvider
 
 
 class InflationProvider(BaseInflationProvider):
-    def __init__(self, singleMonthInflationProvider: BaseSingleMonthInflationProvider):
+    def __init__(self, singleMonthInflationProvider: BaseSingleMonthInflationProvider, weeklyInflationProvider: BaseWeeklyInflationProvider):
+        self.weeklyInflationProvider = weeklyInflationProvider
         self.singleMonthInflationProvider = singleMonthInflationProvider
+
+    def getProductsCommonWeeklyInflationLastNWeeks(self, d: date, products: list[str], weeksOffset: int):
+        return self.weeklyInflationProvider.getWeeklyInflation(d, products, weeksOffset)
 
     def getAverageCommonYearInflationLastNMonth(self, d: date, lastMonth: int = 1) -> float:
         return self.getAverageRegionalYearInflationLastNMonth(d, constants.commonRegionName, lastMonth)

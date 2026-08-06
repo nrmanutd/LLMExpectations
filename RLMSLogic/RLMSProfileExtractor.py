@@ -38,8 +38,6 @@ class RLMSProfileExtractor:
         self.durable = self._parseMapFileAndInitialize(durableGoods)
         self.services = self._parseMapFileAndInitialize(services)
 
-
-
     def extractAndSaveRLMSProfiles(self, dta_path: Path, hhFile: Path, output_path: Path, sampleSize: int) -> List[RLMSProfileData]:
         """
         Загружает данные RLMS, извлекает профиль каждого респондента и сохраняет JSON-файлы.
@@ -57,6 +55,7 @@ class RLMSProfileExtractor:
         match = re.search(r'.*r(\d+)i.*', dta_path.name)
         waveNumber = int(match.group(1))
         p = self.prefix[waveNumber]
+        separator = '_' if waveNumber >= 25 else '.'
 
         df, meta = self._readConcreteWaveData(str(dta_path), waveNumber)
         dfhh, metahh = self._readConcreteWaveData(str(hhFile), waveNumber)
@@ -90,7 +89,7 @@ class RLMSProfileExtractor:
             # Пол (CCH5)
             sex = value_to_label(f'{p}h5', row.get(f'{p}h5'), meta)
 
-            highestEducation = value_to_label(f'{p}j72_18a', row.get(f'{p}j72_18a'), meta)
+            highestEducation = value_to_label(f'{p}j72_18a'.replace('_', separator), row.get(f'{p}j72_18a'.replace('_', separator)), meta)
             commonEducation = value_to_label(f'{p}_educ', row.get(f'{p}_educ'), meta)
             diploma = value_to_label(f'{p}_diplom', row.get(f'{p}_diplom'), meta)
             education = f'{diploma}, {commonEducation}, {highestEducation}'
@@ -121,10 +120,10 @@ class RLMSProfileExtractor:
             job = f'{occupation} (численность {numberOfEmployees})'
 
             # Отрасль (вопрос 6, CCJ5A)
-            jobSector = value_to_label(f'{p}j4_1', row.get(f'{p}j4_1'), meta)
+            jobSector = value_to_label(f'{p}j4_1'.replace('_', separator), row.get(f'{p}j4_1'.replace('_', separator)), meta)
 
             # Зарплата: среднемесячная за 12 месяцев (вопрос 32, CCJ13)
-            salary_raw = norm(row.get(f'{p}j13_2'))
+            salary_raw = norm(row.get(f'{p}j13_2'.replace('_', separator)))
             salary = str(salary_raw) if salary_raw is not None else None
 
             # Сбережения: банковский депозит (вопрос 79.1, CCJ596.1)
@@ -155,7 +154,11 @@ class RLMSProfileExtractor:
             idHHrespondent = hhRow[f'{p}a8']
             idIndividualrespondent = row[f'{p}h4']
 
-            familyHasActiveCredits = safe_value_to_label(f'{p}f14_8_1', hhRow, metahh)
+            activeCreditKey = f'{p}f14_8'.replace('_', separator)
+            if not activeCreditKey in hhRow:
+                activeCreditKey = f'{p}f14_8_1'.replace('_', separator)
+
+            familyHasActiveCredits = safe_value_to_label(activeCreditKey, hhRow, metahh)
 
             totalFamilyCreditDebt = safe_norm(f'{p}f14_9', hhRow)
 
@@ -163,19 +166,19 @@ class RLMSProfileExtractor:
             familyHouseAllocationType = value_to_label(f'{p}c3', hhRow[f'{p}c3'], metahh)
             familyHouseTotalSquare = safe_norm(f'{p}c5', hhRow)
 
-            hasRussianCar = safe_value_to_label(f'{p}c9_7_2a', hhRow, metahh)
-            yearsOfRussianCar = safe_norm(f'{p}c9_7_2b', hhRow)
-            hasForeignCar = safe_value_to_label(f'{p}c9_7_3a', hhRow, metahh)
-            yearsOfForeignCar = safe_norm(f'{p}c9_7_3b', hhRow)
+            hasRussianCar = safe_value_to_label(f'{p}c9_7_2a'.replace('_', separator), hhRow, metahh)
+            yearsOfRussianCar = safe_norm(f'{p}c9_7_2b'.replace('_', separator), hhRow)
+            hasForeignCar = safe_value_to_label(f'{p}c9_7_3a'.replace('_', separator), hhRow, metahh)
+            yearsOfForeignCar = safe_norm(f'{p}c9_7_3b'.replace('_', separator), hhRow)
 
-            hasCountryHouse = safe_value_to_label(f'{p}c9_101a', hhRow, metahh)
-            hasOtherMortgage = safe_value_to_label(f'{p}c9_12a', hhRow, metahh)
+            hasCountryHouse = safe_value_to_label(f'{p}c9_101a'.replace('_', separator), hhRow, metahh)
+            hasOtherMortgage = safe_value_to_label(f'{p}c9_12a'.replace('_', separator), hhRow, metahh)
             hasLand = safe_value_to_label(f'{p}d2', hhRow, metahh)
             landOwner = safe_value_to_label(f'{p}d4', hhRow, metahh)
 
-            regular = self._processMap(self.regular, hhRow, p)
-            durable = self._processMap(self.durable, hhRow, p)
-            services = self._processMap(self.services, hhRow, p)
+            regular = self._processMap(self.regular, hhRow, p, separator)
+            durable = self._processMap(self.durable, hhRow, p, separator)
+            services = self._processMap(self.services, hhRow, p, separator)
 
             profile = RLMSProfileData(
                 respondentId=str(respondent_id),
@@ -283,11 +286,12 @@ class RLMSProfileExtractor:
 
         return result
 
-    def _processMap(self, map: set, row, prefix: str) -> dict[str, float]:
+    def _processMap(self, map: set, row, prefix: str, separator: str) -> dict[str, float]:
         result = dict[str, float]()
         for item in map:
 
             curQuestion = item.replace(self.prefixConstant, prefix)
+            curQuestion = curQuestion.replace('_', separator)
             if curQuestion not in row:
                 continue
 

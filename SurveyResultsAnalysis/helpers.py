@@ -28,6 +28,9 @@ def getCategory(answeredCategory: str, type: str):
     if answeredCategory == 'вырастут умеренно' or answeredCategory == 'medium_growth':
         return 'вырастут умеренно' if type == 'expected' else 'выросли умеренно'
 
+    if answeredCategory == 'снизился незначительно' or answeredCategory == 'снизилась незначительно':
+        return 'снизились незначительно'
+
     if answeredCategory == 'вырастут незначительно' or answeredCategory == 'little_growth':
         return 'вырастут незначительно' if type == 'expected' else 'выросли незначительно'
 

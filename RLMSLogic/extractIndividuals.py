@@ -8,8 +8,8 @@ from tqdm import tqdm
 
 from RLMSLogic.extractionHelpers import value_to_label, norm
 
-pathToIndivisuals = '..\\data\\RLMS waves\\r33i_os_84.dta'
-pathToHH = '..\\data\\RLMS waves\\r33h_os_83.dta'
+pathToIndivisuals = '..\\data\\RLMS waves\\r25i_os_82.dta'
+pathToHH = '..\\data\\RLMS waves\\r25h_os_82.dta'
 
 df, meta = pyreadstat.read_dta(
     pathToIndivisuals,
@@ -24,6 +24,20 @@ dfhh, metahh = pyreadstat.read_dta(
     formats_as_category=False,
     user_missing=False
 )
+
+with open('column_names_individuals_dta25.txt', 'w', encoding='utf-8') as f:
+    for col in df.columns:
+        f.write(col + '\n')
+
+with open('column_names_households_dta25.txt', 'w', encoding='utf-8') as f:
+    for col in dfhh.columns:
+        f.write(col + '\n')
+
+with open('questions_households_dta25.txt', 'w', encoding='utf-8') as f:
+    row = dfhh.iloc[0]
+    for var, raw in row.items():
+        question = meta.column_names_to_labels.get(var, var)
+        f.write(f'Code = {var}, Question = {question}' + '\n')
 
 for __, irow in df.iterrows():
     continue
@@ -61,15 +75,7 @@ for x in range(1, 58):
     #print(metahh.column_names_to_labels[s])
     #print(meta.value_labels[s])
 
-with open('column_names_households.txt', 'w', encoding='utf-8') as f:
-    for col in dfhh.columns:
-        f.write(col + '\n')
 
-with open('questions_households.txt', 'w', encoding='utf-8') as f:
-    row = dfhh.iloc[0]
-    for var, raw in row.items():
-        question = meta.column_names_to_labels.get(var, var)
-        f.write(f'Code = {var}, Question = {question}' + '\n')
 
 #print(df.columns)
 #print(f'{int(df['status'][0])}')

@@ -4,8 +4,8 @@ from tqdm import tqdm
 
 from RLMSLogic.extractionHelpers import value_to_label, norm
 
-pathToIndivisuals = '..\\data\\RLMS waves\\r18i_os_82.sav'
-pathToHH = '..\\data\\RLMS waves\\r18h_os_71.sav'
+pathToIndivisuals = '..\\data\\RLMS waves\\r24i_os_82.sav'
+pathToHH = '..\\data\\RLMS waves\\r24h_os_82.sav'
 
 df, meta = pyreadstat.read_sav(
     pathToIndivisuals,
@@ -21,8 +21,33 @@ dfhh, metahh = pyreadstat.read_sav(
     user_missing=False
 )
 
-for __, irow in df.iterrows():
+with open('column_names_individuals_sav24.txt', 'w', encoding='utf-8') as f:
+    for col in df.columns:
+        f.write(col + '\n')
 
+with open('column_names_households_sav24.txt', 'w', encoding='utf-8') as f:
+    for col in dfhh.columns:
+        f.write(col + '\n')
+
+with open('questions_households_sav24.txt', 'w', encoding='utf-8') as f:
+    row = dfhh.iloc[0]
+    for var, raw in row.items():
+        question = meta.column_names_to_labels.get(var, var)
+        f.write(f'Code = {var}, Question = {question}' + '\n')
+
+a = dfhh.columns
+for x in range(1, 58):
+    s0 = f'ne1_{x}a'
+    s1 = f'ne1_{x}c'
+
+    print(f'{s1}: {dfhh[s0][0]} - {dfhh[s1][0]}' )
+
+    #print(metahh.variable_value_labels[s])
+    #print(metahh.column_names_to_labels[s])
+    #print(meta.value_labels[s])
+
+for __, irow in df.iterrows():
+    continue
     id = irow['nid_h']
 
     matched = False

@@ -10,6 +10,9 @@ class ConvertingInflationProvider(BaseInflationProvider):
         self.provider = provider
         self.regionMap = self._getRegionMap(regionMapPath)
 
+    def getProductsCommonWeeklyInflationLastNWeeks(self, d: date, products: list[str], weeksOffset: int):
+        return self.provider.getProductsCommonWeeklyInflationLastNWeeks(d, products, weeksOffset)
+
     def getProductsRegionalYearInflationLastNMonth(self, d: date, region: str, products: list[str],
                                                    lastMonth: int = 1) -> list[float]:
 

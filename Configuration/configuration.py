@@ -29,4 +29,9 @@ regularGoods = Path(f'data/rlms_regular_goods_map.txt')
 durableGoods = Path(f'data/rlms_durable_goods_map.txt')
 services = Path(f'data/rlms_services_map.txt')
 
+weeklyRegularGoods = Path(f'data/rlmsWeeklyRegularGoods.txt')
+weeklyDurableGoods = Path(f'data/rlmsWeeklyDurableGoods.txt')
+weeklyServices = Path(f'data/rlmsWeeklyServices.txt')
+
 inflationSurveysDates = Path(f'data/ExpectedInflationSurveysDates.xlsx')
+weeklyInflationDataPath = Path(f'data/Nedel_ipc.xlsx')

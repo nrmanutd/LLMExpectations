@@ -15,3 +15,4 @@ regionInflationPrompt=Path(f'{promptsPath}/regionCommonInflationPrompt.txt').rea
 househouldCommonPrompt=Path(f'{promptsPath}/householdCommonPrompt.txt').read_text(encoding="utf-8")
 
 expensesPrompt=Path(f'{promptsPath}/expensesPromptTemplate.txt').read_text(encoding="utf-8")
+stateWeeklyExpensesPrompt=Path(f'{promptsPath}/stateExpensesPromptTemplate.txt').read_text(encoding="utf-8")

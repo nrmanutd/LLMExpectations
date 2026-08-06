@@ -4,6 +4,10 @@ from datetime import datetime, date
 
 class BaseInflationProvider(ABC):
     @abstractmethod
+    def getProductsCommonWeeklyInflationLastNWeeks(self, d: date, products: list[str], weeksOffset: int):
+        pass
+
+    @abstractmethod
     def getAverageCommonYearInflationLastNMonth(self, d: date, lastMonth: int = 1) -> float:
         pass
 

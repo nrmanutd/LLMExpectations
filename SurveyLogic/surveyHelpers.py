@@ -37,6 +37,9 @@ def createAsyncSurveyRunner(profilesFolder: Path, systemPromptBuilder: BasePromp
 def getDatesRowWithMonthlyStep(start: str, end: str):
     return pd.date_range(start=start, end=end, freq='MS', inclusive='both').tolist()
 
+def getDatesRowWithWeeklyStep(start: str, end: str):
+    return pd.date_range(start=start, end=end, freq='7D', inclusive='both').tolist()
+
 def extractDatesFromFile(path: Path) -> list[datetime]:
     df = pd.read_excel(path, sheet_name=0, header=0)
 

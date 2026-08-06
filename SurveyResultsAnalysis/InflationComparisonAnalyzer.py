@@ -4,7 +4,8 @@ import pandas as pd
 import statsmodels.api as sm
 from scipy import stats
 
-from SurveyResultsAnalysis.visualizationHelpers import calculate_statistics, plot_time_series, plot_comparison
+from SurveyResultsAnalysis.visualizationHelpers import calculate_statistics, plot_time_series, plot_comparison, \
+    plot_log_returns
 
 
 class InflationComparisonAnalyzer:
@@ -117,8 +118,11 @@ class InflationComparisonAnalyzer:
         plot_time_series(self.comparison_df,
                          save_path=f'{save_prefix}_timeseries.png')
 
+        #plot_log_returns(self.comparison_df,
+        #                 save_path=f'{save_prefix}_timeseries_log_returns.png')
+
         # 3. Residuals plot (дополнительно)
-        self._plot_residuals(save_path=f'{save_prefix}_residuals.png')
+        #self._plot_residuals(save_path=f'{save_prefix}_residuals.png')
 
         """Создает все графики"""
         # 1. Scatter plots

@@ -11,7 +11,7 @@ categories = [
     'затрудняюсь ответить'
 ]
 
-folder = '../data/SurveyResults/mlcluster_qwen36_custom_inflation_politics_no_date_2016_2026_QS'
+folder = '../data/SurveyResults/mlcluster_qwen36_async_hh_detailed_with_personal_prices_2010_2026'
 
 quarterly_agg_df = load_pdtable(folder)
 quarterly_agg_df = aggregate_to_percentages(quarterly_agg_df, date_col='date', response_col='expected_1m')
