@@ -117,7 +117,16 @@ class RLMSProfileExtractor:
             # Должность/профессия (вопрос 3: CCJ2_3a – должность, CCJ2_3b – профессия)
             occupation = value_to_label(f'{p}_occup08', row.get(f'{p}_occup08'), meta)
             numberOfEmployees = value_to_label(f'{p}j13', row.get(f'{p}j13'), meta)
-            job = f'{occupation} (численность {numberOfEmployees})'
+
+            if occupation is None:
+                job = 'Нет информации'
+            else:
+                if numberOfEmployees is not None:
+                    numberOfEmployees = f' (численность {numberOfEmployees})'
+                else:
+                    numberOfEmployees = ''
+
+                job = f'{occupation}{numberOfEmployees}'
 
             # Отрасль (вопрос 6, CCJ5A)
             jobSector = value_to_label(f'{p}j4_1'.replace('_', separator), row.get(f'{p}j4_1'.replace('_', separator)), meta)

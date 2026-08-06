@@ -8,6 +8,20 @@ months = {
         'сентября': 9, 'октября': 10, 'ноября': 11, 'декабря': 12
     }
 
+months_ru = {
+    1: 'Январь',
+    2: 'Февраль',
+    3: 'Март',
+    4: 'Апрель',
+    5: 'Май',
+    6: 'Июнь',
+    7: 'Июль',
+    8: 'Август',
+    9: 'Сентябрь',
+    10: 'Октябрь',
+    11: 'Ноябрь',
+    12: 'Декабрь'
+}
 
 def getDirection(inflation: float):
     if inflation > 0.0:
@@ -75,6 +89,15 @@ def showInflation(inflation: float)->str:
         return 'нет данных'
 
     return f'{inflation*100: .1f}'
+
+def getDeltaDescription(d: date, offsetMonth: int):
+    finishMonth = (d.month + 12 - 1) % 12
+    if offsetMonth == 1:
+        return months_ru[finishMonth]
+
+    startMonth = (d.month + 12 - offsetMonth) % 12
+
+    return f'{months_ru[startMonth]} - {months_ru[finishMonth]}'
 
 def getUsdRubDirection(rate):
     if rate == None:

@@ -20,7 +20,7 @@ copyPromptTemplatesToFolder(Path('SurveyLogic/PromptBuilders/Prompts/'), results
 
 #surveyDates = extractDatesFromFile(configuration.inflationSurveysDates)
 #surveyDates = getDatesRowWithMonthlyStep('2020.12.01', '2021.01.01')
-surveyDates = getDatesRowWithWeeklyStep('2022.02.04', '2022.04.01')
+surveyDates = getDatesRowWithWeeklyStep('2022.02.05', '2022.04.02')
 
 cfg = ExperimentsConfiguration(
     useEconomy=True,
@@ -32,8 +32,8 @@ saveExperimentConfiguration(cfg, resultsFolder)
 systemPromptBuilder, promptBuilder = createCustomPromptBuilder(cfg)
 logger = SimpleLogger()
 
-#surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
-surveyer = StubSurveyer()
+surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
+#surveyer = StubSurveyer()
 
 surveySerializer = SurveySerializer(resultsFolder)
 

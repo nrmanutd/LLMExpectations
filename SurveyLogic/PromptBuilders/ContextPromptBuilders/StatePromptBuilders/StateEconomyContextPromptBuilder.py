@@ -4,7 +4,7 @@ from SurveyLogic.PromptBuilders import constants
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.PromptBuilders.Profiles.ProfileData import ProfileData
 from SurveyLogic.PromptBuilders.StatisticsProviders.BaseCurrencyProvider import BaseCurrencyProvider
-from SurveyLogic.PromptBuilders.commonHelpers import getUsdRubDirection
+from SurveyLogic.PromptBuilders.commonHelpers import getUsdRubDirection, getDeltaDescription
 
 
 class StateEconomyContextPromptBuilder(BasePromptBuilder):
@@ -23,7 +23,7 @@ class StateEconomyContextPromptBuilder(BasePromptBuilder):
         rateChangePrev6m = self.usdRubRateChangeProvider.getRateDifferenceByMonthOffset(curMonthFirstDay, 6)
 
         localDescription = self._getLocalDescription(rateChange1d, rateChange1w, rateChange2w)
-        globalDescription = self._getGlobalDescription(rateChangePrev1m, rateChangePrev3m, rateChangePrev6m)
+        globalDescription = self._getGlobalDescription(surveyDate, rateChangePrev1m, rateChangePrev3m, rateChangePrev6m)
 
         prompt = self.prompt.replace(constants.localUsdRubTag, localDescription)
         prompt = prompt.replace(constants.globalUsdRubTag, globalDescription)
@@ -37,7 +37,7 @@ class StateEconomyContextPromptBuilder(BasePromptBuilder):
         direction1w = getUsdRubDirection(rateChange1w)
         direction2w = getUsdRubDirection(rateChange2w)
 
-        periods = ['день', 'неделю', '2 недели']
+        periods = ['предыдущий день', 'предыдущую неделю', 'предыдущие 2 недели']
         directions = [direction1d, direction1w, direction2w]
         rates = [rateChange1d, rateChange1w, rateChange2w]
 
@@ -46,21 +46,25 @@ class StateEconomyContextPromptBuilder(BasePromptBuilder):
                 continue
 
             if directions[i] == 'стабилен':
-                result += f'за прошедший {periods[i]} не изменился\n'
+                result += f'за {periods[i]} не изменился\n'
                 continue
 
-            result += f'за предыдущий {periods[i]} {directions[i]} на {abs(rates[i]*100):.1f}%\n'
+            result += f'за {periods[i]} {directions[i]} на {abs(rates[i]*100):.1f}%\n'
 
         return result
 
-    def _getGlobalDescription(self, rateChangePrev1m, rateChangePrev3m, rateChangePrev6m):
+    def _getGlobalDescription(self, d: date, rateChangePrev1m, rateChangePrev3m, rateChangePrev6m):
         result = ''
 
         direction1m = getUsdRubDirection(rateChangePrev1m)
         direction3m = getUsdRubDirection(rateChangePrev3m)
         direction6m = getUsdRubDirection(rateChangePrev6m)
 
-        periods = ['месяце', '3 месяца', '6 месяцев']
+        onePeriod = getDeltaDescription(d, 1)
+        threePeriod = getDeltaDescription(d, 3)
+        sixPeriod = getDeltaDescription(d, 6)
+
+        periods = [onePeriod, threePeriod, sixPeriod]
         directions = [direction1m, direction3m, direction6m]
         rates = [rateChangePrev1m, rateChangePrev3m, rateChangePrev6m]
 
@@ -69,9 +73,9 @@ class StateEconomyContextPromptBuilder(BasePromptBuilder):
                 continue
 
             if directions[i] == 'стабилен':
-                result += f'в прошлом {periods[i]} не изменился\n'
+                result += f'за {periods[i]} не изменился\n'
                 continue
 
-            result += f'в прошлом {periods[i]} {directions[i]} на {abs(rates[i] * 100):.1f}%\n'
+            result += f'за {periods[i]} {directions[i]} на {abs(rates[i] * 100):.1f}%\n'
 
         return result

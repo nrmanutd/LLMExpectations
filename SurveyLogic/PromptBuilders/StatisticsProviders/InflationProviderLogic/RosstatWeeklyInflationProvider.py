@@ -31,7 +31,7 @@ class RosstatWeeklyInflationProvider(BaseWeeklyInflationProvider):
 
         inflation = 1
         for i in range(weeksOffset):
-            currentDate = (d - pd.DateOffset(days=7*i)).date()
+            currentDate = (d - pd.DateOffset(days=7*i + 1)).date()
             columnIdx = self.datesMap[currentDate]
 
             curInflation = float(self.df.iloc[rowIdx, columnIdx])
