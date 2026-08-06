@@ -35,3 +35,4 @@ weeklyServices = Path(f'data/rlmsWeeklyServices.txt')
 
 inflationSurveysDates = Path(f'data/ExpectedInflationSurveysDates.xlsx')
 weeklyInflationDataPath = Path(f'data/Nedel_ipc.xlsx')
+usdrubDataPath = Path(f'data/RC_F01_01_2009_T01_08_2026.xlsx')

@@ -76,6 +76,18 @@ def showInflation(inflation: float)->str:
 
     return f'{inflation*100: .1f}'
 
+def getUsdRubDirection(rate):
+    if rate == None:
+        return None
+
+    if rate > 0:
+        return 'обесценился'
+
+    if rate < 0:
+        return 'укрепился'
+
+    return 'стабилен'
+
 def loadRlmsGoodsToRosstatGoodsMap(pathes: list[Path]) -> dict[str, str]:
 
     result = dict[str, str]()
