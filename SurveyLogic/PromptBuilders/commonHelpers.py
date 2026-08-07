@@ -20,7 +20,7 @@ months_ru = {
     9: 'Сентябрь',
     10: 'Октябрь',
     11: 'Ноябрь',
-    12: 'Декабрь'
+    0: 'Декабрь'
 }
 
 def getDirection(inflation: float):
@@ -32,16 +32,17 @@ def getDirection(inflation: float):
 
     return "цена не изменилась"
 
-def getDescriptionMonth(inflation: float, month: int):
+def getDescriptionMonth(d: date, inflation: float, month: int):
     if inflation is None:
         return ''
 
+    description = getDeltaDescription(d, month)
     direction = getDirection(inflation)
     if abs(inflation) < 0.00001:
-        return f"в предыдущие {month} месяцев не изменилась"
+        return f"за {description} не изменилась"
 
     clearInflation = (inflation + 1)**(month/12) - 1
-    return f'{direction} на {showInflation(abs(clearInflation))}% в предыдущие {month} месяцев'
+    return f'за {description} {direction} на {showInflation(abs(clearInflation))}% (прошлые {month} месяцев)'
 
 def getDescriptionWeeks(inflation: float, weeks: int):
     if inflation is None:

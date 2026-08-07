@@ -16,7 +16,7 @@ class HouseholdProfilePromptBuilder(BasePromptBuilder):
 
         expensesRepresentation = self._getExpensesRepresentation(profile, hhAverageExpenses)
         prompt = self.prompt.replace(constants.familyTotalMonthExpenses, expensesRepresentation)
-        prompt = prompt.replace(constants.familyTotalMembers, str(profile.totalFamilyMembers))
+        prompt = prompt.replace(constants.familyTotalMembers, str(int(profile.totalFamilyMembers)))
 
         mortgageDescription = self._getMortgageDescription(profile)
         prompt = prompt.replace(constants.mortgageInformation, mortgageDescription)

@@ -22,7 +22,7 @@ def load_respond_from_json(file_path: str) -> InflationSurveyRespond:
     return InflationSurveyRespond(**data)
 
 def getCategory(answeredCategory: str, type: str):
-    if answeredCategory == 'вырастут очень сильно' or answeredCategory == 'high_growth':
+    if answeredCategory == 'вырастут очень сильно' or answeredCategory == 'high_growth' or answeredCategory == 'вырастут сильно':
         return 'вырастут очень сильно' if type == 'expected' else 'выросли очень сильно'
 
     if answeredCategory == 'вырастут умеренно' or answeredCategory == 'medium_growth':
@@ -57,9 +57,11 @@ def getCategory(answeredCategory: str, type: str):
 def load_pdtable(folder: str):
     files = os.listdir(folder)
     files = [f for f in files if os.path.isfile(os.path.join(folder, f))]
+    files = [f for f in files if f.endswith('.json')]
 
     rows = []
     for file in files:
+
         respond = load_respond_from_json(f'{folder}/{file}')
 
         expectedCategory = getCategory(respond.expected_inflation_1m_pct, 'expected')

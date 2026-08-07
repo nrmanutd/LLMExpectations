@@ -13,7 +13,7 @@ from SurveyLogic.surveyHelpers import createAsyncSurveyRunner, extractDatesFromF
     getDatesRowWithMonthlyStep, getDatesRowWithWeeklyStep
 from experimentsConfiguration import ExperimentsConfiguration
 
-experimentUniqueName='mlcluster_qwen36_async_hh_weekly_2022_02_04'
+experimentUniqueName='mlcluster_qwen36_async_hh_weekly_nousdrub_2022_02_04'
 profilesFolder = Path('./data/Target profiles')
 resultsFolder = Path('data/SurveyResults/')/experimentUniqueName
 copyPromptTemplatesToFolder(Path('SurveyLogic/PromptBuilders/Prompts/'), resultsFolder/'Prompts')
@@ -23,8 +23,8 @@ copyPromptTemplatesToFolder(Path('SurveyLogic/PromptBuilders/Prompts/'), results
 surveyDates = getDatesRowWithWeeklyStep('2022.02.05', '2022.04.02')
 
 cfg = ExperimentsConfiguration(
-    useEconomy=True,
     useFamilyInformation=True,
+    useFamilyExpenses=True,
     useStateExpenses=True)
 
 saveExperimentConfiguration(cfg, resultsFolder)
