@@ -139,11 +139,24 @@ class RLMSProfileExtractor:
             deposit = value_to_label(f'{p}j596_1', row.get(f'{p}j596_1'), meta)
             equities = value_to_label(f'{p}j596_3', row.get(f'{p}j596_3'), meta)
             brokerAccount = value_to_label(f'{p}j596_4', row.get(f'{p}j596_4'), meta)
-            hasSavings = (deposit == 'Да' or equities == 'Да' or brokerAccount == 'Да')
+            last12monthSavedKey = f'{p}j60_4a8'.replace('_', separator)
+            last12monthSaved = value_to_label(last12monthSavedKey, last12monthSavedKey, meta)
+
+            if deposit == 'Да' or equities == 'Да' or brokerAccount == 'Да' or last12monthSaved == 'Да':
+                hasSavings = True
+            elif deposit == 'Нет' and equities == 'Нет' and brokerAccount == 'Нет' or last12monthSaved == 'Нет':
+                hasSavings = False
+            else:
+                hasSavings = None
 
             # Кредит: невыплаченный кредит (вопрос 79.2, CCJ596.2)
             credit_raw = value_to_label(f'{p}j596_2', row.get(f'{p}j596_2'), meta)
-            hasCredit = (credit_raw == 'Да') if credit_raw is not None else False
+            if credit_raw == 'Да':
+                hasCredit = True
+            elif credit_raw == 'Нет':
+                hasCredit = False
+            else:
+                hasCredit = None
 
             familyStatus = value_to_label(f'{p}_marst', row.get(f'{p}_marst'), meta)
             currentStatus = value_to_label(f'{p}j1', row.get(f'{p}j1'), meta)

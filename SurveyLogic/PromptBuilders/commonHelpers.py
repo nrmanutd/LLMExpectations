@@ -78,10 +78,11 @@ def getDirection(inflation: float, isInflation: bool):
     return "цена не изменилась" if not isInflation else 'не изменилась'
 
 def getDescriptionMonth(inflation: float, month: int, isInflation: bool = False):
-    if inflation is None:
-        return ''
 
     description = getDeltaDescription(month)
+    if inflation is None:
+        return f'за {description} нет информации'
+
     direction = getDirection(inflation, isInflation)
     if abs(inflation) < 0.00001:
         return f"за {description} не изменилась"

@@ -76,9 +76,9 @@ class StateEconomyContextPromptBuilder(BasePromptBuilder):
                 continue
 
             if directions[i] == 'стабилен':
-                result += f'за {periods[i]} не изменился\n'
+                result += f'-за {periods[i]} не изменился\n'
                 continue
 
-            result += f'за {periods[i]} {directions[i]} на {abs(rates[i] * 100):.1f}%\n'
+            result += f'-за {periods[i]} {directions[i]} на {abs(rates[i] * 100):.1f}%\n'
 
         return result
