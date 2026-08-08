@@ -15,6 +15,7 @@ from experimentsConfiguration import ExperimentsConfiguration
 
 experimentUniqueName='mlcluster_qwen36_async_only_usdrub_2022_02_04'
 profilesFolder = Path('./data/Target profiles')
+profilesCount = 100
 resultsFolder = Path('data/SurveyResults/')/experimentUniqueName
 copyPromptTemplatesToFolder(Path('SurveyLogic/PromptBuilders/Prompts/'), resultsFolder/'Prompts')
 
@@ -41,7 +42,7 @@ surveyer = StubSurveyer()
 surveySerializer = SurveySerializer(resultsFolder)
 
 for surveyDate in surveyDates:
-    runner = createAsyncSurveyRunner(profilesFolder, systemPromptBuilder, promptBuilder, surveySerializer, surveyer,
+    runner = createAsyncSurveyRunner(profilesFolder, systemPromptBuilder, promptBuilder, surveySerializer, surveyer, profilesCount,
                                      logger)
     surveyResults = asyncio.run(runner.RunSurvey(surveyDate))
     surveySerializer.saveSurvey(surveyResults, surveyDate)

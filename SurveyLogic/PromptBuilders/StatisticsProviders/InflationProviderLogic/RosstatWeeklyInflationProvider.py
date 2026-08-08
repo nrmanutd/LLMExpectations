@@ -11,11 +11,13 @@ from SurveyLogic.PromptBuilders.commonHelpers import parseRosstateMonth
 
 class RosstatWeeklyInflationProvider(BaseWeeklyInflationProvider):
     def __init__(self, path: Path, year):
-        datesMap, productsMap, df = self._getMaps(path, year)
+        datesMap, productsMap, df, minDate, maxDate = self._getMaps(path, year)
 
         self.productsMap = productsMap
         self.datesMap = datesMap
         self.df = df
+        self.minDate = minDate
+        self.maxDate = maxDate
 
     def getWeeklyInflation(self, d: date, products: list[str], weeksOffset: int) -> list[float]:
         result = []
@@ -32,12 +34,31 @@ class RosstatWeeklyInflationProvider(BaseWeeklyInflationProvider):
         inflation = 1
         for i in range(weeksOffset):
             currentDate = (d - pd.DateOffset(days=7*i + 1)).date()
+            currentDate = self._getDate(currentDate)
+            if currentDate is None:
+                return None
+
             columnIdx = self.datesMap[currentDate]
 
             curInflation = float(self.df.iloc[rowIdx, columnIdx])
             inflation = inflation * curInflation/100
 
         return inflation**(365 / (7 * weeksOffset)) - 1
+
+    def _getDate(self, d: date):
+        if d < self.minDate:
+            return None
+
+        if d >= self.maxDate:
+            return self.maxDate
+
+        curD = d
+
+        while True:
+            if curD in self.datesMap:
+                return curD
+
+            curD = (curD - pd.DateOffset(days=1)).date()
 
     def _getMaps(self, path: Path, year: int) -> (dict[str, int], dict[date, int], DataFrame):
         df = pd.read_excel(path, sheet_name=str(year), header=None, skiprows=[0, 1, 2])
@@ -48,10 +69,25 @@ class RosstatWeeklyInflationProvider(BaseWeeklyInflationProvider):
         data_start_row = 1
         goodCategory_col = 0
 
+        minDate = None
+        maxDate = None
         dateToCol = dict()
         for col in range(data_start_col, len(df.columns)):
             val = df.iloc[month_row, col]
             dateVal = parseRosstateMonth(val, year)
+
+            if minDate is None:
+                minDate = dateVal
+
+            if maxDate is None:
+                maxDate = dateVal
+
+            if dateVal < minDate:
+                minDate = dateVal
+
+            if dateVal > maxDate:
+                maxDate = dateVal
+
             dateToCol[dateVal] = col
 
         goodToRow = {}
@@ -61,5 +97,5 @@ class RosstatWeeklyInflationProvider(BaseWeeklyInflationProvider):
 
             goodToRow[category] = row
 
-        return dateToCol, goodToRow, df
+        return dateToCol, goodToRow, df, minDate, maxDate
 

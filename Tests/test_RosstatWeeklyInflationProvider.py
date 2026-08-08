@@ -17,7 +17,22 @@ class TestRosstatWeeklyInflationProvider(TestCase):
         cls.inflationProvider = weeklyInflationProvider
     def test_get_weekly_inflation(self):
         format = '%d.%m.%Y'
-        dates = ['04.03.2022', '26.12.2022']
+        dates = ['09.01.2022', '05.03.2022', '27.12.2022']
+        expectedValues = [None, (99.82 * 99.94/10000) ** (365/14) - 1, (100.27*99.63/10000) ** (365/14) - 1]
+
+        product = 'Куры охлажденные и мороженые, кг'
+        for i in range(len(dates)):
+            inflation = self.inflationProvider.getWeeklyInflation(datetime.strptime(dates[i], format), [product], 2)
+
+            print(f'Expected: {expectedValues[i]}, actual: {inflation[0]}')
+            if expectedValues[i] is not None:
+                assert abs(expectedValues[i] - inflation[0]) < 0.00001
+            else:
+                assert inflation[0] is None
+
+    def test_get_weekly_inflation_with_nonround_dates(self):
+        format = '%d.%m.%Y'
+        dates = ['07.03.2022', '30.12.2022']
         expectedValues = [(99.82 * 99.94/10000) ** (365/14) - 1, (100.27*99.63/10000) ** (365/14) - 1]
 
         product = 'Куры охлажденные и мороженые, кг'

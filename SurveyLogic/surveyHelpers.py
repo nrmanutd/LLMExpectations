@@ -8,6 +8,7 @@ from Logging.BaseLogger import BaseLogger
 from SurveyLogic.AsyncSurveyRunner import AsyncSurveyRunner
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.PromptBuilders.Profiles.ProfileDataLoader import ProfileDataLoader
+from SurveyLogic.PromptBuilders.Profiles.RandomSubsampleProfilesProvider import RandomSubsampleProfilesProvider
 from SurveyLogic.PromptBuilders.Profiles.StandardProfilesProvider import StandardProfilesProvider
 from SurveyLogic.StandardSurveyRunner import StandardSurveyRunner
 from SurveyLogic.SurveyExecution.AdditionalInformationSurveyExecutor import AdditionalInformationSurveyExecutor
@@ -26,8 +27,9 @@ def createSurveyRunner(profilesFolder: Path, systemPromptBuilder: BasePromptBuil
     runner = StandardSurveyRunner(surveySerializer, surveyExecutor, profilesProvider, logger)
     return runner
 
-def createAsyncSurveyRunner(profilesFolder: Path, systemPromptBuilder: BasePromptBuilder, promptBuilder: BasePromptBuilder, surveySerializer: BaseSurveySerializer, surveyer: AsyncSurveyer, logger: BaseLogger) -> AsyncSurveyRunner:
+def createAsyncSurveyRunner(profilesFolder: Path, systemPromptBuilder: BasePromptBuilder, promptBuilder: BasePromptBuilder, surveySerializer: BaseSurveySerializer, surveyer: AsyncSurveyer, profilesCount: int, logger: BaseLogger) -> AsyncSurveyRunner:
     profilesProvider = StandardProfilesProvider(profilesFolder, ProfileDataLoader())
+    profilesProvider = RandomSubsampleProfilesProvider(profilesProvider, profilesCount)
     surveyExecutor = StandardAsyncSurveyExecutor(systemPromptBuilder, promptBuilder, surveyer)
     #surveyExecutor = AdditionalInformationSurveyExecutor(surveyExecutor)
 
