@@ -91,11 +91,11 @@ def getDescriptionMonth(inflation: float, month: int, isInflation: bool = False)
     return f'за {description} {direction} на {showInflation(abs(clearInflation))}%'
 
 def getDescriptionWeeks(inflation: float, weeks: int, isInflation: bool = False):
+    description = getDescriptionNumberWeeks(weeks)
     if inflation is None:
-        return ''
+        return f'за {description} нет информации'
 
     direction = getDirection(inflation, isInflation)
-    description = getDescriptionNumberWeeks(weeks)
     if abs(inflation) < 0.00001:
         return f"{description} не изменилась"
 
@@ -130,9 +130,10 @@ def getTop5(map, goods: dict[str, float]):
     top_5 = sorted(rosstatGoods.items(), key=lambda x: x[1], reverse=True)[:min(5, len(rosstatGoods))]
     return [item[0] for item in top_5]
 
+
 def parseRosstateMonth(value: str, year: int) -> date:
     # Извлекаем день и месяц
-    parts = value.replace('на ', '').strip().split()
+    parts = value.replace('на ', '').replace('*', '').strip().split()
     day = int(parts[0])
     month_name = parts[1].lower()
     month = months[month_name]

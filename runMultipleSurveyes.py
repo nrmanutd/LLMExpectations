@@ -21,7 +21,7 @@ copyPromptTemplatesToFolder(Path('SurveyLogic/PromptBuilders/Prompts/'), results
 
 #surveyDates = extractDatesFromFile(configuration.inflationSurveysDates)
 #surveyDates = getDatesRowWithMonthlyStep('2020.12.01', '2021.01.01')
-surveyDates = getDatesRowWithWeeklyStep('2022.02.05', '2022.05.07')
+surveyDates = getDatesRowWithWeeklyStep('2020.01.12', '2022.05.07')
 
 cfg = ExperimentsConfiguration(
     useEconomy=True,

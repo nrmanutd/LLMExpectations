@@ -30,6 +30,8 @@ from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.EMISS
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.InflationProvider import InflationProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.MultipleEMISSFilesInflationProvider import \
     MultipleEMISSFilesInflationProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.MultipleWeeklyInflationProvider import \
+    MultipleWeeklyInflationProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.RosstatWeeklyInflationProvider import \
     RosstatWeeklyInflationProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.MROTProvider import MROTProvider
@@ -72,7 +74,9 @@ def createCustomPromptBuilder(cfg: ExperimentsConfiguration):
     builders.append(CommonProfilePromptBuilder(prompts.respondentPrompt, mrotProvider, averageBuyingsProvider))
     headers.append('Основные параметры опроса и респондента')
 
-    weeklyInflationProvider = RosstatWeeklyInflationProvider(configuration.weeklyInflationDataPath, 2022)
+    multipleWeeklyProvider = MultipleWeeklyInflationProvider(configuration.weeklyInflationDataPath, list(range(2022, 2027)))
+    weeklyInflationProvider = RosstatWeeklyInflationProvider(multipleWeeklyProvider)
+
     singleMonthInflationProvider = createSingleMonthInflationProvider()
     singleMonthInflationProvider = DateRoundingSingleMonthInflationProvider(singleMonthInflationProvider)
 
