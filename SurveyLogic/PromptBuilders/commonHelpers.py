@@ -67,32 +67,33 @@ def getSafeDescription(value):
 
     return value
 
-def getDirection(inflation: float):
+def getDirection(inflation: float, isInflation: bool):
+
     if inflation > 0.0:
-        return "подорожал"
+        return "подорожал" if not isInflation else 'повысилась'
 
     if inflation < 0.0:
-        return "подешевел"
+        return "подешевел" if not isInflation else 'понизилась'
 
-    return "цена не изменилась"
+    return "цена не изменилась" if not isInflation else 'не изменилась'
 
-def getDescriptionMonth(d: date, inflation: float, month: int):
+def getDescriptionMonth(inflation: float, month: int, isInflation: bool = False):
     if inflation is None:
         return ''
 
     description = getDeltaDescription(month)
-    direction = getDirection(inflation)
+    direction = getDirection(inflation, isInflation)
     if abs(inflation) < 0.00001:
         return f"за {description} не изменилась"
 
     clearInflation = (inflation + 1)**(month/12) - 1
     return f'за {description} {direction} на {showInflation(abs(clearInflation))}%'
 
-def getDescriptionWeeks(inflation: float, weeks: int):
+def getDescriptionWeeks(inflation: float, weeks: int, isInflation: bool = False):
     if inflation is None:
         return ''
 
-    direction = getDirection(inflation)
+    direction = getDirection(inflation, isInflation)
     description = getDescriptionNumberWeeks(weeks)
     if abs(inflation) < 0.00001:
         return f"{description} не изменилась"
@@ -141,7 +142,7 @@ def showInflation(inflation: float)->str:
     if inflation is None:
         return 'нет данных'
 
-    return f'{inflation*100: .1f}'
+    return f'{inflation*100:.1f}'
 
 def getDeltaDescription(offsetMonth: int):
     if offsetMonth == 1:

@@ -18,9 +18,9 @@ class StateInflationContextPromptBuilder(BasePromptBuilder):
         inflation6m = self.inflationProvider.getAverageCommonYearInflationLastNMonth(surveyDate, 6)
         inflation1Y = self.inflationProvider.getAverageCommonYearInflationLastNMonth(surveyDate, 12)
 
-        prompt = self.prompt.replace(constants.inflation1M, getDescriptionMonth(surveyDate, inflation1m, 1))
-        prompt = prompt.replace(constants.inflation3M, getDescriptionMonth(surveyDate, inflation3m, 3))
-        prompt = prompt.replace(constants.inflation6M, getDescriptionMonth(surveyDate, inflation6m, 6))
-        prompt = prompt.replace(constants.inflation1Y, getDescriptionMonth(surveyDate, inflation1Y, 12))
+        prompt = self.prompt.replace(constants.inflation1M, getDescriptionMonth(inflation1m, 1, True))
+        prompt = prompt.replace(constants.inflation3M, getDescriptionMonth(inflation3m, 3, True))
+        prompt = prompt.replace(constants.inflation6M, getDescriptionMonth(inflation6m, 6, True))
+        prompt = prompt.replace(constants.inflation1Y, getDescriptionMonth(inflation1Y, 12, True))
 
         return prompt
