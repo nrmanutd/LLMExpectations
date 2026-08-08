@@ -67,6 +67,7 @@ class HouseholdProfilePromptBuilder(BasePromptBuilder):
             return 'тот же самый, что и дает ответы на вопрос анкеты о домохозяйтсве'
 
         return 'другой член домохозяйства давал ответы на вопросы анкеты о домохозястве'
+
     def _getExpensesRepresentation(self, profile: ProfileData, expenses: float):
         if checkNoAnswer(profile.allFamilyMonthIncome):
             return getNoAnswerDescription(profile.allFamilyMonthIncome)
@@ -75,9 +76,9 @@ class HouseholdProfilePromptBuilder(BasePromptBuilder):
         return f'{ratio: .1f} в регионе {profile.currentLocalityRegion}'
 
     def _getMortgageDescription(self, profile):
-        baseInformation = f'Тип жилья - {profile.familyHouseType}, семья занимает {profile.familyHouseAllocationType}, общая площадь - {getSafeDescription(profile.familyHouseTotalSquare)}'
-        countryInformation = f'Есть дача: {profile.hasCountryHouse}, есть иная недвижимость: {profile.hasOtherMortgage}'
-        landInformation = f'Семья пользуется землей: {profile.hasLand}, собственность: {profile.landOwner}'
+        baseInformation = f'Тип жилья - {getSafeDescription(profile.familyHouseType)}, семья занимает {getSafeDescription(profile.familyHouseAllocationType)}, общая площадь - {getSafeDescription(profile.familyHouseTotalSquare)}'
+        countryInformation = f'Есть дача: {getSafeDescription(profile.hasCountryHouse)}, есть иная недвижимость: {profile.hasOtherMortgage}'
+        landInformation = f'Семья пользуется землей: {getSafeDescription(profile.hasLand)}, собственность: {getSafeDescription(profile.landOwner)}'
 
         return f'\n{baseInformation}\n{countryInformation}\n{landInformation}.'
 

@@ -80,24 +80,34 @@ def getDescriptionMonth(d: date, inflation: float, month: int):
     if inflation is None:
         return ''
 
-    description = getDeltaDescription(d, month)
+    description = getDeltaDescription(month)
     direction = getDirection(inflation)
     if abs(inflation) < 0.00001:
         return f"за {description} не изменилась"
 
     clearInflation = (inflation + 1)**(month/12) - 1
-    return f'за {description} {direction} на {showInflation(abs(clearInflation))}% (прошлые {month} месяцев)'
+    return f'за {description} {direction} на {showInflation(abs(clearInflation))}%'
 
 def getDescriptionWeeks(inflation: float, weeks: int):
     if inflation is None:
         return ''
 
     direction = getDirection(inflation)
+    description = getDescriptionNumberWeeks(weeks)
     if abs(inflation) < 0.00001:
-        return f"за последние {weeks} недель не изменилась"
+        return f"{description} не изменилась"
 
     clearInflation = (inflation + 1) ** (weeks*7 / 365) - 1
-    return f'{direction} на {showInflation(abs(clearInflation))}% за последние {weeks} недель'
+    return f'{description} {direction} на {showInflation(abs(clearInflation))}%'
+
+def getDescriptionNumberWeeks(weeks: int):
+    if weeks == 1:
+        return 'за последнюю 1 неделю'
+
+    if weeks in {2, 3, 4}:
+        return f'за последние {weeks} недели'
+
+    return f'за последние {weeks} недель'
 
 def getTop5(map, goods: dict[str, float]):
     rosstatGoods = dict[str, float]()
@@ -133,14 +143,14 @@ def showInflation(inflation: float)->str:
 
     return f'{inflation*100: .1f}'
 
-def getDeltaDescription(d: date, offsetMonth: int):
-    finishMonth = (d.month + 12 - 1) % 12
+def getDeltaDescription(offsetMonth: int):
     if offsetMonth == 1:
-        return months_ru[finishMonth]
+        return '1 полный календарный месяц'
 
-    startMonth = (d.month + 12 - offsetMonth) % 12
+    if offsetMonth in {2, 3, 4}:
+        return f'{offsetMonth} полных календарных месяца'
 
-    return f'{months_ru[startMonth]} - {months_ru[finishMonth]}'
+    return f'{offsetMonth} полных календарных месяцев'
 
 def getUsdRubDirection(rate):
     if rate == None:

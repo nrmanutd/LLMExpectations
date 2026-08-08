@@ -17,6 +17,7 @@ hasCreditsTag='{{HAS_CREDITS}}'
 
 inflation1M='{{1MInflation}}'
 inflation3M='{{3MInflation}}'
+inflation6M='{{6MInflation}}'
 inflation1Y='{{1YInflation}}'
 localityRegionTag='{{Region}}'
 
