@@ -79,20 +79,10 @@ def createCustomPromptBuilder(cfg: ExperimentsConfiguration):
     inflationProvider = InflationProvider(singleMonthInflationProvider, weeklyInflationProvider)
     inflationProvider = ConvertingInflationProvider(inflationProvider, configuration.rlmsToInflationRegionsPath)
 
-    if cfg.useStateInflation:
-        stateInflationProvider = StateInflationContextPromptBuilder(prompts.stateInflationPrompt, inflationProvider)
-        builders.append(stateInflationProvider)
-        headers.append('Официальная государственная статистика по инфляции')
-
-    if cfg.useRegionalInflation:
-        regionInflationProvider = RegionalInflationContextPromptBuilder(prompts.regionInflationPrompt, inflationProvider)
-        builders.append(regionInflationProvider)
-        headers.append('Официальная государственная статистика по инфляции в регионе проживания индивида')
-
     if cfg.useFamilyInformation:
         householdInformationBuilder = HouseholdProfilePromptBuilder(prompts.househouldCommonPrompt, averageBuyingsProvider)
         builders.append(householdInformationBuilder)
-        headers.append('Детальная информация о семье индивида')
+        headers.append('Детальная информация о домохозяйстве, членом которого является индивид')
 
     if cfg.useFamilyExpenses:
         expensesProfilePromptBuilder = ExpensesProfilePromptBuilder(prompts.expensesPrompt, inflationProvider, [configuration.regularGoods, configuration.durableGoods, configuration.services])
@@ -104,7 +94,17 @@ def createCustomPromptBuilder(cfg: ExperimentsConfiguration):
 
         stateExpensesPromptBuilder = StateExpensesProfilePromptBuilder(prompts.stateWeeklyExpensesPrompt, inflationProvider, paths)
         builders.append(stateExpensesPromptBuilder)
-        headers.append('Детальная информация об инфляции на уровне Российской Федерации в целом на товары в топ-расходах семьи')
+        headers.append('Детальная наиболее свежая информация об инфляции на уровне Российской Федерации в целом на товары, покупаемые домохозяйством')
+
+    if cfg.useStateInflation:
+        stateInflationProvider = StateInflationContextPromptBuilder(prompts.stateInflationPrompt, inflationProvider)
+        builders.append(stateInflationProvider)
+        headers.append('Официальная государственная статистика по инфляции')
+
+    if cfg.useRegionalInflation:
+        regionInflationProvider = RegionalInflationContextPromptBuilder(prompts.regionInflationPrompt, inflationProvider)
+        builders.append(regionInflationProvider)
+        headers.append('Официальная государственная статистика по инфляции в регионе проживания индивида')
 
     if cfg.useEconomy:
         currencyProvider = USDRUBRateProvider(configuration.usdrubDataPath)

@@ -130,7 +130,40 @@ def load_from_official_statistics(fileName):
 
     return directEstimations
 
+
 def aggregate_survey(surveys):
+    """
+    Агрегирует данные по датам
+
+    Returns:
+        DataFrame с индексом из дат и колонками 'obs_mean', 'obs_std', 'obs_count',
+        'exp_mean', 'exp_std', 'exp_count'
+    """
+    # Убеждаемся, что date - это datetime
+    surveys['date'] = pd.to_datetime(surveys['date'])
+
+    quarterly_agg_df = surveys.groupby('date').agg({
+        'observable_12m': ['mean', 'std', 'count'],
+        'expected_12m': ['mean', 'std', 'count']
+    })
+
+    # Переименовываем колонки
+    quarterly_agg_df.columns = ['obs_mean', 'obs_std', 'obs_count',
+                                'exp_mean', 'exp_std', 'exp_count']
+
+    # Сбрасываем индекс и снова устанавливаем его как date
+    # ВАЖНО: НЕ используем reset_index(), чтобы date остался индексом
+    # quarterly_agg_df = quarterly_agg_df.reset_index()  # <-- ЭТО НЕ НУЖНО!
+
+    print("\nАгрегированные квартальные данные (первые 5):")
+    print(quarterly_agg_df.head())
+    print(f"\nИндекс: {quarterly_agg_df.index.name}")
+    print(f"Тип индекса: {type(quarterly_agg_df.index)}")
+    print(f"Колонки: {quarterly_agg_df.columns.tolist()}")
+
+    return quarterly_agg_df
+
+def aggregate_survey1(surveys):
     quarterly_agg_df = surveys.groupby('date').agg({
         'observable_12m': ['mean', 'std', 'count'],
         'expected_12m': ['mean', 'std', 'count']

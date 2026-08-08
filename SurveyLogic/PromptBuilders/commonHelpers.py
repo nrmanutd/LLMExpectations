@@ -9,19 +9,57 @@ months = {
     }
 
 months_ru = {
-    1: 'Январь',
-    2: 'Февраль',
-    3: 'Март',
-    4: 'Апрель',
-    5: 'Май',
-    6: 'Июнь',
-    7: 'Июль',
-    8: 'Август',
-    9: 'Сентябрь',
-    10: 'Октябрь',
-    11: 'Ноябрь',
-    0: 'Декабрь'
+    1: 'январь',
+    2: 'февраль',
+    3: 'март',
+    4: 'апрель',
+    5: 'май',
+    6: 'июнь',
+    7: 'июль',
+    8: 'август',
+    9: 'сентябрь',
+    10: 'октябрь',
+    11: 'ноябрь',
+    0: 'декабрь'
 }
+
+
+def processIfNone(data):
+    if data is None or data == 'None' or data == '':
+        return 'нет информации'
+
+    return str(data)
+
+def processBoolToYesNo(data: bool):
+    if data:
+        return 'Да'
+
+    return 'Нет'
+
+def checkNoAnswer(value):
+    noAnswerSet = {99999997, 99999998, 99999999}
+    if value in noAnswerSet or value is None or value == '':
+        return True
+
+    return False
+
+def getNoAnswerDescription(value):
+    if value == 99999997:
+        return 'затрудняюсь ответить'
+    elif value == 99999998:
+        return 'отказ от ответа'
+    elif value == 99999999:
+        return 'нет ответа'
+    elif value is None or value == '':
+        return 'нет информации'
+
+    raise ValueError(f'Incorrect value: {value}')
+
+def getSafeDescription(value):
+    if checkNoAnswer(value):
+        return getNoAnswerDescription(value)
+
+    return value
 
 def getDirection(inflation: float):
     if inflation > 0.0:

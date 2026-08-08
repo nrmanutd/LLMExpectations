@@ -25,15 +25,18 @@ surveyDates = getDatesRowWithWeeklyStep('2022.02.05', '2022.05.07')
 cfg = ExperimentsConfiguration(
     useEconomy=True,
     useFamilyInformation=True,
-    useStateExpenses=False)
+    useRegionalInflation=True,
+    useStateInflation=True,
+    useFamilyExpenses=True,
+    useStateExpenses=True)
 
 saveExperimentConfiguration(cfg, resultsFolder)
 
 systemPromptBuilder, promptBuilder = createCustomPromptBuilder(cfg)
 logger = SimpleLogger()
 
-surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
-#surveyer = StubSurveyer()
+#surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
+surveyer = StubSurveyer()
 
 surveySerializer = SurveySerializer(resultsFolder)
 

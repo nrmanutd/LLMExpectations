@@ -1,10 +1,9 @@
 from datetime import date
-
 from SurveyLogic.PromptBuilders import constants
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.PromptBuilders.Profiles.ProfileData import ProfileData
 from SurveyLogic.PromptBuilders.StatisticsProviders.BaseAverageExpensesProvider import BaseAverageExpensesProvider
-
+from SurveyLogic.PromptBuilders.commonHelpers import checkNoAnswer, getNoAnswerDescription, getSafeDescription
 
 class HouseholdProfilePromptBuilder(BasePromptBuilder):
     def __init__(self, prompt: str, provider: BaseAverageExpensesProvider):
@@ -38,14 +37,14 @@ class HouseholdProfilePromptBuilder(BasePromptBuilder):
 
         return 'другой член домохозяйства давал ответы на вопросы анкеты о домохозястве'
     def _getExpensesRepresentation(self, profile: ProfileData, expenses: float):
-        if self._checkNoAnswer(profile.allFamilyMonthIncome):
-            return self._getNoAnswerDescription(profile.allFamilyMonthIncome)
+        if checkNoAnswer(profile.allFamilyMonthIncome):
+            return getNoAnswerDescription(profile.allFamilyMonthIncome)
 
         ratio = profile.allFamilyMonthIncome / (expenses * profile.totalFamilyMembers / 12)
         return f'{ratio: .1f} в регионе {profile.currentLocalityRegion}'
 
     def _getMortgageDescription(self, profile):
-        baseInformation = f'Тип жилья - {profile.familyHouseType}, семья занимает {profile.familyHouseAllocationType}, общая площадь - {profile.familyHouseTotalSquare}'
+        baseInformation = f'Тип жилья - {profile.familyHouseType}, семья занимает {profile.familyHouseAllocationType}, общая площадь - {getSafeDescription(profile.familyHouseTotalSquare)}'
         countryInformation = f'Есть дача: {profile.hasCountryHouse}, есть иная недвижимость: {profile.hasOtherMortgage}'
         landInformation = f'Семья пользуется землей: {profile.hasLand}, собственность: {profile.landOwner}'
 
@@ -55,31 +54,12 @@ class HouseholdProfilePromptBuilder(BasePromptBuilder):
         if profile.familyHasActiveCredits == 'Нет':
             return 'у домохозяйства нет активных кредитов.'
 
-        if self._checkNoAnswer(profile.totalFamilyCreditDebt):
-            return self._getNoAnswerDescription(profile.totalFamilyCreditDebt)
+        if checkNoAnswer(profile.totalFamilyCreditDebt):
+            return getNoAnswerDescription(profile.totalFamilyCreditDebt)
 
         ratio = profile.totalFamilyCreditDebt / (profile.allFamilyMonthIncome * 12)
 
         return f'Совокупная задолженность домохозяйства по всем кредитам эквивалентна {ratio: .1f} годам работы семьи при условии, что все заработанные деньги будут уходить на погашение кредита.'
-
-    def _checkNoAnswer(self, value):
-        noAnswerSet = {99999997, 99999998, 99999999}
-        if value in noAnswerSet or value is None:
-            return True
-
-        return False
-
-    def _getNoAnswerDescription(self, value):
-        if value == 99999997:
-            return 'затрудняюсь ответить'
-        elif value == 99999998:
-            return 'отказ от ответа'
-        elif value == 99999999:
-            return 'нет ответа'
-        elif value is None:
-            return 'нет информации'
-
-        raise ValueError(f'Incorrect value: {value}')
 
     def _getCarsDescription(self, profile):
         domesticCar = f'отечественный автомобиль {'имеется' if profile.hasRussianCar == 'Да' else 'отсутствует'}'
