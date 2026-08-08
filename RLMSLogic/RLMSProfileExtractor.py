@@ -108,7 +108,7 @@ class RLMSProfileExtractor:
             psu = value_to_label('psu', row.get('psu'), meta)
             region = value_to_label('region', row.get('region'), meta)
 
-            currentLocality = f'{localityStatus}, {psu}, {region}'
+            currentLocality = f'{localityStatus}, {region}'
             currentLocalityRegion = psu
             currentLocalityRegionCode = psu_raw
 
@@ -162,6 +162,8 @@ class RLMSProfileExtractor:
 
             idHHrespondent = hhRow[f'{p}a8']
             idIndividualrespondent = row[f'{p}h4']
+            hhHasChildrenKey = f'{p}e6_2'.replace('_', separator)
+            hhHasChildrenValue = value_to_label(hhHasChildrenKey, hhRow.get(hhHasChildrenKey), metahh)
 
             activeCreditKey = f'{p}f14_8'.replace('_', separator)
             if not activeCreditKey in hhRow:
@@ -184,6 +186,9 @@ class RLMSProfileExtractor:
             hasOtherMortgage = safe_value_to_label(f'{p}c9_12a'.replace('_', separator), hhRow, metahh)
             hasLand = safe_value_to_label(f'{p}d2', hhRow, metahh)
             landOwner = safe_value_to_label(f'{p}d4', hhRow, metahh)
+
+            vacationForeign = safe_norm(f'{p}e42_5'.replace('_', separator), hhRow)
+            vacationDomestic = safe_norm(f'{p}e42_6'.replace('_', separator), hhRow)
 
             regular = self._processMap(self.regular, hhRow, p, separator)
             durable = self._processMap(self.durable, hhRow, p, separator)
@@ -212,6 +217,7 @@ class RLMSProfileExtractor:
                 moneyStatusLastThreeYears=moneyStatusLastThreeYears,
                 idIndividualrespondent=idIndividualrespondent,
                 idHHrespondent=idHHrespondent,
+                hhHasChildren=hhHasChildrenValue,
                 totalFamilyMembers=numberOfFamilyMembers,
                 allFamilyMonthIncome=allFamilyIncome,
                 familyHasActiveCredits=familyHasActiveCredits,
@@ -229,6 +235,9 @@ class RLMSProfileExtractor:
                 hasOtherMortgage=hasOtherMortgage,
                 hasLand=hasLand,
                 landOwner=landOwner,
+
+                vacationForeign=vacationForeign,
+                vacationDomestic=vacationDomestic,
 
                 regular=regular,
                 durable=durable,

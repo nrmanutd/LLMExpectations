@@ -30,6 +30,12 @@ def processIfNone(data):
 
     return str(data)
 
+def processYesNo(data):
+    if data == '1':
+        return True
+
+    return False
+
 def processBoolToYesNo(data: bool):
     if data:
         return 'Да'
@@ -92,8 +98,6 @@ def getDescriptionWeeks(inflation: float, weeks: int):
 
     clearInflation = (inflation + 1) ** (weeks*7 / 365) - 1
     return f'{direction} на {showInflation(abs(clearInflation))}% за последние {weeks} недель'
-
-
 
 def getTop5(map, goods: dict[str, float]):
     rosstatGoods = dict[str, float]()

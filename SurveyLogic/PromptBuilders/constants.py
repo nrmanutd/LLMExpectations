@@ -32,6 +32,8 @@ regularTag='{{RegularGoods}}'
 durableTag='{{DurableGoods}}'
 servicesTag='{{Services}}'
 
+vacationTag='{{Vacation}}'
+
 commonRegionName='Российская Федерация'
 commonRegionNameAlias='Российская Федерация без учета новых субъектов (с 01.01.2023)'
 allGoodsAndServicesName='Все товары и услуги'

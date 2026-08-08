@@ -3,7 +3,9 @@ from SurveyLogic.PromptBuilders import constants
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.PromptBuilders.Profiles.ProfileData import ProfileData
 from SurveyLogic.PromptBuilders.StatisticsProviders.BaseAverageExpensesProvider import BaseAverageExpensesProvider
-from SurveyLogic.PromptBuilders.commonHelpers import checkNoAnswer, getNoAnswerDescription, getSafeDescription
+from SurveyLogic.PromptBuilders.commonHelpers import checkNoAnswer, getNoAnswerDescription, getSafeDescription, \
+    processYesNo
+
 
 class HouseholdProfilePromptBuilder(BasePromptBuilder):
     def __init__(self, prompt: str, provider: BaseAverageExpensesProvider):
@@ -15,7 +17,9 @@ class HouseholdProfilePromptBuilder(BasePromptBuilder):
 
         expensesRepresentation = self._getExpensesRepresentation(profile, hhAverageExpenses)
         prompt = self.prompt.replace(constants.familyTotalMonthExpenses, expensesRepresentation)
-        prompt = prompt.replace(constants.familyTotalMembers, str(int(profile.totalFamilyMembers)))
+
+        familyTtotalMembersDescription = self._getFamilyMembersDescription(profile)
+        prompt = prompt.replace(constants.familyTotalMembers, familyTtotalMembersDescription)
 
         mortgageDescription = self._getMortgageDescription(profile)
         prompt = prompt.replace(constants.mortgageInformation, mortgageDescription)
@@ -29,7 +33,34 @@ class HouseholdProfilePromptBuilder(BasePromptBuilder):
         carsDescription = self._getCarsDescription(profile)
         prompt = prompt.replace(constants.householdCars, carsDescription)
 
+        vacation = self._getVacationDescription(profile)
+        prompt = prompt.replace(constants.vacationTag, vacation)
+
         return prompt
+
+    def _getVacationDescription(self, profile: ProfileData):
+        foreign = profile.vacationForeign
+        domestic = profile.vacationDomestic
+
+        foreignHasNoAnswer = checkNoAnswer(foreign)
+        domesticHasNoAnswer = checkNoAnswer(domestic)
+
+        if foreignHasNoAnswer and domesticHasNoAnswer:
+            return 'нет информации'
+
+        isForeign = processYesNo(foreign)
+        isDomestic = processYesNo(domestic)
+
+        if not isForeign and not isDomestic:
+            return 'у семьи нет возможности отдохнуть вместе ни на российском курорте ни за границей'
+
+        if isForeign and isDomestic:
+            return 'есть возможность провести всей семьей отпуск на российском курорте и за границей'
+
+        if isDomestic:
+            return 'есть возможность провести всей семьей отпуск только на российском курорте'
+
+        return 'есть возможность провести всей семьей отпуск только на за границей'
 
     def _getSameRespondentInformation(self, profile: ProfileData):
         if profile.idIndividualrespondent == profile.idHHrespondent:
@@ -66,4 +97,16 @@ class HouseholdProfilePromptBuilder(BasePromptBuilder):
         foreignCar = f'иностранный автомобиль {'имеется' if profile.hasForeignCar == 'Да' else 'отсутствует'}'
 
         return f'{domesticCar}, {foreignCar}.'
+
+    def _getFamilyMembersDescription(self, profile: ProfileData) -> str:
+        totalMembers = str(int(profile.totalFamilyMembers))
+        hasNoChildren = profile.hhHasChildren == 99999996
+        desc = ''
+        if hasNoChildren:
+            desc = ' (детей нет)'
+        else:
+            desc = ' (дети есть)'
+
+        return f'{totalMembers}{desc}'
+
 
