@@ -42,7 +42,7 @@ def getDatesRowWithMonthlyStep(start: str, end: str):
 def getDatesRowWithWeeklyStep(start: str, end: str):
     return pd.date_range(start=start, end=end, freq='7D', inclusive='both').tolist()
 
-def extractDatesFromFile(path: Path) -> list[datetime]:
+def extractDatesFromFile(path: Path, offsetDays: int) -> list[datetime]:
     df = pd.read_excel(path, sheet_name=0, header=0)
 
     # Получаем заголовки (первая строка)
@@ -52,6 +52,7 @@ def extractDatesFromFile(path: Path) -> list[datetime]:
     parsed_dates = []
     for header in headers:
         dt = header.to_pydatetime()
+        dt = (dt + pd.DateOffset(days=offsetDays))
         parsed_dates.append(dt)
 
     parsed_dates.sort()

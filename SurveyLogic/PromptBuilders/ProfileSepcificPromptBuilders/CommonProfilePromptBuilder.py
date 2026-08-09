@@ -17,7 +17,7 @@ class CommonProfilePromptBuilder(BasePromptBuilder):
 
     def buildPrompt(self, surveyDate: date, profile: ProfileData):
 
-        prompt = self.prompt.replace(constants.surveyDateTag, months_ru[surveyDate.month])
+        prompt = self.prompt.replace(constants.surveyDateTag, months_ru[surveyDate.month%12])
         prompt = prompt.replace(constants.ageTag, processIfNone(profile.age))
         prompt = prompt.replace(constants.sexTag, processIfNone(profile.sex))
         prompt = prompt.replace(constants.localityTag, processIfNone(profile.currentLocality))
