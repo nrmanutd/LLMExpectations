@@ -1,5 +1,6 @@
 import shutil
 from datetime import datetime
+from typing import Optional
 
 import pandas as pd
 from pathlib import Path
@@ -42,7 +43,25 @@ def getDatesRowWithMonthlyStep(start: str, end: str):
 def getDatesRowWithWeeklyStep(start: str, end: str):
     return pd.date_range(start=start, end=end, freq='7D', inclusive='both').tolist()
 
-def extractDatesFromFile(path: Path, offsetDays: int) -> list[datetime]:
+
+def extractDatesFromFile(
+        path: Path,
+        offsetDays: int,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None
+) -> list[datetime]:
+    """
+    Извлекает даты из заголовков Excel файла с возможностью фильтрации по диапазону.
+
+    Args:
+        path: Путь к Excel файлу
+        offsetDays: Смещение в днях для каждой даты
+        start_date: Начальная дата фильтра (включительно). Если None - фильтр не применяется
+        end_date: Конечная дата фильтра (включительно). Если None - фильтр не применяется
+
+    Returns:
+        Отсортированный список дат, отфильтрованный по диапазону
+    """
     df = pd.read_excel(path, sheet_name=0, header=0)
 
     # Получаем заголовки (первая строка)
@@ -54,6 +73,13 @@ def extractDatesFromFile(path: Path, offsetDays: int) -> list[datetime]:
         dt = header.to_pydatetime()
         dt = (dt + pd.DateOffset(days=offsetDays))
         parsed_dates.append(dt)
+
+    # Применяем фильтр по датам
+    if start_date is not None:
+        parsed_dates = [d for d in parsed_dates if d >= start_date]
+
+    if end_date is not None:
+        parsed_dates = [d for d in parsed_dates if d <= end_date]
 
     parsed_dates.sort()
 
