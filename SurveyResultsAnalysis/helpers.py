@@ -147,6 +147,15 @@ def load_from_official_statistics(fileName, offsetDays=0):
         directEstimations.index = directEstimations.index + pd.Timedelta(days=offsetDays)
         print(f"📅 Даты сдвинуты на {offsetDays} дней")
 
+    # Удаляем только первую строку, если в ней есть NaN
+    if not directEstimations.empty:
+        first_row = directEstimations.iloc[0]
+        if first_row.isna().any():
+            directEstimations = directEstimations.iloc[1:]
+            print(f"🗑️ Удалена первая строка с NaN (дата: {first_row.name})")
+
+    print(f"✅ Загружено {len(directEstimations)} записей")
+
     return directEstimations
 
 

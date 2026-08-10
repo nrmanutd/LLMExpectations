@@ -6,6 +6,8 @@ import numpy as np
 from typing import Optional, Tuple, Union, List, Dict, Any
 from datetime import datetime
 
+from scipy.stats import stats
+
 
 class TimeSeriesVisualizer:
     """
@@ -620,3 +622,419 @@ class TimeSeriesVisualizer:
 
         fig = ax.get_figure()
         fig.autofmt_xdate()
+
+    def plot_correlation(self,
+                         variable: str = 'observable',
+                         figsize: Tuple[int, int] = (15, 10),
+                         title: Optional[str] = None,
+                         colors: Optional[Dict[str, str]] = None,
+                         markersize: int = 30,
+                         alpha: float = 0.7,
+                         grid: bool = True,
+                         save_path: Optional[Path] = None,
+                         show: bool = True,
+                         start_date: Optional[Union[str, datetime]] = None,
+                         end_date: Optional[Union[str, datetime]] = None,
+                         use_intersection: bool = False,
+                         model_order: Optional[List[str]] = None,
+                         ncols: int = 2):
+        """
+        Строит графики корреляции между истинным рядом и каждым модельным рядом.
+        Каждая модель отображается на отдельном subplot.
+        Сопоставление происходит по ПОРЯДКОВОМУ НОМЕРУ.
+
+        Args:
+            ncols: количество колонок в сетке subplots
+        """
+        # Определяем колонки
+        if variable == 'observable':
+            true_col = 'observable_inflation'
+            model_col = 'obs_mean'
+            default_title = f'Correlation: Observable Inflation - Models vs True'
+        else:
+            true_col = 'expected_inflation'
+            model_col = 'exp_mean'
+            default_title = f'Correlation: Expected Inflation - Models vs True'
+
+        if title is None:
+            title = default_title
+
+        # Настройки цветов
+        default_colors = {}
+        model_colors = ['#E74C3C', '#2ECC71', '#F39C12', '#9B59B6', '#1ABC9C', '#E67E22', '#3498DB', '#E74C3C']
+        for i, name in enumerate(self.model_series.keys()):
+            default_colors[name] = model_colors[i % len(model_colors)]
+
+        colors = colors or {}
+        all_colors = {**default_colors, **colors}
+
+        # Определяем диапазон дат
+        start, end = self._get_date_range(start_date, end_date, use_intersection)
+
+        # Фильтруем данные
+        true_filtered, model_filtered = self._filter_data_by_date(start, end)
+
+        if true_filtered.empty:
+            print("⚠️ Нет данных для истинного ряда")
+            return None, None
+
+        # Определяем порядок отображения
+        if model_order is None:
+            model_names = list(model_filtered.keys())
+        else:
+            model_names = [name for name in model_order if name in model_filtered]
+
+        # Убираем пустые модели
+        model_names = [name for name in model_names if not model_filtered[name].empty]
+
+        if not model_names:
+            print("⚠️ Нет моделей с данными")
+            return None, None
+
+        # Определяем количество subplots
+        n_models = len(model_names)
+        nrows = (n_models + ncols - 1) // ncols
+
+        # Создаем фигуру с subplots
+        fig, axes = plt.subplots(nrows, ncols, figsize=figsize)
+
+        # Если只有一个 subplot, преобразуем в список
+        if n_models == 1:
+            axes = np.array([axes])
+        else:
+            axes = axes.flatten()
+
+        # Получаем значения истинного ряда
+        true_values = true_filtered[true_col].values
+
+        # Для каждой модели строим отдельный subplot
+        for idx, name in enumerate(model_names):
+            ax = axes[idx]
+            df = model_filtered[name]
+
+            # Получаем значения модели
+            model_values = df[model_col].values
+
+            # Сопоставляем по порядковому номеру
+            min_len = min(len(true_values), len(model_values))
+            true_aligned = true_values[:min_len]
+            model_aligned = model_values[:min_len]
+
+            # Строим scatter plot
+            ax.scatter(model_aligned, true_aligned,
+                       color=all_colors.get(name, '#E74C3C'),
+                       s=markersize,
+                       alpha=alpha,
+                       label='Data points')
+
+            # Вычисляем статистику
+            if len(model_aligned) > 2:
+                # Проверяем, есть ли вариация в данных
+                if np.std(model_aligned) > 1e-10 and np.std(true_aligned) > 1e-10:
+                    # Корреляция Пирсона
+                    correlation, p_value = stats.pearsonr(model_aligned, true_aligned)
+                    r_squared = correlation ** 2
+
+                    # Коэффициент зависимости (наклон линейной регрессии)
+                    slope, intercept, r_value, p_value_reg, std_err = stats.linregress(model_aligned, true_aligned)
+
+                    # Определяем звездочки для p-value
+                    if p_value < 0.001:
+                        stars = '***'
+                    elif p_value < 0.01:
+                        stars = '**'
+                    elif p_value < 0.05:
+                        stars = '*'
+                    else:
+                        stars = 'ns'
+
+                    # Добавляем линию регрессии
+                    x_line = np.array([model_aligned.min(), model_aligned.max()])
+                    y_line = slope * x_line + intercept
+                    ax.plot(x_line, y_line,
+                            color=all_colors.get(name, '#E74C3C'),
+                            linestyle='--',
+                            alpha=0.7,
+                            linewidth=2,
+                            label=f'Regression (slope={slope:.3f})')
+
+                    # Добавляем текст с статистикой в правый верхний угол
+                    stats_text = (f'r = {correlation:.4f}{stars}\n'
+                                  f'R² = {r_squared:.4f}\n'
+                                  f'p = {p_value:.4e}\n'
+                                  f'n = {len(model_aligned)}')
+
+                    ax.text(0.95, 0.95, stats_text,
+                            transform=ax.transAxes,
+                            fontsize=10,
+                            verticalalignment='top',
+                            horizontalalignment='right',
+                            bbox=dict(boxstyle='round,pad=0.5',
+                                      facecolor='white',
+                                      edgecolor=all_colors.get(name, '#E74C3C'),
+                                      alpha=0.9))
+                else:
+                    ax.text(0.5, 0.5, 'No variation in data',
+                            transform=ax.transAxes,
+                            fontsize=12,
+                            ha='center', va='center',
+                            bbox=dict(boxstyle='round,pad=0.5',
+                                      facecolor='yellow',
+                                      alpha=0.5))
+            else:
+                ax.text(0.5, 0.5, f'Not enough points (n={len(model_aligned)})',
+                        transform=ax.transAxes,
+                        fontsize=12,
+                        ha='center', va='center',
+                        bbox=dict(boxstyle='round,pad=0.5',
+                                  facecolor='yellow',
+                                  alpha=0.5))
+
+            # Линия y=x для справки
+            min_val = min(ax.get_xlim()[0], ax.get_ylim()[0])
+            max_val = max(ax.get_xlim()[1], ax.get_ylim()[1])
+            ax.plot([min_val, max_val], [min_val, max_val],
+                    'k--', alpha=0.2, linewidth=1, label='y = x')
+
+            # Настройки subplot
+            ax.set_title(f'{name}', fontsize=12, fontweight='bold')
+            ax.set_xlabel('Model Values', fontsize=10)
+            ax.set_ylabel('True Values', fontsize=10)
+            ax.legend(loc='lower right', fontsize=8)
+
+            if grid:
+                ax.grid(True, alpha=0.3)
+
+            ax.axis('equal')
+
+        # Скрываем неиспользуемые subplots
+        for idx in range(len(model_names), len(axes)):
+            axes[idx].set_visible(False)
+
+        # Общий заголовок
+        fig.suptitle(title, fontsize=14, fontweight='bold', y=0.98)
+
+        plt.tight_layout()
+
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+            print(f"✅ График корреляции сохранен: {save_path}")
+
+        if show:
+            plt.show()
+        else:
+            plt.close()
+
+        return fig, axes
+
+    def plot_correlation_diff(self,
+                              variable: str = 'observable',
+                              figsize: Tuple[int, int] = (15, 10),
+                              title: Optional[str] = None,
+                              colors: Optional[Dict[str, str]] = None,
+                              markersize: int = 30,
+                              alpha: float = 0.7,
+                              grid: bool = True,
+                              save_path: Optional[Path] = None,
+                              show: bool = True,
+                              start_date: Optional[Union[str, datetime]] = None,
+                              end_date: Optional[Union[str, datetime]] = None,
+                              use_intersection: bool = False,
+                              model_order: Optional[List[str]] = None,
+                              ncols: int = 2):
+        """
+        Строит графики корреляции между приростами истинного ряда и каждого модельного ряда.
+        Каждая модель отображается на отдельном subplot.
+        Сопоставление происходит по ПОРЯДКОВОМУ НОМЕРУ.
+
+        Args:
+            ncols: количество колонок в сетке subplots
+        """
+        from scipy import stats
+
+        # Определяем колонки
+        if variable == 'observable':
+            true_col = 'observable_inflation'
+            model_col = 'obs_mean'
+            default_title = f'Correlation of Differences: Observable Inflation - Models vs True'
+        else:
+            true_col = 'expected_inflation'
+            model_col = 'exp_mean'
+            default_title = f'Correlation of Differences: Expected Inflation - Models vs True'
+
+        if title is None:
+            title = default_title
+
+        # Настройки цветов
+        default_colors = {}
+        model_colors = ['#E74C3C', '#2ECC71', '#F39C12', '#9B59B6', '#1ABC9C', '#E67E22', '#3498DB', '#E74C3C']
+        for i, name in enumerate(self.model_series.keys()):
+            default_colors[name] = model_colors[i % len(model_colors)]
+
+        colors = colors or {}
+        all_colors = {**default_colors, **colors}
+
+        # Определяем диапазон дат
+        start, end = self._get_date_range(start_date, end_date, use_intersection)
+
+        # Фильтруем данные
+        true_filtered, model_filtered = self._filter_data_by_date(start, end)
+
+        if true_filtered.empty:
+            print("⚠️ Нет данных для истинного ряда")
+            return None, None
+
+        # Вычисляем приросты для истинного ряда
+        true_values = true_filtered[true_col].values
+        true_diff = np.diff(true_values)
+
+        # Определяем порядок отображения
+        if model_order is None:
+            model_names = list(model_filtered.keys())
+        else:
+            model_names = [name for name in model_order if name in model_filtered]
+
+        # Убираем пустые модели
+        model_names = [name for name in model_names if not model_filtered[name].empty]
+
+        if not model_names:
+            print("⚠️ Нет моделей с данными")
+            return None, None
+
+        # Определяем количество subplots
+        n_models = len(model_names)
+        nrows = (n_models + ncols - 1) // ncols
+
+        # Создаем фигуру с subplots
+        fig, axes = plt.subplots(nrows, ncols, figsize=figsize)
+
+        # Если只有一个 subplot, преобразуем в список
+        if n_models == 1:
+            axes = np.array([axes])
+        else:
+            axes = axes.flatten()
+
+        # Для каждой модели строим отдельный subplot
+        for idx, name in enumerate(model_names):
+            ax = axes[idx]
+            df = model_filtered[name]
+
+            # Вычисляем приросты для модели
+            model_values = df[model_col].values
+            model_diff = np.diff(model_values)
+
+            # Сопоставляем по порядковому номеру
+            min_len = min(len(true_diff), len(model_diff))
+            true_diff_aligned = true_diff[:min_len]
+            model_diff_aligned = model_diff[:min_len]
+
+            print(true_diff_aligned)
+            print(model_diff_aligned)
+
+            # Строим scatter plot
+            ax.scatter(model_diff_aligned, true_diff_aligned,
+                       color=all_colors.get(name, '#E74C3C'),
+                       s=markersize,
+                       alpha=alpha,
+                       label='Data points')
+
+            # Вычисляем статистику
+            if len(model_diff_aligned) > 2:
+                # Проверяем, есть ли вариация в данных
+                if np.std(model_diff_aligned) > 1e-10 and np.std(true_diff_aligned) > 1e-10:
+                    # Корреляция Пирсона
+                    correlation, p_value = stats.pearsonr(model_diff_aligned, true_diff_aligned)
+                    r_squared = correlation ** 2
+
+                    # Коэффициент зависимости
+                    slope, intercept, r_value, p_value_reg, std_err = stats.linregress(model_diff_aligned,
+                                                                                       true_diff_aligned)
+
+                    # Определяем звездочки для p-value
+                    if p_value < 0.001:
+                        stars = '***'
+                    elif p_value < 0.01:
+                        stars = '**'
+                    elif p_value < 0.05:
+                        stars = '*'
+                    else:
+                        stars = 'ns'
+
+                    # Добавляем линию регрессии
+                    x_line = np.array([model_diff_aligned.min(), model_diff_aligned.max()])
+                    y_line = slope * x_line + intercept
+                    ax.plot(x_line, y_line,
+                            color=all_colors.get(name, '#E74C3C'),
+                            linestyle='--',
+                            alpha=0.7,
+                            linewidth=2,
+                            label=f'Regression (slope={slope:.3f})')
+
+                    # Добавляем текст с статистикой
+                    stats_text = (f'r = {correlation:.4f}{stars}\n'
+                                  f'R² = {r_squared:.4f}\n'
+                                  f'p = {p_value:.4e}\n'
+                                  f'n = {len(model_diff_aligned)}')
+
+                    ax.text(0.95, 0.95, stats_text,
+                            transform=ax.transAxes,
+                            fontsize=10,
+                            verticalalignment='top',
+                            horizontalalignment='right',
+                            bbox=dict(boxstyle='round,pad=0.5',
+                                      facecolor='white',
+                                      edgecolor=all_colors.get(name, '#E74C3C'),
+                                      alpha=0.9))
+                else:
+                    ax.text(0.5, 0.5, 'No variation in differences',
+                            transform=ax.transAxes,
+                            fontsize=12,
+                            ha='center', va='center',
+                            bbox=dict(boxstyle='round,pad=0.5',
+                                      facecolor='yellow',
+                                      alpha=0.5))
+            else:
+                ax.text(0.5, 0.5, f'Not enough points (n={len(model_diff_aligned)})',
+                        transform=ax.transAxes,
+                        fontsize=12,
+                        ha='center', va='center',
+                        bbox=dict(boxstyle='round,pad=0.5',
+                                  facecolor='yellow',
+                                  alpha=0.5))
+
+            # Линия y=x для справки
+            min_val = min(ax.get_xlim()[0], ax.get_ylim()[0])
+            max_val = max(ax.get_xlim()[1], ax.get_ylim()[1])
+            ax.plot([min_val, max_val], [min_val, max_val],
+                    'k--', alpha=0.2, linewidth=1, label='y = x')
+
+            # Настройки subplot
+            ax.set_title(f'{name} (differences)', fontsize=12, fontweight='bold')
+            ax.set_xlabel('Model Differences', fontsize=10)
+            ax.set_ylabel('True Differences', fontsize=10)
+            ax.legend(loc='lower right', fontsize=8)
+
+            if grid:
+                ax.grid(True, alpha=0.3)
+
+            ax.axis('equal')
+
+        # Скрываем неиспользуемые subplots
+        for idx in range(len(model_names), len(axes)):
+            axes[idx].set_visible(False)
+
+        # Общий заголовок
+        fig.suptitle(title, fontsize=14, fontweight='bold', y=0.98)
+
+        plt.tight_layout()
+
+        if save_path:
+            plt.savefig(save_path, dpi=300, bbox_inches='tight')
+            print(f"✅ График корреляции приростов сохранен: {save_path}")
+
+        if show:
+            plt.show()
+        else:
+            plt.close()
+
+        return fig, axes

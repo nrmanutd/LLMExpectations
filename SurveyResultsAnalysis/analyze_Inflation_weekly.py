@@ -8,7 +8,7 @@ rootFolder = Path('../data/SurveyResults/')
 modellingResults = [
         ('mlcluster_qwen36_async_all_time', 'survey modelling (=true end of survey+1d), all data'),
         ('mlcluster_qwen36_async_all_time_week_before', 'survey modelling (=true end of survey-6d), all data'),
-        ('mlcluster_qwen36_async_nousdrub_time_week_before', 'survey modelling (=true end of survey-6days), no usdrub')
+        ('mlcluster_qwen36_async_nousdrub_time_week_before', 'survey modelling (=true end of survey-6d), no usdrub')
 ]
 
 models = {}
@@ -45,3 +45,15 @@ viz.plot_timeseries(
         title='Comparison of Expected 12m Inflation: True vs Models',
         figsize=(16, 8)
     )
+
+viz.plot_correlation(
+        variable='expected',
+        save_path=Path('correlation_expected.png'),
+        use_intersection=True,
+)
+
+viz.plot_correlation_diff(
+        variable='expected',
+        save_path=Path('correlation_expected.png'),
+        use_intersection=True,
+)
