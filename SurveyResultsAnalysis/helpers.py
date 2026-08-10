@@ -119,17 +119,33 @@ def load_pdtable_with_repeats(folder: str):
 
     return pd.DataFrame(rows)
 
-def load_from_official_statistics(fileName):
+
+def load_from_official_statistics(fileName, offsetDays=0):
+    """
+    Загружает данные из файла официальной статистики
+
+    Args:
+        fileName (str): путь к файлу Excel
+        offsetDays (int): количество дней для сдвига дат (по умолчанию 0)
+
+    Returns:
+        pd.DataFrame: DataFrame с датами в индексе, сдвинутыми на offsetDays
+    """
     directEstimations = pd.read_excel(fileName, index_col=0)
     directEstimations.rename(
         index={
-            'наблюдаемая инфляция (в %)': 'observable_inflation',  # замените на точное название из файла
-            'ожидаемая инфляция (в %)': 'expected_inflation'  # замените на точное название из файла
+            'наблюдаемая инфляция (в %)': 'observable_inflation',
+            'ожидаемая инфляция (в %)': 'expected_inflation'
         },
         inplace=True
     )
     directEstimations = directEstimations.T
     directEstimations.index = pd.to_datetime(directEstimations.index)
+
+    # Добавляем сдвиг в днях, если указан
+    if offsetDays != 0:
+        directEstimations.index = directEstimations.index + pd.Timedelta(days=offsetDays)
+        print(f"📅 Даты сдвинуты на {offsetDays} дней")
 
     return directEstimations
 

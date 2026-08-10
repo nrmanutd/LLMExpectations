@@ -357,7 +357,7 @@ class TimeSeriesVisualizer:
                     linewidth=linewidth,
                     markersize=markersize,
                     alpha=alpha,
-                    label='True Series')
+                    label='True survey (=end of survey day + 1 day)')
 
         # Рисуем модельные ряды
         for name in model_names:
