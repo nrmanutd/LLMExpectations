@@ -6,7 +6,9 @@ from SurveyResultsAnalysis.helpers import load_from_official_statistics, load_pd
 rootFolder = Path('../data/SurveyResults/')
 
 modellingResults = [
-        ('mlcluster_qwen36_async_all_time', 'survey date+1day, all data')
+        ('mlcluster_qwen36_async_all_time', 'survey modelling (=true end of survey+1d), all data'),
+        ('mlcluster_qwen36_async_all_time_week_before', 'survey modelling (=true end of survey-6d), all data'),
+        ('mlcluster_qwen36_async_nousdrub_time_week_before', 'survey modelling (=true end of survey-6days), no usdrub')
 ]
 
 models = {}
@@ -18,7 +20,7 @@ for folder, name in modellingResults:
         models[name] = s
 
 directEstimationsFileName = '../data/Direct_Inflation_Estimations_12m.xlsx'
-directEstimations = load_from_official_statistics(directEstimationsFileName)
+directEstimations = load_from_official_statistics(directEstimationsFileName, 1)
 
 # Создаем визуализатор
 viz = TimeSeriesVisualizer(
@@ -37,9 +39,9 @@ colors = {
 viz.plot_timeseries(
         variable='expected',
         colors=colors,
-        show_date_labels=True,
+        #show_date_labels=True,
         date_labels_for='all',
         use_intersection=True,
-        title='Comparison of Observable Inflation: True vs Models',
+        title='Comparison of Expected 12m Inflation: True vs Models',
         figsize=(16, 8)
     )
