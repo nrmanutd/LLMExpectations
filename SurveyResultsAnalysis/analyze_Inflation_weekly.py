@@ -8,7 +8,8 @@ rootFolder = Path('../data/SurveyResults/')
 modellingResults = [
         ('mlcluster_qwen36_async_all_time', 'survey modelling (=true end of survey+1d), all data'),
         ('mlcluster_qwen36_async_all_time_week_before', 'survey modelling (=true end of survey-6d), all data'),
-        ('mlcluster_qwen36_async_nousdrub_time_week_before', 'survey modelling (=true end of survey-6d), no usdrub')
+        ('mlcluster_qwen36_async_nousdrub_time_week_before', 'survey modelling (=true end of survey-6d), no usdrub'),
+        ('mlcluster_qwen36_async_nousdrub_time', 'survey modelling (=true end of survey+1d), no usdrub')
 ]
 
 models = {}
@@ -43,17 +44,23 @@ viz.plot_timeseries(
         date_labels_for='all',
         use_intersection=True,
         title='Comparison of Expected 12m Inflation: True vs Models',
-        figsize=(16, 8)
+        figsize=(16, 8),
+        save_path=Path('timeseries.png')
     )
 
-viz.plot_correlation(
-        variable='expected',
-        save_path=Path('correlation_expected.png'),
-        use_intersection=True,
-)
+cutDates = ['2009-01-01', '2013-05-01', '2024-07-01']
 
-viz.plot_correlation_diff(
-        variable='expected',
-        save_path=Path('correlation_expected.png'),
-        use_intersection=True,
-)
+for d in cutDates:
+        viz.plot_correlation(
+                variable='expected',
+                cut_date=d,
+                save_path=Path(f'{d}_correlation_expected.png'),
+                use_intersection=True,
+        )
+
+        viz.plot_correlation_diff(
+                variable='expected',
+                cut_date=d,
+                save_path=Path(f'{d}_correlation_diff_expected.png'),
+                use_intersection=True,
+        )

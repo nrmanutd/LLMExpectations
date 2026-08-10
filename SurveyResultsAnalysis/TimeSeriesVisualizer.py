@@ -637,7 +637,8 @@ class TimeSeriesVisualizer:
                          end_date: Optional[Union[str, datetime]] = None,
                          use_intersection: bool = False,
                          model_order: Optional[List[str]] = None,
-                         ncols: int = 2):
+                         ncols: int = 2,
+                         cut_date: Optional[Union[str, datetime]] = None):
         """
         Строит графики корреляции между истинным рядом и каждым модельным рядом.
         Каждая модель отображается на отдельном subplot.
@@ -645,7 +646,10 @@ class TimeSeriesVisualizer:
 
         Args:
             ncols: количество колонок в сетке subplots
+            cut_date: дата, до которой отсекаются точки (удаляются все точки до этой даты)
         """
+        from scipy import stats
+
         # Определяем колонки
         if variable == 'observable':
             true_col = 'observable_inflation'
@@ -655,9 +659,6 @@ class TimeSeriesVisualizer:
             true_col = 'expected_inflation'
             model_col = 'exp_mean'
             default_title = f'Correlation: Expected Inflation - Models vs True'
-
-        if title is None:
-            title = default_title
 
         # Настройки цветов
         default_colors = {}
@@ -677,6 +678,37 @@ class TimeSeriesVisualizer:
         if true_filtered.empty:
             print("⚠️ Нет данных для истинного ряда")
             return None, None
+
+        # Применяем cut_date для отсечения первых точек
+        cut_idx = 0
+        if cut_date is not None:
+            cut_date = pd.to_datetime(cut_date)
+
+            # Находим индекс первой даты после cut_date
+            true_dates = true_filtered.index
+            cut_idx = np.searchsorted(true_dates, cut_date, side='left')
+
+            # Если есть даты после cut_date
+            if cut_idx < len(true_dates):
+                # Обрезаем true_filtered
+                true_filtered = true_filtered.iloc[cut_idx:]
+
+                # Обрезаем все модели на то же количество точек с начала
+                for name in model_filtered:
+                    if not model_filtered[name].empty:
+                        model_filtered[name] = model_filtered[name].iloc[cut_idx:]
+
+                print(f"✂️ Отсечено {cut_idx} точек до даты {cut_date}")
+            else:
+                print(f"⚠️ Нет точек после даты {cut_date}")
+                return None, None
+
+        # Формируем заголовок с информацией о cut_date
+        if title is None:
+            if cut_date is not None:
+                title = f'{default_title} (cut-off: {cut_date.strftime("%Y-%m-%d")}, removed {cut_idx} points)'
+            else:
+                title = default_title
 
         # Определяем порядок отображения
         if model_order is None:
@@ -811,7 +843,7 @@ class TimeSeriesVisualizer:
         for idx in range(len(model_names), len(axes)):
             axes[idx].set_visible(False)
 
-        # Общий заголовок
+        # Общий заголовок с информацией о cut_date
         fig.suptitle(title, fontsize=14, fontweight='bold', y=0.98)
 
         plt.tight_layout()
@@ -841,7 +873,8 @@ class TimeSeriesVisualizer:
                               end_date: Optional[Union[str, datetime]] = None,
                               use_intersection: bool = False,
                               model_order: Optional[List[str]] = None,
-                              ncols: int = 2):
+                              ncols: int = 2,
+                              cut_date: Optional[Union[str, datetime]] = None):
         """
         Строит графики корреляции между приростами истинного ряда и каждого модельного ряда.
         Каждая модель отображается на отдельном subplot.
@@ -849,6 +882,7 @@ class TimeSeriesVisualizer:
 
         Args:
             ncols: количество колонок в сетке subplots
+            cut_date: дата, до которой отсекаются точки (удаляются все точки до этой даты)
         """
         from scipy import stats
 
@@ -861,9 +895,6 @@ class TimeSeriesVisualizer:
             true_col = 'expected_inflation'
             model_col = 'exp_mean'
             default_title = f'Correlation of Differences: Expected Inflation - Models vs True'
-
-        if title is None:
-            title = default_title
 
         # Настройки цветов
         default_colors = {}
@@ -883,6 +914,37 @@ class TimeSeriesVisualizer:
         if true_filtered.empty:
             print("⚠️ Нет данных для истинного ряда")
             return None, None
+
+        # Применяем cut_date для отсечения первых точек
+        cut_idx = 0
+        if cut_date is not None:
+            cut_date = pd.to_datetime(cut_date)
+
+            # Находим индекс первой даты после cut_date
+            true_dates = true_filtered.index
+            cut_idx = np.searchsorted(true_dates, cut_date, side='left')
+
+            # Если есть даты после cut_date
+            if cut_idx < len(true_dates):
+                # Обрезаем true_filtered
+                true_filtered = true_filtered.iloc[cut_idx:]
+
+                # Обрезаем все модели на то же количество точек с начала
+                for name in model_filtered:
+                    if not model_filtered[name].empty:
+                        model_filtered[name] = model_filtered[name].iloc[cut_idx:]
+
+                print(f"✂️ Отсечено {cut_idx} точек до даты {cut_date}")
+            else:
+                print(f"⚠️ Нет точек после даты {cut_date}")
+                return None, None
+
+        # Формируем заголовок с информацией о cut_date
+        if title is None:
+            if cut_date is not None:
+                title = f'{default_title} (cut-off: {cut_date.strftime("%Y-%m-%d")}, removed {cut_idx} points)'
+            else:
+                title = default_title
 
         # Вычисляем приросты для истинного ряда
         true_values = true_filtered[true_col].values
@@ -927,9 +989,6 @@ class TimeSeriesVisualizer:
             min_len = min(len(true_diff), len(model_diff))
             true_diff_aligned = true_diff[:min_len]
             model_diff_aligned = model_diff[:min_len]
-
-            print(true_diff_aligned)
-            print(model_diff_aligned)
 
             # Строим scatter plot
             ax.scatter(model_diff_aligned, true_diff_aligned,
@@ -1023,7 +1082,7 @@ class TimeSeriesVisualizer:
         for idx in range(len(model_names), len(axes)):
             axes[idx].set_visible(False)
 
-        # Общий заголовок
+        # Общий заголовок с информацией о cut_date
         fig.suptitle(title, fontsize=14, fontweight='bold', y=0.98)
 
         plt.tight_layout()
