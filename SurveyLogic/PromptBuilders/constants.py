@@ -17,5 +17,27 @@ hasCreditsTag='{{HAS_CREDITS}}'
 
 inflation1M='{{1MInflation}}'
 inflation3M='{{3MInflation}}'
+inflation6M='{{6MInflation}}'
 inflation1Y='{{1YInflation}}'
 localityRegionTag='{{Region}}'
+
+familyTotalMembers='{{HouseholdMembers}}'
+familyTotalMonthExpenses='{{AllHouseholdIncome}}'
+
+individualAndHouseholdRespndent= '{{IndividualAndHouseholdRespondent}}'
+mortgageInformation='{{MortgageInformation}}'
+creditDebt='{{Credits}}'
+householdCars='{{HouseholdCars}}'
+
+regularTag='{{RegularGoods}}'
+durableTag='{{DurableGoods}}'
+servicesTag='{{Services}}'
+
+vacationTag='{{Vacation}}'
+
+commonRegionName='Российская Федерация'
+commonRegionNameAlias='Российская Федерация без учета новых субъектов (с 01.01.2023)'
+allGoodsAndServicesName='Все товары и услуги'
+
+localUsdRubTag='{{LocalUsdRub}}'
+globalUsdRubTag='{{GlobalUsdRub}}'

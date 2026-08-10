@@ -2,31 +2,28 @@ import re
 from datetime import date
 from pathlib import Path
 
-from SurveyLogic.PromptBuilders.StatisticsProviders.BaseInflationProvider import BaseInflationProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseInflationProvider import BaseInflationProvider
 
 
 class ConvertingInflationProvider(BaseInflationProvider):
-    def __init__(self, provider: BaseInflationProvider, regionMapPath: Path, productMapPath: Path):
+    def __init__(self, provider: BaseInflationProvider, regionMapPath: Path):
         self.provider = provider
         self.regionMap = self._getRegionMap(regionMapPath)
-        self.productMap = self._getProductMap(productMapPath)
+
+    def getProductsCommonWeeklyInflationLastNWeeks(self, d: date, products: list[str], weeksOffset: int):
+        return self.provider.getProductsCommonWeeklyInflationLastNWeeks(d, products, weeksOffset)
 
     def getProductsRegionalYearInflationLastNMonth(self, d: date, region: str, products: list[str],
                                                    lastMonth: int = 1) -> list[float]:
-        p = []
-        for pp in products:
-            p.append(self.productMap[pp])
+
 
         r = self.regionMap[region]
-        return self.provider.getProductsRegionalYearInflationLastNMonth(d, r, p, lastMonth)
+        return self.provider.getProductsRegionalYearInflationLastNMonth(d, r, products, lastMonth)
 
     def getProductsCommonYearInflationLastNMonth(self, d: date, products: list[str], lastMonth: int = 1) -> list[
         float]:
-        p = []
-        for pp in products:
-            p.append(self.productMap[pp])
 
-        return self.provider.getProductsCommonYearInflationLastNMonth(d, p, lastMonth)
+        return self.provider.getProductsCommonYearInflationLastNMonth(d, products, lastMonth)
 
     def getAverageRegionalYearInflationLastNMonth(self, d: date, region: str, lastMonth: int = 1) -> float:
         r = self.regionMap[region]
@@ -48,10 +45,3 @@ class ConvertingInflationProvider(BaseInflationProvider):
                 mm[number] = infl
 
         return mm
-
-    def _getProductMap(self, path: Path) -> dict:
-        return dict()
-
-
-
-

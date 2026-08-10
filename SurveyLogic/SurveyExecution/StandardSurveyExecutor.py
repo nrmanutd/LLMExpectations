@@ -3,6 +3,7 @@ from datetime import date
 from SurveyLogic.PromptBuilders.Profiles.ProfileData import ProfileData
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.SurveyExecution.BaseSurveyExecutor import BaseSurveyExecutor
+from SurveyLogic.Surveyers.AsyncSurveyer import AsyncSurveyer
 from SurveyLogic.Surveyers.BaseSurveyer import BaseSurveyer
 
 
@@ -12,7 +13,7 @@ class StandardSurveyExecutor(BaseSurveyExecutor):
         self.surveyer = surveyer
         self.promptBuilder = promptBuilder
 
-    def executeSurvey(self, surveyDate: date, profile: ProfileData):
+    async def executeSurvey(self, surveyDate: date, profile: ProfileData):
         systemPrompt = self.systemPromptBuilder.buildPrompt(surveyDate, profile)
         prompt = self.promptBuilder.buildPrompt(surveyDate, profile)
 

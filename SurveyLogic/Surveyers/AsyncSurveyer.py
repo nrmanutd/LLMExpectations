@@ -1,36 +1,36 @@
+import asyncio
 import json
 import time
 from dataclasses import fields
 from datetime import date
 
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 from Logging.BaseLogger import BaseLogger
 from SurveyLogic.SurveyResults.InflationSurveyRespond import InflationSurveyRespond
 from SurveyLogic.Surveyers.BaseSurveyer import BaseSurveyer
 
 
-class MLClusterSurveyer(BaseSurveyer):
-    def __init__(self, modelToUse: str, key: str, logger: BaseLogger, maxAttempts: int = 30, delaySeconds: int = 10):
+class AsyncSurveyer(BaseSurveyer):
+    def __init__(self, modelToUse: str, key: str, logger: BaseLogger, baseUrl: str, maxAttempts: int = 30, delaySeconds: int = 10):
+        self.baseUrl = baseUrl
         self.delaySeconds = delaySeconds
         self.maxAttempts = maxAttempts
         self.logger = logger
         self.modelToUse = modelToUse
         self.key=key
-        self.baseUrl="https://litellm.mlcluster.ru"  # Or https://openai.bothub.chat/v1
 
-        self.client=OpenAI(
+        self.client=AsyncOpenAI(
             api_key=self.key,  # Replace with your actual BotHub key
             base_url=self.baseUrl
         )
 
-    def askSurvey(self, systemPrompt: str, prompt: str, respondentId: str, surveyDate: date):
+        self.logger.logDebug(f'Initialized OpenAI async surveyer on url {baseUrl}')
+
+    async def askSurvey(self, systemPrompt: str, prompt: str, respondentId: str, surveyDate: date):
         for iAttempt in range(self.maxAttempts):
             try:
-                #self.logger.logDebug(systemPrompt)
-                #self.logger.logDebug(prompt)
-
-                response = self.client.chat.completions.create(
+                response = await self.client.chat.completions.create(
                     model=self.modelToUse,  # Specify any model available on your BotHub account
                     messages=[
                         {"role": "system", "content": systemPrompt},
@@ -54,4 +54,4 @@ class MLClusterSurveyer(BaseSurveyer):
                 print(f"An error occurred: {e}")
 
                 self.logger.logDebug(f"Ожидание {self.delaySeconds:.2f} секунд перед следующей попыткой")
-                time.sleep(self.delaySeconds)
+                await asyncio.sleep(self.delaySeconds)

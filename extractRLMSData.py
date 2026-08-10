@@ -2,33 +2,40 @@ import re
 import shutil
 from pathlib import Path
 
+from Configuration import configuration
 from RLMSLogic.SimpleRLMSProfileConverter import SimpleRLMSProfileConverter
 from RLMSLogic.RLMSProfileExtractor import RLMSProfileExtractor
 
 targetDirectory = 'data/Target profiles'
 dtaSources = Path('data/RLMS waves')
-files = list(dtaSources.rglob("*.dta"))
+
+files = list(dtaSources.rglob("*.sav"))
+files.extend(list(dtaSources.rglob("*.dta")))
+
 adultAge = 18
 
 start_wave = 33
-end_wave = 20          # например, до 20-й волны
+end_wave = 18          # например, до 20-й волны
 start_year = 2024
 
 wavesToYearMap = {wave: start_year - (start_wave - wave) for wave in range(start_wave, end_wave - 1, -1)}
 converter = SimpleRLMSProfileConverter()
-extractor = RLMSProfileExtractor(converter)
+extractor = RLMSProfileExtractor(converter, configuration.regularGoods, configuration.durableGoods, configuration.services)
+sampleSize = 1000
 
 folder = Path(targetDirectory)
 if folder.exists():
     shutil.rmtree(folder)  # удаляем папку целиком
 
-for f in files:
-    match = re.search(r'r(\d+)i', f.name)
+for iFile in files:
+    match = re.search(r'r(\d+)i', iFile.name)
     if not match:
         continue
-    waveNumber = int(match.group(1))
 
-    print(f'Parsing file: {f} for wave #{waveNumber}')
+    waveNumber = int(match.group(1))
+    hhFile = next((f for f in files if f'r{waveNumber}h' in f.name), None)
+
+    print(f'Parsing file: {iFile} for wave #{waveNumber}')
 
     waveYear = wavesToYearMap[waveNumber]
     waveDirectory = dtaSources / f'{waveYear}'
@@ -37,8 +44,8 @@ for f in files:
     targetProfileDirectory = Path(targetDirectory) / f'{waveYear}'
     targetProfileDirectory.mkdir(parents=True, exist_ok=True)
 
-    extractor.extractAndSaveRLMSProfiles(f, waveDirectory)
-    extractor.generateAndSaveProfilesFromRLMS(waveDirectory, targetProfileDirectory, 100, adultAge)
+    extractor.extractAndSaveRLMSProfiles(iFile, hhFile, waveDirectory, 2*sampleSize)
+    extractor.generateAndSaveProfilesFromRLMS(waveDirectory, targetProfileDirectory, sampleSize, adultAge)
 
     archive_base = dtaSources / f'{waveYear}'
     archivePath = dtaSources/f'{waveYear}.zip'

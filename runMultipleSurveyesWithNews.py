@@ -1,15 +1,12 @@
 from pathlib import Path
-import pandas as pd
-
-from pathlib import Path
 
 import pandas as pd
 
+from Configuration import configuration
 from Logging.SimpleLogger import SimpleLogger
 from SurveyLogic.PromptBuilders.profileBuildersHelpers import createNewsPromptBuilder
 from SurveyLogic.SurveyResultsSerialization.SurveySerializer import SurveySerializer
-from SurveyLogic.Surveyers.BothubSurveyer import BothubSurveyer
-from SurveyLogic.Surveyers.MLClusterSurveyer import MLClusterSurveyer
+from SurveyLogic.Surveyers.StandardSurveyer import StandardSurveyer
 from SurveyLogic.Surveyers.StubSurveyer import StubSurveyer
 from SurveyLogic.surveyHelpers import createSurveyRunner
 
@@ -22,8 +19,7 @@ surveyDates = pd.date_range(start='2016-04-01', end='2026-04-01', freq='QS', inc
 #promptbuilder logic
 systemPromptBuilder, promptBuilder = createNewsPromptBuilder()
 
-#surveyer = BothubSurveyer(modelToUse='deepseek-v4-pro', key=bothub_key, logger=logger)
-#surveyer = MLClusterSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=mlcluster_key, logger=logger)
+#surveyer = StandardSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=configuration.mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
 surveyer = StubSurveyer()
 
 surveySerializer = SurveySerializer(resultsFolder)

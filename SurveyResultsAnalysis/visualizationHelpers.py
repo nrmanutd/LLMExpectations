@@ -164,8 +164,8 @@ def plot_comparison(comparison_df, obs_stats, exp_stats, save_path=None):
     # Настройка графика
     ax1.set_title('Observable Inflation: Monthly vs Quarterly',
                   fontsize=14, fontweight='bold')
-    ax1.set_xlabel('Quarterly Survey Data (средняя)', fontsize=12)
-    ax1.set_ylabel('Monthly Data (наблюдаемая инфляция)', fontsize=12)
+    ax1.set_xlabel('Модель (среднее по опросу)', fontsize=12)
+    ax1.set_ylabel('Инфом факт (наблюдаемая инфляция)', fontsize=12)
     ax1.legend(loc='best', fontsize=10)
     ax1.grid(True, alpha=0.3)
 
@@ -215,8 +215,8 @@ p = {obs_stats['p_value']:.4f}"""
     # Настройка графика
     ax2.set_title('Expected Inflation: Monthly vs Quarterly',
                   fontsize=14, fontweight='bold')
-    ax2.set_xlabel('Quarterly Survey Data (средняя)', fontsize=12)
-    ax2.set_ylabel('Monthly Data (ожидаемая инфляция)', fontsize=12)
+    ax2.set_xlabel('Модель (средняя по опросу)', fontsize=12)
+    ax2.set_ylabel('Инфом факт (ожидаемая инфляция)', fontsize=12)
     ax2.legend(loc='best', fontsize=10)
     ax2.grid(True, alpha=0.3)
 
@@ -253,11 +253,11 @@ def plot_time_series(comparison_df, save_path=None):
     # Observable Inflation
     ax1 = axes[0]
     ax1.plot(comparison_df['date'], comparison_df['monthly_observable'],
-             'o-', label='Monthly (фактические)', color='#2E86AB', markersize=8, linewidth=2)
+             'o-', label='Инфом (фактические)', color='#2E86AB', markersize=8, linewidth=2)
 
     # График для quarterly с доверительным интервалом
     ax1.plot(comparison_df['date'], comparison_df['quarterly_observable_mean'],
-             's-', label='Quarterly (среднее по опросу)', color='#E74C3C', markersize=8, linewidth=2)
+             's-', label='Модель (среднее по опросу)', color='#E74C3C', markersize=8, linewidth=2)
 
     # Добавляем доверительный интервал (± std) для observable
     if 'quarterly_observable_std' in comparison_df.columns:
@@ -266,7 +266,7 @@ def plot_time_series(comparison_df, save_path=None):
                          comparison_df['quarterly_observable_mean'] + comparison_df['quarterly_observable_std'],
                          color='#E74C3C', alpha=0.2, label='±1 std')
 
-    ax1.set_title('Observable Inflation: Сравнение рядов', fontsize=14, fontweight='bold')
+    ax1.set_title('Наблюдаемая инфляция: сравнение рядов', fontsize=14, fontweight='bold')
     ax1.set_xlabel('Дата', fontsize=12)
     ax1.set_ylabel('Инфляция, %', fontsize=12)
     ax1.legend(loc='best', fontsize=10)
@@ -275,11 +275,11 @@ def plot_time_series(comparison_df, save_path=None):
     # Expected Inflation
     ax2 = axes[1]
     ax2.plot(comparison_df['date'], comparison_df['monthly_expected'],
-             'o-', label='Monthly (фактические)', color='#A23B72', markersize=8, linewidth=2)
+             'o-', label='Инфом (фактические)', color='#A23B72', markersize=8, linewidth=2)
 
     # График для quarterly с доверительным интервалом
     ax2.plot(comparison_df['date'], comparison_df['quarterly_expected_mean'],
-             's-', label='Quarterly (среднее по опросу)', color='#F39C12', markersize=8, linewidth=2)
+             's-', label='Модель (среднее по опросу)', color='#F39C12', markersize=8, linewidth=2)
 
     # Добавляем доверительный интервал (± std) для expected
     if 'quarterly_expected_std' in comparison_df.columns:
@@ -288,7 +288,7 @@ def plot_time_series(comparison_df, save_path=None):
                          comparison_df['quarterly_expected_mean'] + comparison_df['quarterly_expected_std'],
                          color='#F39C12', alpha=0.2, label='±1 std')
 
-    ax2.set_title('Expected Inflation: Сравнение рядов', fontsize=14, fontweight='bold')
+    ax2.set_title('Ожидаемая инфляция: сравнение рядов', fontsize=14, fontweight='bold')
     ax2.set_xlabel('Дата', fontsize=12)
     ax2.set_ylabel('Инфляция, %', fontsize=12)
     ax2.legend(loc='best', fontsize=10)
@@ -301,6 +301,145 @@ def plot_time_series(comparison_df, save_path=None):
         print(f"✅ График сохранен как: {save_path}")
 
     plt.show()
+
+
+def plot_log_returns(comparison_df, save_path=None):
+    """
+    Визуализирует логарифмы приростов (log-returns) для обоих показателей с доверительными интервалами (± std)
+
+    Parameters:
+    -----------
+    comparison_df : pandas.DataFrame
+        DataFrame с колонками: date, monthly_observable, quarterly_observable_mean,
+        quarterly_observable_std, monthly_expected, quarterly_expected_mean, quarterly_expected_std
+    save_path : str, optional
+        Путь для сохранения графика
+    """
+    import numpy as np
+    import pandas as pd
+    import matplotlib.pyplot as plt
+
+    fig, axes = plt.subplots(2, 1, figsize=(14, 10))
+
+    # ---- Observable Inflation ----
+    ax1 = axes[0]
+
+    # Вычисляем логарифмические приросты для observable
+    monthly_obs = comparison_df['monthly_observable'].values
+    quarterly_obs = comparison_df['quarterly_observable_mean'].values
+    quarterly_std = comparison_df[
+        'quarterly_observable_std'].values if 'quarterly_observable_std' in comparison_df.columns else None
+
+    # Преобразуем в Series для diff()
+    monthly_obs_series = pd.Series(monthly_obs)
+    quarterly_obs_series = pd.Series(quarterly_obs)
+
+    # Вычисляем log-returns (логарифмы приростов)
+    monthly_log_returns = np.log(monthly_obs_series).diff().dropna()
+    quarterly_log_returns = np.log(quarterly_obs_series).diff().dropna()
+
+    # Даты для log-returns (пропускаем первую дату, т.к. diff удаляет первое значение)
+    dates_log = comparison_df['date'].iloc[1:]
+
+    # Выравниваем длины
+    min_len = min(len(dates_log), len(monthly_log_returns), len(quarterly_log_returns))
+    dates_log = dates_log.iloc[:min_len]
+    monthly_log_returns = monthly_log_returns.iloc[:min_len]
+    quarterly_log_returns = quarterly_log_returns.iloc[:min_len]
+
+    # Рисуем log-returns
+    ax1.plot(dates_log, monthly_log_returns,
+             'o-', label='Monthly (фактические)', color='#2E86AB', markersize=8, linewidth=2)
+
+    ax1.plot(dates_log, quarterly_log_returns,
+             's-', label='Quarterly (среднее по опросу)', color='#E74C3C', markersize=8, linewidth=2)
+
+    # Добавляем доверительный интервал для quarterly log-returns (если есть std)
+    if quarterly_std is not None:
+        # Для доверительного интервала log-returns используем приближение:
+        # std(log(x)) ≈ std(x)/x для малых изменений
+        # Но лучше использовать дельта-метод: var(log(x)) ≈ var(x)/x^2
+        quarterly_mean = comparison_df['quarterly_observable_mean'].values
+        quarterly_std_log = quarterly_std / quarterly_mean  # приблизительная std для log
+
+        # Сдвигаем std, чтобы совпадало с log-returns (первое значение пропускаем)
+        quarterly_std_log_shifted = quarterly_std_log[1:][:min_len]
+        quarterly_log_returns_vals = quarterly_log_returns.values
+
+        # Доверительный интервал для log-returns
+        ax1.fill_between(dates_log,
+                         quarterly_log_returns_vals - quarterly_std_log_shifted,
+                         quarterly_log_returns_vals + quarterly_std_log_shifted,
+                         color='#E74C3C', alpha=0.2, label='±1 std (log)')
+
+    ax1.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
+    ax1.set_title('Observable Inflation: Логарифмы приростов (log-returns)',
+                  fontsize=14, fontweight='bold')
+    ax1.set_xlabel('Дата', fontsize=12)
+    ax1.set_ylabel('log(инфляция(t) / инфляция(t-1))', fontsize=12)
+    ax1.legend(loc='best', fontsize=10)
+    ax1.grid(True, alpha=0.3)
+
+    # ---- Expected Inflation ----
+    ax2 = axes[1]
+
+    # Вычисляем логарифмические приросты для expected
+    monthly_exp = comparison_df['monthly_expected'].values
+    quarterly_exp = comparison_df['quarterly_expected_mean'].values
+    quarterly_exp_std = comparison_df[
+        'quarterly_expected_std'].values if 'quarterly_expected_std' in comparison_df.columns else None
+
+    # Преобразуем в Series для diff()
+    monthly_exp_series = pd.Series(monthly_exp)
+    quarterly_exp_series = pd.Series(quarterly_exp)
+
+    # Вычисляем log-returns
+    monthly_exp_log_returns = np.log(monthly_exp_series).diff().dropna()
+    quarterly_exp_log_returns = np.log(quarterly_exp_series).diff().dropna()
+
+    # Выравниваем длины
+    min_len_exp = min(len(dates_log), len(monthly_exp_log_returns), len(quarterly_exp_log_returns))
+    dates_log_exp = dates_log.iloc[:min_len_exp]
+    monthly_exp_log_returns = monthly_exp_log_returns.iloc[:min_len_exp]
+    quarterly_exp_log_returns = quarterly_exp_log_returns.iloc[:min_len_exp]
+
+    # Рисуем log-returns
+    ax2.plot(dates_log_exp, monthly_exp_log_returns,
+             'o-', label='Monthly (фактические)', color='#A23B72', markersize=8, linewidth=2)
+
+    ax2.plot(dates_log_exp, quarterly_exp_log_returns,
+             's-', label='Quarterly (среднее по опросу)', color='#F39C12', markersize=8, linewidth=2)
+
+    # Добавляем доверительный интервал для quarterly exp log-returns
+    if quarterly_exp_std is not None:
+        quarterly_exp_mean = comparison_df['quarterly_expected_mean'].values
+        quarterly_exp_std_log = quarterly_exp_std / quarterly_exp_mean
+
+        quarterly_exp_std_log_shifted = quarterly_exp_std_log[1:][:min_len_exp]
+        quarterly_exp_log_returns_vals = quarterly_exp_log_returns.values
+
+        ax2.fill_between(dates_log_exp,
+                         quarterly_exp_log_returns_vals - quarterly_exp_std_log_shifted,
+                         quarterly_exp_log_returns_vals + quarterly_exp_std_log_shifted,
+                         color='#F39C12', alpha=0.2, label='±1 std (log)')
+
+    ax2.axhline(y=0, color='black', linestyle='--', linewidth=1, alpha=0.5)
+    ax2.set_title('Expected Inflation: Логарифмы приростов (log-returns)',
+                  fontsize=14, fontweight='bold')
+    ax2.set_xlabel('Дата', fontsize=12)
+    ax2.set_ylabel('log(инфляция(t) / инфляция(t-1))', fontsize=12)
+    ax2.legend(loc='best', fontsize=10)
+    ax2.grid(True, alpha=0.3)
+
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"✅ График сохранен как: {save_path}")
+
+    plt.show()
+
+    return fig, axes
 
 
 def detailed_analysis(comparison_df):

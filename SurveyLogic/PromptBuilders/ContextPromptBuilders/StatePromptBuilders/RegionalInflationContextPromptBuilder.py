@@ -3,8 +3,8 @@ from datetime import date
 from SurveyLogic.PromptBuilders import constants
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.PromptBuilders.Profiles.ProfileData import ProfileData
-from SurveyLogic.PromptBuilders.StatisticsProviders.BaseInflationProvider import BaseInflationProvider
-from SurveyLogic.PromptBuilders.commonHelpers import convertToPromptValue
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseInflationProvider import BaseInflationProvider
+from SurveyLogic.PromptBuilders.commonHelpers import showInflation, getDescriptionMonth
 
 
 class RegionalInflationContextPromptBuilder(BasePromptBuilder):
@@ -16,12 +16,13 @@ class RegionalInflationContextPromptBuilder(BasePromptBuilder):
         region = profile.currentLocalityRegionCode
         inflation1m = self.inflationProvider.getAverageRegionalYearInflationLastNMonth(surveyDate, region, 1)
         inflation3m = self.inflationProvider.getAverageRegionalYearInflationLastNMonth(surveyDate, region,3)
+        inflation6m = self.inflationProvider.getAverageRegionalYearInflationLastNMonth(surveyDate, region, 6)
         inflation1Y = self.inflationProvider.getAverageRegionalYearInflationLastNMonth(surveyDate, region, 12)
 
-        prompt = self.prompt.replace(constants.inflation1M, convertToPromptValue(inflation1m))
-        prompt = prompt.replace(constants.inflation3M, convertToPromptValue(inflation3m))
-        prompt = prompt.replace(constants.inflation1Y, convertToPromptValue(inflation1Y))
+        prompt = self.prompt.replace(constants.inflation1M, getDescriptionMonth(inflation1m, 1, True))
+        prompt = prompt.replace(constants.inflation3M, getDescriptionMonth(inflation3m, 3, True))
+        prompt = prompt.replace(constants.inflation6M, getDescriptionMonth(inflation6m, 6, True))
+        prompt = prompt.replace(constants.inflation1Y, getDescriptionMonth(inflation1Y, 12, True))
         prompt = prompt.replace(constants.localityRegionTag, profile.currentLocalityRegion)
 
         return prompt
-

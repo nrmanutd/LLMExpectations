@@ -1,10 +1,14 @@
 import json
 import os
 from datetime import datetime
+from pathlib import Path
+from typing import Optional
 
 import pandas as pd
 
 from SurveyLogic.SurveyResults.InflationSurveyRespond import InflationSurveyRespond
+from experimentsConfiguration import ExperimentsConfiguration
+
 
 def load_from_official_statistics_1m(fileName):
     directEstimations = pd.read_excel(fileName, index_col=0)
@@ -22,11 +26,14 @@ def load_respond_from_json(file_path: str) -> InflationSurveyRespond:
     return InflationSurveyRespond(**data)
 
 def getCategory(answeredCategory: str, type: str):
-    if answeredCategory == 'вырастут очень сильно' or answeredCategory == 'high_growth':
+    if answeredCategory == 'вырастут очень сильно' or answeredCategory == 'high_growth' or answeredCategory == 'вырастут сильно' or answeredCategory=='выросли сильно':
         return 'вырастут очень сильно' if type == 'expected' else 'выросли очень сильно'
 
     if answeredCategory == 'вырастут умеренно' or answeredCategory == 'medium_growth':
         return 'вырастут умеренно' if type == 'expected' else 'выросли умеренно'
+
+    if answeredCategory == 'снизился незначительно' or answeredCategory == 'снизилась незначительно':
+        return 'снизились незначительно'
 
     if answeredCategory == 'вырастут незначительно' or answeredCategory == 'little_growth':
         return 'вырастут незначительно' if type == 'expected' else 'выросли незначительно'
@@ -54,27 +61,29 @@ def getCategory(answeredCategory: str, type: str):
 
     raise ValueError(f'Unknown answer category: {answeredCategory}')
 
-def load_pdtable(folder: str):
+def load_pdtable(folder: Path):
     files = os.listdir(folder)
     files = [f for f in files if os.path.isfile(os.path.join(folder, f))]
+    files = [f for f in files if f.endswith('.json')]
 
+    print(files)
     rows = []
     for file in files:
         respond = load_respond_from_json(f'{folder}/{file}')
 
-        expectedCategory = getCategory(respond.expected_inflation_1m_pct, 'expected')
-        observableCategory = getCategory(respond.observable_inflation_last_1m_pct, 'observable')
+        expectedCategory = getCategory(respond.expected_inflation_1m_category, 'expected')
+        observableCategory = getCategory(respond.observable_inflation_last_1m_category, 'observable')
 
         if expectedCategory is None or observableCategory is None:
             continue
 
-        if respond.expected_inflation_12m_pct is None or respond.observable_inflation_12m_pct is None:
+        if respond.expected_inflation_12m_pct is None or respond.observable_inflation_last_12m_pct is None:
             continue
 
         rows.append({
             'date': datetime.strptime(respond.target_date, "%d.%m.%Y"),
             'expected_12m': float(respond.expected_inflation_12m_pct),
-            'observable_12m': float(respond.observable_inflation_12m_pct),
+            'observable_12m': float(respond.observable_inflation_last_12m_pct),
             'expected_1m': expectedCategory,
             'observable_1m': observableCategory
         })
@@ -90,20 +99,20 @@ def load_pdtable_with_repeats(folder: str):
     for file in files:
         respond = load_respond_from_json(f'{folder}/{file}')
 
-        expectedCategory = getCategory(respond.expected_inflation_1m_pct, 'expected')
-        observableCategory = getCategory(respond.observable_inflation_last_1m_pct, 'observable')
+        expectedCategory = getCategory(respond.expected_inflation_1m_category, 'expected')
+        observableCategory = getCategory(respond.observable_inflation_last_1m_category, 'observable')
 
         if expectedCategory is None or observableCategory is None:
             continue
 
-        if respond.expected_inflation_12m_pct is None or respond.observable_inflation_12m_pct is None:
+        if respond.expected_inflation_12m_pct is None or respond.observable_inflation_last_12m_pct is None:
             continue
 
         for d in dates:
             rows.append({
                 'date': d,
                 'expected_12m': float(respond.expected_inflation_12m_pct),
-                'observable_12m': float(respond.observable_inflation_12m_pct),
+                'observable_12m': float(respond.observable_inflation_last_12m_pct),
                 'expected_1m': expectedCategory,
                 'observable_1m': observableCategory
             })
@@ -124,7 +133,40 @@ def load_from_official_statistics(fileName):
 
     return directEstimations
 
+
 def aggregate_survey(surveys):
+    """
+    Агрегирует данные по датам
+
+    Returns:
+        DataFrame с индексом из дат и колонками 'obs_mean', 'obs_std', 'obs_count',
+        'exp_mean', 'exp_std', 'exp_count'
+    """
+    # Убеждаемся, что date - это datetime
+    surveys['date'] = pd.to_datetime(surveys['date'])
+
+    quarterly_agg_df = surveys.groupby('date').agg({
+        'observable_12m': ['mean', 'std', 'count'],
+        'expected_12m': ['mean', 'std', 'count']
+    })
+
+    # Переименовываем колонки
+    quarterly_agg_df.columns = ['obs_mean', 'obs_std', 'obs_count',
+                                'exp_mean', 'exp_std', 'exp_count']
+
+    # Сбрасываем индекс и снова устанавливаем его как date
+    # ВАЖНО: НЕ используем reset_index(), чтобы date остался индексом
+    # quarterly_agg_df = quarterly_agg_df.reset_index()  # <-- ЭТО НЕ НУЖНО!
+
+    print("\nАгрегированные квартальные данные (первые 5):")
+    print(quarterly_agg_df.head())
+    print(f"\nИндекс: {quarterly_agg_df.index.name}")
+    print(f"Тип индекса: {type(quarterly_agg_df.index)}")
+    print(f"Колонки: {quarterly_agg_df.columns.tolist()}")
+
+    return quarterly_agg_df
+
+def aggregate_survey1(surveys):
     quarterly_agg_df = surveys.groupby('date').agg({
         'observable_12m': ['mean', 'std', 'count'],
         'expected_12m': ['mean', 'std', 'count']
@@ -338,3 +380,124 @@ def compare_distributions_core(monthly, quarterly, categories):
         'is_significant': p_value < 0.05 if not np.isnan(p_value) else False,
         'has_zero_categories': (monthly == 0).any() or (quarterly == 0).any()
     }
+
+
+def generate_title_from_config(
+        config: ExperimentsConfiguration,
+        variable: Optional[str] = None,  # 'observable' или 'expected'
+        include_date_range: bool = False,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
+        language: str = 'ru',  # 'ru' или 'en'
+        use_intersection: bool = False,
+        additional_info: Optional[str] = None,
+        max_length: int = 100
+) -> str:
+    """
+    Генерирует говорящий заголовок для графика на основе конфигурации
+
+    Args:
+        config: объект конфигурации
+        variable: тип переменной ('observable' или 'expected')
+        include_date_range: включать ли диапазон дат в заголовок
+        start_date: начальная дата
+        end_date: конечная дата
+        language: язык заголовка ('ru' или 'en')
+        use_intersection: используется ли пересечение диапазонов
+        additional_info: дополнительная информация для заголовка
+        max_length: максимальная длина заголовка
+
+    Returns:
+        str: сгенерированный заголовок
+    """
+    # Получаем активные фичи
+    active_features = config.get_active_features()
+
+    # Определяем названия на нужном языке
+    if language == 'ru':
+        feature_names = config.get_feature_names_ru()
+        variable_names = {
+            'observable': 'Наблюдаемая инфляция',
+            'expected': 'Ожидаемая инфляция'
+        }
+        intersection_text = ' (пересечение диапазонов)' if use_intersection else ''
+        of_text = 'с использованием'
+        and_text = ' и '
+        period_text = 'Период'
+        features_text = 'Фичи'
+
+        # Базовая конструкция для списка фич
+        if active_features:
+            if len(active_features) == 1:
+                features_str = feature_names[0]
+            elif len(active_features) == 2:
+                features_str = f"{feature_names[0]}{and_text}{feature_names[1]}"
+            else:
+                features_str = ', '.join(feature_names[:-1]) + f"{and_text}{feature_names[-1]}"
+        else:
+            features_str = 'Базовый набор'
+
+        # Формируем заголовок
+        if variable:
+            var_name = variable_names.get(variable, variable)
+            title = f"{var_name}: {features_str}"
+        else:
+            title = f"{features_str}"
+
+        # Добавляем информацию о пересечении
+        if use_intersection:
+            title += intersection_text
+
+        # Добавляем диапазон дат
+        if include_date_range and start_date and end_date:
+            date_str = f"{start_date} - {end_date}"
+            title = f"{title} ({date_str})"
+
+        # Добавляем дополнительную информацию
+        if additional_info:
+            title = f"{title} - {additional_info}"
+
+    else:  # English
+        feature_names = config.get_feature_names_en()
+        variable_names = {
+            'observable': 'Observable Inflation',
+            'expected': 'Expected Inflation'
+        }
+        intersection_text = ' (Range Intersection)' if use_intersection else ''
+        of_text = 'with'
+        and_text = ' and '
+        period_text = 'Period'
+        features_text = 'Features'
+
+        if active_features:
+            if len(active_features) == 1:
+                features_str = feature_names[0]
+            elif len(active_features) == 2:
+                features_str = f"{feature_names[0]}{and_text}{feature_names[1]}"
+            else:
+                features_str = ', '.join(feature_names[:-1]) + f"{and_text}{feature_names[-1]}"
+        else:
+            features_str = 'Base Configuration'
+
+        if variable:
+            var_name = variable_names.get(variable, variable)
+            title = f"{var_name}: {features_str}"
+        else:
+            title = f"{features_str}"
+
+        if use_intersection:
+            title += intersection_text
+
+        if include_date_range and start_date and end_date:
+            date_str = f"{start_date} - {end_date}"
+            title = f"{title} ({date_str})"
+
+        if additional_info:
+            title = f"{title} - {additional_info}"
+
+    # Ограничиваем длину заголовка
+    if len(title) > max_length:
+        # Обрезаем с многоточием
+        title = title[:max_length - 3] + '...'
+
+    return title

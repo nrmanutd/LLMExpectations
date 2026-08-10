@@ -8,7 +8,8 @@ from tqdm import tqdm
 
 from RLMSLogic.extractionHelpers import value_to_label, norm
 
-pathToIndivisuals = '..\\data\\RLMS waves\\r33h_os_83.dta'
+pathToIndivisuals = '..\\data\\RLMS waves\\r25i_os_82.dta'
+pathToHH = '..\\data\\RLMS waves\\r25h_os_82.dta'
 
 df, meta = pyreadstat.read_dta(
     pathToIndivisuals,
@@ -16,24 +17,65 @@ df, meta = pyreadstat.read_dta(
     formats_as_category=False,
     user_missing=False
 )
-a = df.columns
-for s in ['psu']:
-    print(s)
-    print(df[s][0])
 
-    print(meta.variable_value_labels[s])
-    print(meta.column_names_to_labels[s])
-    #print(meta.value_labels[s])
+dfhh, metahh = pyreadstat.read_dta(
+    pathToHH,
+    apply_value_formats=False,
+    formats_as_category=False,
+    user_missing=False
+)
 
-with open('column_names_households.txt', 'w', encoding='utf-8') as f:
+with open('column_names_individuals_dta25.txt', 'w', encoding='utf-8') as f:
     for col in df.columns:
         f.write(col + '\n')
 
-with open('questions_households.txt', 'w', encoding='utf-8') as f:
-    row = df.iloc[0]
+with open('column_names_households_dta25.txt', 'w', encoding='utf-8') as f:
+    for col in dfhh.columns:
+        f.write(col + '\n')
+
+with open('questions_households_dta25.txt', 'w', encoding='utf-8') as f:
+    row = dfhh.iloc[0]
     for var, raw in row.items():
         question = meta.column_names_to_labels.get(var, var)
         f.write(f'Code = {var}, Question = {question}' + '\n')
+
+for __, irow in df.iterrows():
+    continue
+    id = irow['ccid_h']
+
+    matched = False
+    for _, hhrow in dfhh.iterrows():
+        hhId = hhrow['ccid_h']
+        if id == hhId:
+            print(f'Id = {id} matched, member id = {irow['ccid_i']}, unique member = {irow['idind']}')
+            print(f'Individual: {irow['region']}, {irow['psu']}, {irow['site']}, family # {irow['cch3']}, individual # {irow['cch4']}')
+            print(f'Household: answering {hhrow['cca8']}, {hhrow['region'], hhrow['psu'], hhrow['site']}, членов семьи {hhrow['cc_nfm']}, family # {hhrow['cca3']}')
+
+            members = hhrow['cc_nfm']
+            print(f'1 member: {hhrow['ccidind1']}')
+            if members >= 2:
+                print(f'2 member: {hhrow['ccidind2']}')
+            if members >= 3:
+                print(f'3 member: {hhrow['ccidind3']}')
+            if members >= 4:
+                print(f'4 member: {hhrow['ccidind4']}')
+
+            matched = True
+
+    print(f'Matched hh and ind: {matched}')
+
+a = dfhh.columns
+for x in range(1, 58):
+    s0 = f'cce1_{x}a'
+    s1 = f'cce1_{x}c'
+
+    print(f'{s1}: {dfhh[s0][0]} - {dfhh[s1][0]}' )
+
+    #print(metahh.variable_value_labels[s])
+    #print(metahh.column_names_to_labels[s])
+    #print(meta.value_labels[s])
+
+
 
 #print(df.columns)
 #print(f'{int(df['status'][0])}')

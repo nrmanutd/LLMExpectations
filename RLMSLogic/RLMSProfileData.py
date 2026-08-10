@@ -27,3 +27,32 @@ class RLMSProfileData:
     moneyStatusLastThreeYears: str
     salary: str
     lastMonthSalary: str
+
+    idIndividualrespondent: float
+    idHHrespondent: float
+    hhHasChildren: int
+    totalFamilyMembers: float
+    allFamilyMonthIncome: float
+
+    familyHasActiveCredits: str
+    totalFamilyCreditDebt: float
+    familyHouseType: str
+    familyHouseAllocationType: str
+    familyHouseTotalSquare: float
+
+    hasRussianCar: str
+    yearsOfRussianCar: float
+    hasForeignCar: str
+    yearsOfForeignCar: float
+
+    hasCountryHouse: str
+    hasOtherMortgage: str
+    hasLand: str
+    landOwner: str
+
+    vacationForeign: int
+    vacationDomestic: int
+
+    regular: dict[str, float]
+    durable: dict[str, float]
+    services: dict[str, float]

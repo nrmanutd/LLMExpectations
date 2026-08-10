@@ -7,7 +7,7 @@ from SurveyLogic.PromptBuilders.Profiles.ProfileDataLoader import ProfileDataLoa
 from SurveyLogic.PromptBuilders.Profiles.StandardProfilesProvider import StandardProfilesProvider
 from SurveyLogic.PromptBuilders.profileBuildersHelpers import createSimplePromptBuilder
 from SurveyLogic.StandardSurveyRunner import StandardSurveyRunner
-from SurveyLogic.SurveyExecution.StandardSurveyExecutor import StandardSurveyExecutor
+from SurveyLogic.SurveyExecution.StandardAsyncSurveyExecutor import StandardAsyncSurveyExecutor
 from SurveyLogic.SurveyResultsSerialization.BatchesSerializer import BatchesSerializer
 from SurveyLogic.Surveyers.BatchCollectingSurveyer import BatchCollectingSurveyer
 
@@ -20,7 +20,7 @@ surveyer = BatchCollectingSurveyer('deepseek-v4-pro')
 surveySerializer = BatchesSerializer('custom_inflation_politics_2020_2020_QS', 'data\\SurveyTasksToExecute')
 
 profilesProvider = StandardProfilesProvider(profilesFolder, ProfileDataLoader())
-surveyExecutor = StandardSurveyExecutor(systemPromptBuilder, promptBuilder, surveyer)
+surveyExecutor = StandardAsyncSurveyExecutor(systemPromptBuilder, promptBuilder, surveyer)
 runner = StandardSurveyRunner(surveySerializer, surveyExecutor, profilesProvider, logger)
 
 for surveyDate in surveyDates:

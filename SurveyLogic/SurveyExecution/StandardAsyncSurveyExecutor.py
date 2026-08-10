@@ -1,0 +1,25 @@
+from datetime import date
+
+from SurveyLogic.PromptBuilders.Profiles.ProfileData import ProfileData
+from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
+from SurveyLogic.SurveyExecution.BaseSurveyExecutor import BaseSurveyExecutor
+from SurveyLogic.Surveyers.AsyncSurveyer import AsyncSurveyer
+from SurveyLogic.Surveyers.BaseSurveyer import BaseSurveyer
+
+
+class StandardAsyncSurveyExecutor(BaseSurveyExecutor):
+    def __init__(self, systemPromptBuilder: BasePromptBuilder, promptBuilder: BasePromptBuilder, surveyer: AsyncSurveyer):
+        self.systemPromptBuilder = systemPromptBuilder
+        self.surveyer = surveyer
+        self.promptBuilder = promptBuilder
+
+    async def executeSurvey(self, surveyDate: date, profile: ProfileData):
+        systemPrompt = self.systemPromptBuilder.buildPrompt(surveyDate, profile)
+        prompt = self.promptBuilder.buildPrompt(surveyDate, profile)
+
+        respond = await self.surveyer.askSurvey(systemPrompt, prompt, profile.respondentId, surveyDate)
+
+        respond.hasCredit = profile.hasCredit
+        respond.hasSavings = profile.hasSavings
+
+        return respond

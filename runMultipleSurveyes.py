@@ -1,36 +1,48 @@
-from datetime import date
+import asyncio
 from pathlib import Path
-import pandas as pd
 
-from Configuration.configuration import bothub_key, mlcluster_key
+from Configuration import configuration
+from Configuration.configuration import mlcluster_key
 from Logging.SimpleLogger import SimpleLogger
-from SurveyLogic.PromptBuilders.Profiles.ProfileDataLoader import ProfileDataLoader
-from SurveyLogic.PromptBuilders.Profiles.StandardProfilesProvider import StandardProfilesProvider
-from SurveyLogic.PromptBuilders.profileBuildersHelpers import createSimplePromptBuilder, createCustomPromptBuilder
-from SurveyLogic.StandardSurveyRunner import StandardSurveyRunner
-from SurveyLogic.SurveyExecution.AdditionalInformationSurveyExecutor import AdditionalInformationSurveyExecutor
-from SurveyLogic.SurveyExecution.StandardSurveyExecutor import StandardSurveyExecutor
+from SurveyExecutionTools.surveyExecutionHelpers import saveExperimentConfiguration
+from SurveyLogic.PromptBuilders.profileBuildersHelpers import createCustomPromptBuilder
 from SurveyLogic.SurveyResultsSerialization.SurveySerializer import SurveySerializer
-from SurveyLogic.Surveyers.BothubSurveyer import BothubSurveyer
-from SurveyLogic.Surveyers.MLClusterSurveyer import MLClusterSurveyer
+from SurveyLogic.Surveyers.AsyncSurveyer import AsyncSurveyer
 from SurveyLogic.Surveyers.StubSurveyer import StubSurveyer
-from SurveyLogic.surveyHelpers import createSurveyRunner
+from SurveyLogic.surveyHelpers import createAsyncSurveyRunner, extractDatesFromFile, copyPromptTemplatesToFolder, \
+    getDatesRowWithMonthlyStep, getDatesRowWithWeeklyStep
+from experimentsConfiguration import ExperimentsConfiguration
 
-logger = SimpleLogger()
+experimentUniqueName='mlcluster_qwen36_async_all_time'
 profilesFolder = Path('./data/Target profiles')
-resultsFolder = Path('data/SurveyResults/mlcluster_qwen36_official_inflation_avgbuyings_mrot_2016_2026_QS')
-surveyDates = pd.date_range(start='2020-01-01', end='2026-04-01', freq='QS', inclusive='both').tolist()
+profilesCount = 100
+resultsFolder = Path('data/SurveyResults/')/experimentUniqueName
+copyPromptTemplatesToFolder(Path('SurveyLogic/PromptBuilders/Prompts/'), resultsFolder/'Prompts')
 
-#systemPromptBuilder, promptBuilder = createSimplePromptBuilder()
-systemPromptBuilder, promptBuilder = createCustomPromptBuilder(useEconomy=False, usePolitics=False, useStateInflation=True, useRegionalInflation=True)
+surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDays=1)
+#surveyDates = getDatesRowWithMonthlyStep('2020.12.01', '2021.01.01')
+#surveyDates = getDatesRowWithWeeklyStep('2022.01.12', '2022.05.07')
 
-#surveyer = BothubSurveyer(modelToUse='deepseek-v4-pro', key=bothub_key, logger=logger)
-surveyer = MLClusterSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=mlcluster_key, logger=logger)
+cfg = ExperimentsConfiguration(
+    useEconomy=True,
+    useFamilyInformation=True,
+    useRegionalInflation=True,
+    useStateInflation=True,
+    useFamilyExpenses=True,
+    useStateExpenses=True)
+
+saveExperimentConfiguration(cfg, resultsFolder)
+
+systemPromptBuilder, promptBuilder = createCustomPromptBuilder(cfg)
+logger = SimpleLogger()
+
+surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
 #surveyer = StubSurveyer()
 
 surveySerializer = SurveySerializer(resultsFolder)
-runner = createSurveyRunner(profilesFolder, systemPromptBuilder, promptBuilder, surveySerializer, surveyer, logger)
 
 for surveyDate in surveyDates:
-    surveyResults = runner.RunSurvey(surveyDate)
+    runner = createAsyncSurveyRunner(profilesFolder, systemPromptBuilder, promptBuilder, surveySerializer, surveyer, profilesCount,
+                                     logger)
+    surveyResults = asyncio.run(runner.RunSurvey(surveyDate))
     surveySerializer.saveSurvey(surveyResults, surveyDate)
