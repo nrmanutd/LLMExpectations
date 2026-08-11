@@ -59,10 +59,10 @@ viz.plot_timeseries(
         save_path=Path('timeseries.png')
     )
 
-cutDates = ['2009-01-01', '2013-05-01', '2024-07-01']
+#cutDates = ['2009-01-01', '2013-05-01', '2024-07-01']
+cutDates = []
 
 for d in cutDates:
-
         viz.plot_correlation(
                 variable='expected',
                 cut_date=d,
