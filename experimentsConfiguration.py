@@ -9,6 +9,7 @@ class ExperimentsConfiguration:
     useFamilyInformation: bool = False
     useFamilyExpenses: bool = False
     useStateExpenses: bool = False
+    useIndividualRLMSData: bool = False
 
     def get_active_features(self) -> list:
         """Возвращает список активных фич"""
@@ -27,6 +28,8 @@ class ExperimentsConfiguration:
             features.append('family_exp')
         if self.useStateExpenses:
             features.append('state_exp')
+        if self.useIndividualRLMSData:
+            features.append('individual_info')
         return features
 
     def get_feature_names_en(self) -> list[str]:
@@ -38,7 +41,8 @@ class ExperimentsConfiguration:
             'regional_inf': 'Regional Inflation',
             'family_info': 'Family Information',
             'family_exp': 'Family Expenses',
-            'state_exp': 'State Expenses'
+            'state_exp': 'State Expenses',
+            'individual_info': 'Individual Information'
         }
         active = self.get_active_features()
         return [names_map[f] for f in active]
@@ -52,7 +56,8 @@ class ExperimentsConfiguration:
             'regional_inf': 'RegInf',
             'family_info': 'FamInf',
             'family_exp': 'FamExp',
-            'state_exp': 'StExp'
+            'state_exp': 'StExp',
+            'individual_info': 'IndInfo'
         }
         active = self.get_active_features()
         if not active:

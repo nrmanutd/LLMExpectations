@@ -71,8 +71,9 @@ def createCustomPromptBuilder(cfg: ExperimentsConfiguration):
     averageBuyingsProvider = AverageExpensesProvider(configuration.averageBuyingsDataPath)
     averageBuyingsProvider = ConvertingAverageExpensesProvider(averageBuyingsProvider, configuration.rlmsToInflationRegionsPath)
 
-    builders.append(CommonProfilePromptBuilder(prompts.respondentPrompt, mrotProvider, averageBuyingsProvider))
-    headers.append('Основные параметры опроса и респондента')
+    if cfg.useIndividualRLMSData:
+        builders.append(CommonProfilePromptBuilder(prompts.respondentPrompt, mrotProvider, averageBuyingsProvider))
+        headers.append('Основные параметры опроса и респондента')
 
     multipleWeeklyProvider = MultipleWeeklyInflationProvider(configuration.weeklyInflationDataPath, list(range(2022, 2027)))
     weeklyInflationProvider = RosstatWeeklyInflationProvider(multipleWeeklyProvider)
