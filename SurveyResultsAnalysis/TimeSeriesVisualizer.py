@@ -17,16 +17,24 @@ class TimeSeriesVisualizer:
 
     def __init__(self,
                  true_series: pd.DataFrame,
-                 model_series: Dict[str, pd.DataFrame]):
+                 model_series: Dict[str, pd.DataFrame],
+                 additional_series: Optional[Dict[str, pd.DataFrame]] = None,
+                 vertical_lines: Optional[Dict[str, str]] = None):
         """
         Args:
             true_series: DataFrame с колонками 'observable_inflation', 'expected_inflation'
                         Индекс - даты (истинный ряд)
             model_series: Словарь {имя_модели: DataFrame с колонками 'obs_mean', 'exp_mean'}
                          Индекс - даты (модельные ряды)
+            additional_series: Словарь {имя_ряда: DataFrame с колонками 'Дата', 'Значение'}
+                              Индекс - даты (дополнительные ряды для отображения)
+            vertical_lines: Словарь {дата в формате 'dd.mm.yyyy': текст подписи}
+                           Вертикальные прерывистые линии для отображения на графике
         """
         self.true_series = true_series.copy()
         self.model_series = {}
+        self.additional_series = {}
+        self.vertical_lines = {}
 
         # Приводим даты к datetime для истинного ряда
         if not pd.api.types.is_datetime64_any_dtype(self.true_series.index):
@@ -39,6 +47,36 @@ class TimeSeriesVisualizer:
             if not pd.api.types.is_datetime64_any_dtype(self.model_series[name].index):
                 self.model_series[name].index = pd.to_datetime(self.model_series[name].index)
             self.model_series[name] = self.model_series[name].sort_index()
+
+        # Приводим даты к datetime для каждого дополнительного ряда
+        if additional_series:
+            for name, df in additional_series.items():
+                self.additional_series[name] = df.copy()
+                # Проверяем, есть ли колонка 'Дата'
+                if 'Дата' in self.additional_series[name].columns:
+                    if not pd.api.types.is_datetime64_any_dtype(self.additional_series[name]['Дата']):
+                        self.additional_series[name]['Дата'] = pd.to_datetime(
+                            self.additional_series[name]['Дата']
+                        )
+                    # Устанавливаем 'Дата' как индекс, если её там нет
+                    if self.additional_series[name].index.name != 'Дата':
+                        self.additional_series[name] = self.additional_series[name].set_index('Дата')
+                elif not pd.api.types.is_datetime64_any_dtype(self.additional_series[name].index):
+                    # Если 'Дата' не колонка, а индекс
+                    self.additional_series[name].index = pd.to_datetime(
+                        self.additional_series[name].index
+                    )
+                self.additional_series[name] = self.additional_series[name].sort_index()
+
+        # Обрабатываем вертикальные линии
+        if vertical_lines:
+            for date_str, label in vertical_lines.items():
+                try:
+                    # Парсим дату в формате dd.mm.yyyy
+                    date = datetime.strptime(date_str, '%d.%m.%Y')
+                    self.vertical_lines[date] = label
+                except ValueError:
+                    print(f"⚠️ Неверный формат даты: {date_str}. Ожидается dd.mm.yyyy")
 
     def _get_date_range(self,
                         start_date: Optional[Union[str, datetime]] = None,
@@ -212,6 +250,52 @@ class TimeSeriesVisualizer:
                                         alpha=0.5,
                                         lw=0.5))
 
+    def _add_vertical_lines(self, ax, y_min, y_max):
+        """
+        Добавляет вертикальные прерывистые линии для отмеченных дат
+        """
+        # Получаем текущие границы X в числовом формате (matplotlib dates)
+        xlim = ax.get_xlim()
+
+        # Преобразуем даты в числовой формат matplotlib для сравнения
+        # matplotlib.dates.date2num преобразует datetime в числовой формат
+        x_min_num = xlim[0]
+        x_max_num = xlim[1]
+
+        for date, label in self.vertical_lines.items():
+            # Преобразуем datetime в числовой формат matplotlib
+            date_num = mdates.date2num(date)
+
+            # Проверяем, что дата в пределах текущего графика
+            if x_min_num <= date_num <= x_max_num:
+                # Рисуем вертикальную прерывистую линию черного цвета
+                ax.axvline(x=date, color='black', linestyle='--', linewidth=1.5, alpha=0.7)
+
+                # Добавляем подпись рядом с линией
+                # Позиционируем подпись в верхней части графика
+                y_pos = y_max * 0.95  # 95% от максимума
+
+                # Форматируем дату для отображения
+                date_str = date.strftime('%d.%m.%Y')
+
+                # Текст подписи: дата + описание
+                label_text = f"{date_str}\n{label}" if label else date_str
+
+                ax.annotate(label_text,
+                            xy=(date, y_pos),
+                            xytext=(10, 0),  # Смещение вправо
+                            textcoords='offset points',
+                            fontsize=9,
+                            color='black',
+                            weight='bold',
+                            ha='left',
+                            va='top',
+                            bbox=dict(boxstyle='round,pad=0.3',
+                                      facecolor='white',
+                                      edgecolor='black',
+                                      alpha=0.8,
+                                      linewidth=1))
+
     def plot_timeseries(self,
                         variable: str = 'observable',
                         figsize: Tuple[int, int] = (16, 8),
@@ -228,20 +312,28 @@ class TimeSeriesVisualizer:
                         ci_alpha: float = 0.2,
                         grid: bool = True,
                         legend_loc: str = 'best',
+                        legend_fontsize: int = 8,  # НОВЫЙ ПАРАМЕТР
+                        show_ci_legend: bool = False,  # НОВЫЙ ПАРАМЕТР
                         save_path: Optional[Path] = None,
                         show: bool = True,
                         start_date: Optional[Union[str, datetime]] = None,
                         end_date: Optional[Union[str, datetime]] = None,
-                        use_intersection: bool = False,
                         auto_format_dates: bool = True,
                         show_date_labels: bool = False,
                         date_labels_for: str = 'all',  # 'true', 'models', 'all'
                         label_fontsize: int = 8,
                         label_offset_x: float = 0.02,
                         label_offset_y: float = 0.02,
-                        model_order: Optional[List[str]] = None):
+                        model_order: Optional[List[str]] = None,
+                        additional_order: Optional[List[str]] = None,
+                        show_vertical_lines: bool = True,
+                        additional_alpha: float = 0.9,  # НОВЫЙ ПАРАМЕТР: прозрачность дополнительных рядов
+                        additional_linewidth: float = 2.5,  # НОВЫЙ ПАРАМЕТР: толщина линий дополнительных рядов
+                        additional_markersize: int = 4  # НОВЫЙ ПАРАМЕТР: размер маркеров дополнительных рядов
+                        ):
         """
-        Строит график временных рядов для observable или expected инфляции
+        Строит график временных рядов для observable или expected инфляции,
+        включая дополнительные ряды, переданные в конструктор.
 
         Args:
             variable: 'observable' или 'expected'
@@ -249,7 +341,7 @@ class TimeSeriesVisualizer:
             title: заголовок
             xlabel: подпись оси X
             ylabel: подпись оси Y
-            colors: словарь цветов для рядов {'true': '#color', 'model1': '#color', ...}
+            colors: словарь цветов для рядов {'true': '#color', 'model1': '#color', 'additional1': '#color', ...}
             markers: словарь маркеров для рядов
             linestyles: словарь стилей линий для рядов
             markersize: размер маркеров
@@ -263,7 +355,6 @@ class TimeSeriesVisualizer:
             show: показывать график
             start_date: начальная дата для отображения
             end_date: конечная дата для отображения
-            use_intersection: использовать пересечение диапазонов данных
             auto_format_dates: автоматически форматировать даты
             show_date_labels: показывать подписи дат справа от точек
             date_labels_for: для каких рядов показывать подписи ('true', 'models', 'all')
@@ -271,6 +362,8 @@ class TimeSeriesVisualizer:
             label_offset_x: смещение подписей по X
             label_offset_y: смещение подписей по Y
             model_order: порядок отображения моделей в легенде
+            additional_order: порядок отображения дополнительных рядов в легенде
+            show_vertical_lines: показывать вертикальные линии для отмеченных дат
         """
         # Определяем колонки
         if variable == 'observable':
@@ -291,6 +384,7 @@ class TimeSeriesVisualizer:
         default_colors = {
             'true': '#2E86C1',  # синий
         }
+
         # Цвета для моделей из палитры
         model_colors = [
             '#E74C3C',  # красный
@@ -303,22 +397,47 @@ class TimeSeriesVisualizer:
             '#E74C3C',  # розовый
         ]
 
+        # Цвета для дополнительных рядов (другие оттенки)
+        additional_colors = [
+            '#FF6B6B',  # светло-красный
+            '#4ECDC4',  # мятный
+            '#45B7D1',  # голубой
+            '#96CEB4',  # салатовый
+            '#FFEAA7',  # желтый
+            '#DDA0DD',  # сливовый
+            '#FF8C94',  # розовый
+            '#A8E6CF',  # светло-зеленый
+        ]
+
         for i, name in enumerate(self.model_series.keys()):
             default_colors[name] = model_colors[i % len(model_colors)]
+
+        for i, name in enumerate(self.additional_series.keys()):
+            default_colors[name] = additional_colors[i % len(additional_colors)]
 
         default_markers = {
             'true': 'o',
         }
+
         model_markers = ['s', '^', 'D', '*', 'p', 'X', 'h', 'v']
         for i, name in enumerate(self.model_series.keys()):
             default_markers[name] = model_markers[i % len(model_markers)]
 
+        additional_markers = ['s', '^', 'D', '*', 'p', 'X', 'h', 'v']
+        for i, name in enumerate(self.additional_series.keys()):
+            default_markers[name] = additional_markers[i % len(additional_markers)]
+
         default_linestyles = {
             'true': '-',
         }
+
         model_linestyles = ['-', '--', '-.', ':', '-', '--', '-.', ':']
         for i, name in enumerate(self.model_series.keys()):
             default_linestyles[name] = model_linestyles[i % len(model_linestyles)]
+
+        additional_linestyles = ['-', '--', '-.', ':', '-', '--', '-.', ':']
+        for i, name in enumerate(self.additional_series.keys()):
+            default_linestyles[name] = additional_linestyles[i % len(additional_linestyles)]
 
         # Применяем пользовательские настройки
         colors = colors or {}
@@ -329,25 +448,40 @@ class TimeSeriesVisualizer:
         all_markers = {**default_markers, **markers}
         all_linestyles = {**default_linestyles, **linestyles}
 
-        # Определяем диапазон дат
-        start, end = self._get_date_range(start_date, end_date, use_intersection)
+        # Определяем диапазон дат (без use_intersection)
+        start, end = self._get_date_range(start_date, end_date, use_intersection=False)
 
         # Фильтруем данные
         true_filtered, model_filtered = self._filter_data_by_date(start, end)
 
+        # Фильтруем дополнительные ряды
+        additional_filtered = {}
+        for name, df in self.additional_series.items():
+            additional_filtered[name] = df[
+                (df.index >= start) &
+                (df.index <= end)
+                ]
+
         # Проверяем, остались ли данные после фильтрации
-        if true_filtered.empty and all(df.empty for df in model_filtered.values()):
+        if true_filtered.empty and all(df.empty for df in model_filtered.values()) and all(
+                df.empty for df in additional_filtered.values()):
             print("⚠️ Нет данных в выбранном диапазоне дат")
             return None, None
 
         # Создаем график
         fig, ax = plt.subplots(figsize=figsize)
 
-        # Определяем порядок отображения
+        # Определяем порядок отображения моделей
         if model_order is None:
             model_names = list(model_filtered.keys())
         else:
             model_names = [name for name in model_order if name in model_filtered]
+
+        # Определяем порядок отображения дополнительных рядов
+        if additional_order is None:
+            additional_names = list(additional_filtered.keys())
+        else:
+            additional_names = [name for name in additional_order if name in additional_filtered]
 
         # Рисуем истинный ряд
         if not true_filtered.empty:
@@ -359,7 +493,7 @@ class TimeSeriesVisualizer:
                     linewidth=linewidth,
                     markersize=markersize,
                     alpha=alpha,
-                    label='True survey (=end of survey day + 1 day)')
+                    label='Опрос Инфом (след день после опроса)')
 
         # Рисуем модельные ряды
         for name in model_names:
@@ -368,7 +502,7 @@ class TimeSeriesVisualizer:
                 ax.plot(df.index,
                         df[model_col],
                         marker=all_markers.get(name, 's'),
-                        linestyle=all_linestyles.get(name, '-'),
+                        linestyle='--',  # all_linestyles.get(name, '-'),
                         color=all_colors.get(name, '#E74C3C'),
                         linewidth=linewidth,
                         markersize=markersize,
@@ -382,7 +516,34 @@ class TimeSeriesVisualizer:
                                     df[model_col] + df[model_std_col],
                                     alpha=ci_alpha,
                                     color=all_colors.get(name, '#E74C3C'),
-                                    label=f'{name} CI')
+                                    label=f'{name} CI' if show_ci_legend else None)
+
+        # Рисуем дополнительные ряды
+        for name in additional_names:
+            df = additional_filtered[name]
+            if not df.empty:
+                # Проверяем, есть ли колонка 'Значение'
+                if 'Значение' in df.columns:
+                    values = df['Значение']
+                else:
+                    # Если нет 'Значение', берем первую колонку
+                    values = df.iloc[:, 0]
+
+                ax.plot(df.index,
+                        values,
+                        marker=all_markers.get(name, 's'),
+                        linestyle=all_linestyles.get(name, '-'),
+                        color=all_colors.get(name, '#FF6B6B'),
+                        linewidth=additional_linewidth,  # Более толстая линия
+                        markersize=additional_markersize,  # Более крупные маркеры
+                        alpha=additional_alpha,  # Более насыщенный (меньше прозрачности)
+                        label=name)
+
+        # Добавляем вертикальные линии
+        if show_vertical_lines and self.vertical_lines:
+            # Получаем y-границы для размещения подписей
+            y_min, y_max = ax.get_ylim()
+            self._add_vertical_lines(ax, y_min, y_max)
 
         # Добавляем подписи дат
         if show_date_labels:
@@ -413,6 +574,25 @@ class TimeSeriesVisualizer:
                             fontsize=label_fontsize
                         )
 
+            # Для дополнительных рядов
+            if date_labels_for in ['all']:
+                for name in additional_names:
+                    df = additional_filtered[name]
+                    if not df.empty:
+                        if 'Значение' in df.columns:
+                            values = df['Значение']
+                        else:
+                            values = df.iloc[:, 0]
+                        self._add_date_labels(
+                            ax,
+                            df.index,
+                            values,
+                            all_colors.get(name, '#FF6B6B'),
+                            offset_x=label_offset_x,
+                            offset_y=label_offset_y,
+                            fontsize=label_fontsize
+                        )
+
         # Настройки графика
         ax.set_title(title, fontsize=14, fontweight='bold')
         ax.set_xlabel(xlabel, fontsize=12)
@@ -421,7 +601,7 @@ class TimeSeriesVisualizer:
         if grid:
             ax.grid(True, alpha=0.3)
 
-        ax.legend(loc=legend_loc)
+        legend = ax.legend(loc=legend_loc, fontsize=legend_fontsize)
 
         # Автоматическое форматирование дат
         if auto_format_dates:
@@ -461,6 +641,7 @@ class TimeSeriesVisualizer:
                   use_intersection: bool = False,
                   show_date_labels: bool = False,
                   date_labels_for: str = 'all',
+                  show_vertical_lines: bool = True,
                   **kwargs):
         """
         Строит два графика: для observable и expected инфляции
@@ -474,6 +655,7 @@ class TimeSeriesVisualizer:
                            use_intersection=use_intersection,
                            show_date_labels=show_date_labels,
                            date_labels_for=date_labels_for,
+                           show_vertical_lines=show_vertical_lines,
                            **kwargs)
 
         # Expected
@@ -483,6 +665,7 @@ class TimeSeriesVisualizer:
                            use_intersection=use_intersection,
                            show_date_labels=show_date_labels,
                            date_labels_for=date_labels_for,
+                           show_vertical_lines=show_vertical_lines,
                            **kwargs)
 
         plt.tight_layout()
@@ -495,6 +678,139 @@ class TimeSeriesVisualizer:
 
         plt.show()
         return fig, axes
+
+    def _plot_on_axes(self, ax, variable, **kwargs):
+        """Вспомогательный метод для рисования на переданной оси"""
+        if variable == 'observable':
+            true_col = 'observable_inflation'
+            model_col = 'obs_mean'
+            model_std_col = 'obs_std'
+            title = 'Observable Inflation'
+        else:
+            true_col = 'expected_inflation'
+            model_col = 'exp_mean'
+            model_std_col = 'exp_std'
+            title = 'Expected Inflation'
+
+        start_date = kwargs.get('start_date', None)
+        end_date = kwargs.get('end_date', None)
+        use_intersection = kwargs.get('use_intersection', False)
+        show_date_labels = kwargs.get('show_date_labels', False)
+        date_labels_for = kwargs.get('date_labels_for', 'all')
+        label_fontsize = kwargs.get('label_fontsize', 8)
+        label_offset_x = kwargs.get('label_offset_x', 0.02)
+        label_offset_y = kwargs.get('label_offset_y', 0.02)
+        grid = kwargs.get('grid', True)
+        legend_loc = kwargs.get('legend_loc', 'best')
+        show_ci = kwargs.get('show_ci', True)
+        ci_alpha = kwargs.get('ci_alpha', 0.2)
+        alpha = kwargs.get('alpha', 0.7)
+        show_vertical_lines = kwargs.get('show_vertical_lines', True)
+
+        # Настройки цветов
+        colors = kwargs.get('colors', {})
+        markers = kwargs.get('markers', {})
+        linestyles = kwargs.get('linestyles', {})
+
+        default_colors = {'true': '#2E86C1'}
+        model_colors = ['#E74C3C', '#2ECC71', '#F39C12', '#9B59B6', '#1ABC9C', '#E67E22', '#3498DB']
+        for i, name in enumerate(self.model_series.keys()):
+            default_colors[name] = model_colors[i % len(model_colors)]
+
+        all_colors = {**default_colors, **colors}
+
+        start, end = self._get_date_range(start_date, end_date, use_intersection)
+        true_filtered, model_filtered = self._filter_data_by_date(start, end)
+
+        # Истинный ряд
+        if not true_filtered.empty:
+            ax.plot(true_filtered.index,
+                    true_filtered[true_col],
+                    marker='o',
+                    linestyle='-',
+                    color=all_colors.get('true', '#2E86C1'),
+                    linewidth=2,
+                    markersize=6,
+                    alpha=alpha,
+                    label='True Series')
+
+        # Модельные ряды
+        for name, df in model_filtered.items():
+            if not df.empty:
+                ax.plot(df.index,
+                        df[model_col],
+                        marker='s',
+                        linestyle='-',
+                        color=all_colors.get(name, '#E74C3C'),
+                        linewidth=2,
+                        markersize=6,
+                        alpha=alpha,
+                        label=name)
+
+                if show_ci and model_std_col in df.columns:
+                    ax.fill_between(df.index,
+                                    df[model_col] - df[model_std_col],
+                                    df[model_col] + df[model_std_col],
+                                    alpha=ci_alpha,
+                                    color=all_colors.get(name, '#E74C3C'),
+                                    label=f'{name} CI')
+
+        # Добавляем вертикальные линии
+        if show_vertical_lines and self.vertical_lines:
+            y_min, y_max = ax.get_ylim()
+            self._add_vertical_lines(ax, y_min, y_max)
+
+        # Подписи дат
+        if show_date_labels:
+            if date_labels_for in ['true', 'all'] and not true_filtered.empty:
+                self._add_date_labels(
+                    ax,
+                    true_filtered.index,
+                    true_filtered[true_col],
+                    all_colors.get('true', '#2E86C1'),
+                    offset_x=label_offset_x,
+                    offset_y=label_offset_y,
+                    fontsize=label_fontsize
+                )
+
+            if date_labels_for in ['models', 'all']:
+                for name, df in model_filtered.items():
+                    if not df.empty:
+                        self._add_date_labels(
+                            ax,
+                            df.index,
+                            df[model_col],
+                            all_colors.get(name, '#E74C3C'),
+                            offset_x=label_offset_x,
+                            offset_y=label_offset_y,
+                            fontsize=label_fontsize
+                        )
+
+        ax.set_title(title, fontsize=12, fontweight='bold')
+        ax.set_xlabel('Date', fontsize=10)
+        ax.set_ylabel('Inflation', fontsize=10)
+
+        if grid:
+            ax.grid(True, alpha=0.3)
+
+        ax.legend(loc=legend_loc)
+
+        date_format = self._determine_date_format(start, end)
+        tick_interval = self._determine_tick_interval(start, end)
+
+        ax.xaxis.set_major_formatter(mdates.DateFormatter(date_format))
+        ax.xaxis.set_major_locator(mdates.DayLocator(interval=tick_interval))
+
+        if show_date_labels:
+            x_range = (end - start).days
+            padding = x_range * 0.1
+            ax.set_xlim(start - pd.Timedelta(days=padding),
+                        end + pd.Timedelta(days=padding))
+        else:
+            ax.set_xlim(start, end)
+
+        fig = ax.get_figure()
+        fig.autofmt_xdate()
 
     def _plot_on_axes(self, ax, variable, **kwargs):
         """Вспомогательный метод для рисования на переданной оси"""
@@ -605,6 +921,7 @@ class TimeSeriesVisualizer:
             ax.grid(True, alpha=0.3)
 
         ax.legend(loc=legend_loc)
+
 
         date_format = self._determine_date_format(start, end)
         tick_interval = self._determine_tick_interval(start, end)

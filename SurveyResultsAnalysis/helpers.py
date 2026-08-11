@@ -1,6 +1,7 @@
 import json
 import os
-from datetime import datetime
+import re
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -66,7 +67,6 @@ def load_pdtable(folder: Path):
     files = [f for f in files if os.path.isfile(os.path.join(folder, f))]
     files = [f for f in files if f.endswith('.json')]
 
-    print(files)
     rows = []
     for file in files:
         respond = load_respond_from_json(f'{folder}/{file}')
@@ -119,6 +119,153 @@ def load_pdtable_with_repeats(folder: str):
 
     return pd.DataFrame(rows)
 
+def transform_date(date_str: str) -> datetime:
+    # Парсим строку в формате MM.YYYY
+    month, year = map(int, date_str.split('.'))
+    # Создаем дату 01 числа следующего месяца
+    if month == 12:
+        # Если декабрь, то переходим на январь следующего года
+        new_date = datetime(year + 1, 1, 1)
+    else:
+        new_date = datetime(year, month + 1, 1)
+    return new_date
+
+def load_official_inflation(path: Path):
+    df = pd.read_excel(path, header=0, dtype={'Дата': str})
+
+    # Применяем преобразование к столбцу 'Дата'
+    df['Дата'] = df['Дата'].apply(transform_date)
+
+    # Устанавливаем индекс по датам
+    df = df.set_index('Дата')
+    df = df.rename(columns={'Инфляция, % г/г': 'Значение'})
+
+    # Сортируем по индексу (по датам) для удобства
+    df = df.sort_index()
+
+    return df
+
+
+def parse_dates_from_file(file_path: Path) -> dict:
+    """
+    Парсит файл с датами и возвращает словарь.
+
+    Формат файла: "Месяц Год — ДД.ММ.ГГГГ"
+    Ключ: 01.месяц.год (первое число указанного месяца)
+    Значение: распознанная дата + 1 день (datetime)
+
+    Args:
+        file_path: путь к файлу
+
+    Returns:
+        dict: {ключ_дата: значение_datetime}
+
+    Example:
+        "Май 2021 — 01.06.2021" -> {datetime(2021, 5, 1): datetime(2021, 6, 2)}
+    """
+    # Словарь для перевода названий месяцев на русском в номер месяца
+    months_ru = {
+        'январь': 1, 'января': 1,
+        'февраль': 2, 'февраля': 2,
+        'март': 3, 'марта': 3,
+        'апрель': 4, 'апреля': 4,
+        'май': 5, 'мая': 5,
+        'июнь': 6, 'июня': 6,
+        'июль': 7, 'июля': 7,
+        'август': 8, 'августа': 8,
+        'сентябрь': 9, 'сентября': 9,
+        'октябрь': 10, 'октября': 10,
+        'ноябрь': 11, 'ноября': 11,
+        'декабрь': 12, 'декабря': 12
+    }
+
+    result = {}
+
+    # Читаем файл
+    with open(file_path, 'r', encoding='utf-8') as file:
+        lines = file.readlines()
+
+    for line in lines:
+        line = line.strip()
+        if not line:  # Пропускаем пустые строки
+            continue
+
+        # Разделяем на префикс (месяц год) и дату
+        parts = line.split('—')
+        if len(parts) != 2:
+            print(f"⚠️ Неверный формат строки: {line}")
+            continue
+
+        prefix = parts[0].strip()  # "Май 2021"
+        date_part = parts[1].strip()  # "01.06.2021"
+
+        # Извлекаем месяц и год из префикса
+        prefix_parts = prefix.split()
+        if len(prefix_parts) != 2:
+            print(f"⚠️ Неверный формат префикса: {prefix}")
+            continue
+
+        month_name = prefix_parts[0].lower()  # "май"
+        year = int(prefix_parts[1])  # 2021
+
+        # Получаем номер месяца
+        if month_name not in months_ru:
+            print(f"⚠️ Неизвестный месяц: <{month_name}>")
+            continue
+
+        month = months_ru[month_name]
+
+        # Создаем ключ: 01.месяц.год
+        key_date = pd.Timestamp(year=year, month=month, day=1)
+
+        # Извлекаем дату из правой части
+        date_pattern = r'\d{2}\.\d{2}\.\d{4}'
+        match = re.search(date_pattern, date_part)
+
+        if not match:
+            print(f"⚠️ Не найдена дата в: {date_part}")
+            continue
+
+        date_str = match.group()
+        parsed_date = datetime.strptime(date_str, '%d.%m.%Y')
+
+        # Добавляем в словарь
+        result[key_date] = parsed_date
+
+    return result
+
+def load_official_analytics_expectation(path: Path, datesMapPath: Path):
+    df = pd.read_excel(path, sheet_name='1', skiprows=range(5), header=None)
+    print(df)
+    data_col_idx = 4
+    date_row_idx = 0
+    value_row_idx = 11
+
+    datesMap = parse_dates_from_file(datesMapPath)
+    print(datesMap)
+
+    resultDf = pd.DataFrame(columns=['Дата', 'Значение'])
+
+    for col in range(data_col_idx, len(df.columns)):
+        date_str = df.iloc[date_row_idx, col]
+        value = df.iloc[value_row_idx, col]
+
+        if value=='-':
+            value_row_idx += 1
+            value = df.iloc[value_row_idx, col]
+
+        new_date = pd.to_datetime(date_str, format='%d.%m.%Y')
+
+        correctDate = datesMap[new_date]
+        correctDate = correctDate + timedelta(days=1)#на следующий день мы знаем эту инфо
+
+        new_row = pd.DataFrame({'Дата': [correctDate], 'Значение': [value]})
+        resultDf = pd.concat([resultDf, new_row], ignore_index=True)
+
+    resultDf = resultDf.set_index('Дата')
+    resultDf = resultDf.sort_index()
+
+    return resultDf
 
 def load_from_official_statistics(fileName, offsetDays=0):
     """
