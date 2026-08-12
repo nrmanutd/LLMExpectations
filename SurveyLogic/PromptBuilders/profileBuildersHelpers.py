@@ -1,4 +1,5 @@
 from Configuration import configuration
+from SHAPAnalysis.shapHelpers import getBitArray
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.PromptBuilders.CompositePromptBuilder import CompositePromptBuilder
 from SurveyLogic.PromptBuilders.ConstantPromptBuilder import ConstantPromptBuilder
@@ -151,3 +152,26 @@ def createSingleMonthInflationProvider() -> BaseSingleMonthInflationProvider:
 
     singleMonthInflationProvider = MultipleEMISSFilesInflationProvider(providers, yearsSets)
     return singleMonthInflationProvider
+
+def createSHAPPromptBuilders():
+    systemPromptBuilder = SystemPromptBuilder(prompts.systemPrompt)
+    builders = []
+
+    for i in range(128):
+        arr = getBitArray(i, 7)
+        cfg = ExperimentsConfiguration(
+            useIndividualRLMSData=arr[0],
+            useFamilyInformation=arr[1],
+            useFamilyExpenses=arr[2],
+            useStateExpenses=arr[3],
+            useEconomy=arr[4],
+            useRegionalInflation=arr[5],
+            useStateInflation=arr[6]
+            )
+
+        pp = createCustomPromptBuilder(cfg)
+        builders.append(pp)
+
+    names = ['RLMSIndividual', 'RLMSHH', 'RLMSHHRegionalExpenses', 'RLMSHHStateExpenses', 'Economy', 'RegionalInflation', 'StateInflation']
+
+    return systemPromptBuilder, builders, names

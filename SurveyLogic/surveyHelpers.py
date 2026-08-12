@@ -6,6 +6,7 @@ import pandas as pd
 from pathlib import Path
 
 from Logging.BaseLogger import BaseLogger
+from SHAPAnalysis.BruteforceSHAPCalculator import BruteforceSHAPCalculator
 from SurveyLogic.AsyncSurveyRunner import AsyncSurveyRunner
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.PromptBuilders.Profiles.ProfileDataLoader import ProfileDataLoader
@@ -13,6 +14,7 @@ from SurveyLogic.PromptBuilders.Profiles.RandomSubsampleProfilesProvider import 
 from SurveyLogic.PromptBuilders.Profiles.StandardProfilesProvider import StandardProfilesProvider
 from SurveyLogic.StandardSurveyRunner import StandardSurveyRunner
 from SurveyLogic.SurveyExecution.AdditionalInformationSurveyExecutor import AdditionalInformationSurveyExecutor
+from SurveyLogic.SurveyExecution.SHAPSurveyExecutor import SHAPSurveyExecutor
 from SurveyLogic.SurveyExecution.StandardAsyncSurveyExecutor import StandardAsyncSurveyExecutor
 from SurveyLogic.SurveyExecution.StandardSurveyExecutor import StandardSurveyExecutor
 from SurveyLogic.SurveyResultsSerialization.BaseSurveySerializer import BaseSurveySerializer
@@ -24,6 +26,16 @@ def createSurveyRunner(profilesFolder: Path, systemPromptBuilder: BasePromptBuil
     profilesProvider = StandardProfilesProvider(profilesFolder, ProfileDataLoader())
     surveyExecutor = StandardSurveyExecutor(systemPromptBuilder, promptBuilder, surveyer)
     surveyExecutor = AdditionalInformationSurveyExecutor(surveyExecutor)
+
+    runner = StandardSurveyRunner(surveySerializer, surveyExecutor, profilesProvider, logger)
+    return runner
+
+def createSHAPSurveyRunner(profilesFolder: Path, systemPromptBuilder: BasePromptBuilder, promptBuilders: list[BasePromptBuilder], names: list[str], surveySerializer: BaseSurveySerializer, surveyer: AsyncSurveyer, profilesCount: int, logger: BaseLogger) -> StandardSurveyRunner:
+    profilesProvider = StandardProfilesProvider(profilesFolder, ProfileDataLoader())
+    profilesProvider = RandomSubsampleProfilesProvider(profilesProvider, profilesCount)
+
+    shapCalculator = BruteforceSHAPCalculator(names)
+    surveyExecutor = SHAPSurveyExecutor(systemPromptBuilder, promptBuilders, surveyer, shapCalculator, logger)
 
     runner = StandardSurveyRunner(surveySerializer, surveyExecutor, profilesProvider, logger)
     return runner
@@ -84,6 +96,9 @@ def extractDatesFromFile(
     parsed_dates.sort()
 
     return parsed_dates
+
+def getDatesFromStrings(dates: list[str]):
+    return [datetime.strptime(x, '%d.%m.%Y') for x in dates]
 
 def copyPromptTemplatesToFolder(promptFolder: Path, resultsFolder: Path):
     if resultsFolder.exists():
