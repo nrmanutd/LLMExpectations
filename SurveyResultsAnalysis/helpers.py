@@ -236,13 +236,12 @@ def parse_dates_from_file(file_path: Path) -> dict:
 
 def load_official_analytics_expectation(path: Path, datesMapPath: Path):
     df = pd.read_excel(path, sheet_name='1', skiprows=range(5), header=None)
-    print(df)
+
     data_col_idx = 4
     date_row_idx = 0
     value_row_idx = 11
 
     datesMap = parse_dates_from_file(datesMapPath)
-    print(datesMap)
 
     resultDf = pd.DataFrame(columns=['Дата', 'Значение'])
 
@@ -314,7 +313,6 @@ def aggregate_survey(surveys):
         DataFrame с индексом из дат и колонками 'obs_mean', 'obs_std', 'obs_count',
         'exp_mean', 'exp_std', 'exp_count'
     """
-    # Убеждаемся, что date - это datetime
     surveys['date'] = pd.to_datetime(surveys['date'])
 
     quarterly_agg_df = surveys.groupby('date').agg({
@@ -326,15 +324,7 @@ def aggregate_survey(surveys):
     quarterly_agg_df.columns = ['obs_mean', 'obs_std', 'obs_count',
                                 'exp_mean', 'exp_std', 'exp_count']
 
-    # Сбрасываем индекс и снова устанавливаем его как date
-    # ВАЖНО: НЕ используем reset_index(), чтобы date остался индексом
-    # quarterly_agg_df = quarterly_agg_df.reset_index()  # <-- ЭТО НЕ НУЖНО!
-
-    print("\nАгрегированные квартальные данные (первые 5):")
     print(quarterly_agg_df.head())
-    print(f"\nИндекс: {quarterly_agg_df.index.name}")
-    print(f"Тип индекса: {type(quarterly_agg_df.index)}")
-    print(f"Колонки: {quarterly_agg_df.columns.tolist()}")
 
     return quarterly_agg_df
 
@@ -348,8 +338,6 @@ def aggregate_survey1(surveys):
     quarterly_agg_df.columns = ['date', 'obs_mean', 'obs_std', 'obs_count',
                                 'exp_mean', 'exp_std', 'exp_count']
 
-    print("\nАгрегированные квартальные данные (первые 5):")
-    print(quarterly_agg_df.head())
     return quarterly_agg_df
 
 

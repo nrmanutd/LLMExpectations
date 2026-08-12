@@ -10,8 +10,9 @@ rootFolder = Path('../data/SurveyResults/')
 modellingResults = [
         ('mlcluster_qwen36_async_all_time', 'QWEN 3.6 (все данные, в день Инфом)'),
         ('mlcluster_qwen36_async_all_time_week_before', 'QWEN 3.6 (все данные, -7d от Инфом)'),
-        #('mlcluster_qwen36_async_nousdrub_time_week_before', 'survey modelling (=true end of survey-6d), no usdrub'),
-        #('mlcluster_qwen36_async_nousdrub_time', 'survey modelling (=true end of survey+1d), no usdrub')
+        ('mlcluster_qwen36_async_nousdrub_time_week_before', 'QWEN 3.6 (без usdrub, -7d от Инфом)'),
+        ('mlcluster_qwen36_async_nousdrub_time', 'QWEN 3.6 (без usdrub, в день Инфом)'),
+        ('mlcluster_qwen36_async_norlms_weekbefore', 'QWEN 3.6 (без RLMS, -7d от Инфом)')
 ]
 
 officialInflation = load_official_inflation(visualizationConfiguration.officialInflationPath)
@@ -27,7 +28,7 @@ for folder, name in modellingResults:
 
 directEstimationsFileName = visualizationConfiguration.directInflationEstimationsPath
 directEstimations = load_from_official_statistics(directEstimationsFileName, 1)
-keyDates = {'15.12.2014': 'Черный понедельник', '31.01.2020': 'COVID-19 в РФ', '24.02.2022': 'Начало СВО', '18.06.2026': 'НПЗ в Московской области'}
+keyDates = {'15.12.2014': 'Черный понедельник', '31.01.2020': 'COVID-19 в РФ', '24.02.2022': 'Начало СВО', '18.06.2026': 'НПЗ в Московской области', '01.05.2018': 'Топливный кризис в РФ'}
 
 # Создаем визуализатор
 viz = TimeSeriesVisualizer(
@@ -59,20 +60,12 @@ viz.plot_timeseries(
         save_path=Path('timeseries.png')
     )
 
-#cutDates = ['2009-01-01', '2013-05-01', '2024-07-01']
-cutDates = []
+cutDates = ['2009-01-01', '2013-05-01', '2024-07-01']
 
 for d in cutDates:
         viz.plot_correlation(
                 variable='expected',
                 cut_date=d,
                 save_path=Path(f'{d}_correlation_expected.png'),
-                use_intersection=True,
-        )
-
-        viz.plot_correlation_diff(
-                variable='expected',
-                cut_date=d,
-                save_path=Path(f'{d}_correlation_diff_expected.png'),
                 use_intersection=True,
         )

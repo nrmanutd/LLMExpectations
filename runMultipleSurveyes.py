@@ -30,7 +30,7 @@ cfg = ExperimentsConfiguration(
     #useFamilyExpenses=True,
     #useStateExpenses=True,
     useEconomy=True,
-    useRegionalInflation=True,
+    #useRegionalInflation=True,
     useStateInflation=True
     )
 
