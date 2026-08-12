@@ -6,7 +6,7 @@ from Configuration import configuration
 from Configuration.configuration import mlcluster_key
 from Logging.SimpleLogger import SimpleLogger
 from SurveyExecutionTools.surveyExecutionHelpers import saveExperimentConfiguration
-from SurveyLogic.PromptBuilders.profileBuildersHelpers import createCustomPromptBuilder
+from SurveyLogic.PromptBuilders.PromptBuilderFactory import PromptBuilderFactory
 from SurveyLogic.SurveyResultsSerialization.SurveySerializer import SurveySerializer
 from SurveyLogic.Surveyers.AsyncSurveyer import AsyncSurveyer
 from SurveyLogic.Surveyers.StubSurveyer import StubSurveyer
@@ -36,7 +36,8 @@ cfg = ExperimentsConfiguration(
 
 saveExperimentConfiguration(cfg, resultsFolder)
 
-systemPromptBuilder, promptBuilder = createCustomPromptBuilder(cfg)
+factory = PromptBuilderFactory()
+systemPromptBuilder, promptBuilder = factory.createCustomPromptBuilder(cfg)
 logger = SimpleLogger()
 
 surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)

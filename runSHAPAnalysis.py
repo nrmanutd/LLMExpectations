@@ -7,6 +7,7 @@ from Logging.SimpleLogger import SimpleLogger
 from SurveyLogic.PromptBuilders.profileBuildersHelpers import createSHAPPromptBuilders
 from SurveyLogic.SurveyResultsSerialization.SurveySerializer import SurveySerializer
 from SurveyLogic.Surveyers.AsyncSurveyer import AsyncSurveyer
+from SurveyLogic.Surveyers.StubSurveyer import StubSurveyer
 from SurveyLogic.surveyHelpers import createAsyncSurveyRunner, copyPromptTemplatesToFolder, \
     getDatesFromStrings, createSHAPSurveyRunner
 

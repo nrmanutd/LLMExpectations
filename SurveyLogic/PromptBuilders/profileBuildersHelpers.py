@@ -19,6 +19,7 @@ from SurveyLogic.PromptBuilders.ProfileSepcificPromptBuilders.HouseholdProfilePr
     HouseholdProfilePromptBuilder
 from SurveyLogic.PromptBuilders.ProfileSepcificPromptBuilders.StateExpensesProfilePromptBuilder import \
     StateExpensesProfilePromptBuilder
+from SurveyLogic.PromptBuilders.PromptBuilderFactory import PromptBuilderFactory
 from SurveyLogic.PromptBuilders.StatisticsProviders.AverageExpensesProvider import AverageExpensesProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.ConvertingAverageExpensesProvider import \
     ConvertingAverageExpensesProvider
@@ -65,99 +66,14 @@ def createNewsPromptBuilder() -> (BasePromptBuilder, BasePromptBuilder):
 
     return SystemPromptBuilder(prompts.systemPrompt), CompositePromptBuilder(builders, headers)
 
-def createCustomPromptBuilder(cfg: ExperimentsConfiguration):
-    builders = []
-    headers = []
-
-    noInformationPromptBuilder = ConstantPromptBuilder('Нет информации')
-    mrotProvider = MROTProvider(configuration.mrotStatisticsPath)
-    averageBuyingsProvider = AverageExpensesProvider(configuration.averageBuyingsDataPath)
-    averageBuyingsProvider = ConvertingAverageExpensesProvider(averageBuyingsProvider, configuration.rlmsToInflationRegionsPath)
-
-    if cfg.useIndividualRLMSData:
-        builders.append(CommonProfilePromptBuilder(prompts.respondentPrompt, mrotProvider, averageBuyingsProvider))
-    else:
-        builders.append(noInformationPromptBuilder)
-    headers.append('Основные параметры опроса и респондента')
-
-    multipleWeeklyProvider = MultipleWeeklyInflationProvider(configuration.weeklyInflationDataPath, list(range(2022, 2027)))
-    weeklyInflationProvider = RosstatWeeklyInflationProvider(multipleWeeklyProvider)
-
-    singleMonthInflationProvider = createSingleMonthInflationProvider()
-    singleMonthInflationProvider = DateRoundingSingleMonthInflationProvider(singleMonthInflationProvider)
-
-    inflationProvider = InflationProvider(singleMonthInflationProvider, weeklyInflationProvider)
-    inflationProvider = ConvertingInflationProvider(inflationProvider, configuration.rlmsToInflationRegionsPath)
-
-    if cfg.useFamilyInformation:
-        householdInformationBuilder = HouseholdProfilePromptBuilder(prompts.househouldCommonPrompt, averageBuyingsProvider)
-        builders.append(householdInformationBuilder)
-    else:
-        builders.append(noInformationPromptBuilder)
-    headers.append('Детальная информация о домохозяйстве, членом которого является индивид')
-
-    if cfg.useFamilyExpenses:
-        expensesProfilePromptBuilder = ExpensesProfilePromptBuilder(prompts.expensesPrompt, inflationProvider, [configuration.regularGoods, configuration.durableGoods, configuration.services])
-        builders.append(expensesProfilePromptBuilder)
-    else:
-        builders.append(noInformationPromptBuilder)
-    headers.append('Детальная информация об инфляции на уровне региона на товары в топ-расходах семьи индивида (регулярные траты, товары длительного использования, услуги)')
-
-    if cfg.useStateExpenses:
-        paths = [configuration.weeklyRegularGoods, configuration.weeklyDurableGoods, configuration.weeklyServices]
-
-        stateExpensesPromptBuilder = StateExpensesProfilePromptBuilder(prompts.stateWeeklyExpensesPrompt, inflationProvider, paths)
-        builders.append(stateExpensesPromptBuilder)
-    else:
-        builders.append(noInformationPromptBuilder)
-    headers.append('Детальная наиболее свежая информация об инфляции на уровне Российской Федерации в целом на товары, покупаемые домохозяйством')
-
-    if cfg.useStateInflation:
-        stateInflationProvider = StateInflationContextPromptBuilder(prompts.stateInflationPrompt, inflationProvider)
-        builders.append(stateInflationProvider)
-    else:
-        builders.append(noInformationPromptBuilder)
-    headers.append('Официальная государственная статистика по инфляции')
-
-    if cfg.useRegionalInflation:
-        regionInflationProvider = RegionalInflationContextPromptBuilder(prompts.regionInflationPrompt, inflationProvider)
-        builders.append(regionInflationProvider)
-    else:
-        builders.append(noInformationPromptBuilder)
-    headers.append('Официальная государственная статистика по инфляции в регионе проживания индивида')
-
-    if cfg.useEconomy:
-        currencyProvider = USDRUBRateProvider(configuration.usdrubDataPath)
-        builders.append(StateEconomyContextPromptBuilder(prompts.stateEconomyPrompt, currencyProvider))
-    else:
-        builders.append(noInformationPromptBuilder)
-    headers.append('Основная информация об экономических показателях РФ в целом в мире')
-
-    if cfg.usePolitics:
-        builders.append(MonthlyFromFilePromptBuilder(prompts.politicsPath))
-    else:
-        builders.append(noInformationPromptBuilder)
-    headers.append('Основная политико-экономическая информация по РФ в целом')
-
-    builders.append(TaskPromptBuilder(prompts.taskPrompt))
-    headers.append('Задача')
-
-    return SystemPromptBuilder(prompts.systemPrompt), CompositePromptBuilder(builders, headers)
-
-def createSingleMonthInflationProvider() -> BaseSingleMonthInflationProvider:
-    files = [configuration.inflation20092014DataPath, configuration.inflation20152020DataPath,
-             configuration.inflation20212026DataPath]
-    yearsSets = [configuration.years20092014, configuration.years20152020, configuration.years20212026]
-    providers = [EMISSWebSingleMonthInflationProvider(x) for x in files]
-
-    singleMonthInflationProvider = MultipleEMISSFilesInflationProvider(providers, yearsSets)
-    return singleMonthInflationProvider
-
 def createSHAPPromptBuilders():
+    factory = PromptBuilderFactory()
+
     systemPromptBuilder = SystemPromptBuilder(prompts.systemPrompt)
     builders = []
 
     for i in range(128):
+        print(i)
         arr = getBitArray(i, 7)
         cfg = ExperimentsConfiguration(
             useIndividualRLMSData=arr[0],
@@ -169,8 +85,8 @@ def createSHAPPromptBuilders():
             useStateInflation=arr[6]
             )
 
-        pp = createCustomPromptBuilder(cfg)
-        builders.append(pp)
+        pp = factory.createCustomPromptBuilder(cfg)
+        builders.append(pp[1])
 
     names = ['RLMSIndividual', 'RLMSHH', 'RLMSHHRegionalExpenses', 'RLMSHHStateExpenses', 'Economy', 'RegionalInflation', 'StateInflation']
 
