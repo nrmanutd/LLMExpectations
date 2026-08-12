@@ -49,6 +49,31 @@ class BruteforceSHAPCalculator(BaseSHAPCalculator):
         idxes = self.indexes[i]
         oidxes = self.oppositeIndexes[i]
 
-        directData = sum([responds[i] for i in idxes])
-        oppositeData = sum([responds[i] for i in oidxes])
-        return (directData - oppositeData) / len(responds)
+        directData = 0
+        oppositeData = 0
+        count_direct = 0
+        count_opposite = 0
+
+        # Суммируем только не-None значения для прямых индексов
+        for idx in idxes:
+            val = responds[idx]
+            if val is not None:  # или if val is not None and not math.isnan(val) если есть NaN
+                directData += val
+                count_direct += 1
+
+        # Суммируем только не-None значения для противоположных индексов
+        for idx in oidxes:
+            val = responds[idx]
+            if val is not None:
+                oppositeData += val
+                count_opposite += 1
+
+        # Общее количество учтенных элементов
+        total_count = count_direct + count_opposite
+
+        # Защита от деления на ноль
+        if total_count == 0:
+            return 0.0
+
+        # Нормализуем на количество учтенных элементов
+        return (directData - oppositeData) / total_count

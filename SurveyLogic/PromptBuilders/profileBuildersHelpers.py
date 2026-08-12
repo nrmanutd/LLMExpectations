@@ -72,9 +72,10 @@ def createSHAPPromptBuilders():
     systemPromptBuilder = SystemPromptBuilder(prompts.systemPrompt)
     builders = []
 
-    for i in range(128):
-        print(i)
-        arr = getBitArray(i, 7)
+    totalBits = 7
+
+    for i in range(2**totalBits):
+        arr = getBitArray(i, totalBits)
         cfg = ExperimentsConfiguration(
             useIndividualRLMSData=arr[0],
             useFamilyInformation=arr[1],
@@ -90,4 +91,4 @@ def createSHAPPromptBuilders():
 
     names = ['RLMSIndividual', 'RLMSHH', 'RLMSHHRegionalExpenses', 'RLMSHHStateExpenses', 'Economy', 'RegionalInflation', 'StateInflation']
 
-    return systemPromptBuilder, builders, names
+    return systemPromptBuilder, builders, names[:totalBits]
