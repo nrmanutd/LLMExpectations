@@ -20,7 +20,8 @@ class SHAPSurveyExecutor(BaseSurveyExecutor):
         self.surveyer = surveyer
         self.promptBuilders = promptBuilders
         self.systemPromptBuilder = systemPromptBuilder
-        self.semaphore = asyncio.Semaphore(maxConnectionsLimit)
+        self.limit = maxConnectionsLimit
+        #self.semaphore = asyncio.Semaphore(maxConnectionsLimit)
 
     async def _executeWithLimit(self, surveyDate: date, profile: ProfileData, index: int):
         async with self.semaphore:
@@ -71,7 +72,7 @@ class SHAPSurveyExecutor(BaseSurveyExecutor):
         return completedSurveyes
 
     def executeSurvey(self, surveyDate: date, profile: ProfileData) -> SHAPSurveyRespond:
-
+        self.semaphore = asyncio.Semaphore(self.limit)
         surveyResults = asyncio.run(self._executeSurveyInternal(surveyDate, profile))
         responds = [x.expected_inflation_12m_pct for x in surveyResults]
         shapValues = self.shapCalculator.calculateShapValues(responds)

@@ -13,11 +13,11 @@ from SurveyLogic.surveyHelpers import createAsyncSurveyRunner, copyPromptTemplat
 
 experimentUniqueName='mlcluster_qwen36_async_shap'
 profilesFolder = Path('./data/Target profiles')
-profilesCount = 5
+profilesCount = 100
 resultsFolder = Path('data/Shap Results/')/experimentUniqueName
 copyPromptTemplatesToFolder(Path('SurveyLogic/PromptBuilders/Prompts/'), resultsFolder/'Prompts')
 
-surveyDates = getDatesFromStrings(['24.02.2022'])
+surveyDates = getDatesFromStrings(['05.03.2022'])
 
 logger = SimpleLogger()
 
