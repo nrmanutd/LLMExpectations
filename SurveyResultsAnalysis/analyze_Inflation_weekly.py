@@ -51,7 +51,7 @@ viz.plot_timeseries(
         colors=colors,
         xlabel='Дата',
         ylabel='Инфляция, %',
-        #show_date_labels=True,
+        show_date_labels=True,
         date_labels_for='true',
         title='Ожидаемая на год вперед инфляция: моделирование vs реальный опрос',
         figsize=(16, 8),

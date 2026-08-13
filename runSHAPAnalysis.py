@@ -17,7 +17,7 @@ profilesCount = 100
 resultsFolder = Path('data/Shap Results/')/experimentUniqueName
 copyPromptTemplatesToFolder(Path('SurveyLogic/PromptBuilders/Prompts/'), resultsFolder/'Prompts')
 
-surveyDates = getDatesFromStrings(['05.03.2022'])
+surveyDates = getDatesFromStrings(['09.07.2026', '08.05.2018', '09.12.2014', '05.03.2020'])
 
 logger = SimpleLogger()
 
