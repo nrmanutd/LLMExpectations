@@ -1,4 +1,7 @@
 from Configuration import configuration
+from SHAPAnalysis.AllMinusOneShapCalculator import AllMinusOneShapCalculator
+from SHAPAnalysis.BruteforceSHAPCalculator import BruteforceSHAPCalculator
+from SHAPAnalysis.ZeroPlusOneShapCalculator import ZeroPlusOneShapCalculator
 from SHAPAnalysis.shapHelpers import getBitArray
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.PromptBuilders.CompositePromptBuilder import CompositePromptBuilder
@@ -42,15 +45,75 @@ def createNewsPromptBuilder() -> (BasePromptBuilder, BasePromptBuilder):
 
     return SystemPromptBuilder(prompts.systemPrompt), CompositePromptBuilder(builders, headers)
 
-def createSHAPPromptBuilders():
+def createSHAPBruteforcePromptBuilders():
+    promptBuilders = createBruteforce()
+
+    return createBuilders(promptBuilders, lambda x: BruteforceSHAPCalculator(x))
+
+def createSHAPZeroPlusOnePromptBuilders():
+    builders = createZeroPlusOne()
+    return createBuilders(builders, lambda x: ZeroPlusOneShapCalculator(x))
+
+def createSHAPAllMinusOnePromptBuilders():
+    builders = createAllMinusOne()
+    return createBuilders(builders, lambda x: AllMinusOneShapCalculator(x) )
+
+
+def createZeroPlusOne():
     factory = PromptBuilderFactory()
-
-    systemPromptBuilder = SystemPromptBuilder(prompts.systemPrompt)
     builders = []
-
     totalBits = 7
 
-    for i in range(2**totalBits):
+    for i in range(totalBits):
+        arr = [False] * totalBits
+        arr[i] = True
+
+        cfg = ExperimentsConfiguration(
+            useIndividualRLMSData=arr[0],
+            useFamilyInformation=arr[1],
+            useFamilyExpenses=arr[2],
+            useStateExpenses=arr[3],
+            useEconomy=arr[4],
+            useRegionalInflation=arr[5],
+            useStateInflation=arr[6]
+        )
+
+        pp = factory.createCustomPromptBuilder(cfg)
+        builders.append(pp[1])
+
+    return builders
+
+def createAllMinusOne():
+    factory = PromptBuilderFactory()
+    builders = []
+    totalBits = 7
+
+    for i in range(totalBits + 1):
+        arr = [True] * totalBits
+        if i <totalBits:
+            arr[i] = False
+
+        cfg = ExperimentsConfiguration(
+            useIndividualRLMSData=arr[0],
+            useFamilyInformation=arr[1],
+            useFamilyExpenses=arr[2],
+            useStateExpenses=arr[3],
+            useEconomy=arr[4],
+            useRegionalInflation=arr[5],
+            useStateInflation=arr[6]
+        )
+
+        pp = factory.createCustomPromptBuilder(cfg)
+        builders.append(pp[1])
+
+    return builders
+
+def createBruteforce():
+    factory = PromptBuilderFactory()
+    builders = []
+    totalBits = 7
+
+    for i in range(2 ** totalBits):
         arr = getBitArray(i, totalBits)
         cfg = ExperimentsConfiguration(
             useIndividualRLMSData=arr[0],
@@ -60,11 +123,18 @@ def createSHAPPromptBuilders():
             useEconomy=arr[4],
             useRegionalInflation=arr[5],
             useStateInflation=arr[6]
-            )
+        )
 
         pp = factory.createCustomPromptBuilder(cfg)
         builders.append(pp[1])
 
-    names = ['RLMSIndividual', 'RLMSHH', 'RLMSHHRegionalExpenses', 'RLMSHHStateExpenses', 'Economy', 'RegionalInflation', 'StateInflation']
+    return builders
 
-    return systemPromptBuilder, builders, names[:totalBits]
+def createBuilders(builders, factory):
+    names = ['RLMSIndividual', 'RLMSHH', 'RLMSHHRegionalExpenses', 'RLMSHHStateExpenses', 'Economy',
+             'RegionalInflation', 'StateInflation']
+
+    systemPromptBuilder = SystemPromptBuilder(prompts.systemPrompt)
+    shapCalculator = factory(names)
+
+    return systemPromptBuilder, builders, shapCalculator
