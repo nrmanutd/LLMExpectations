@@ -5,15 +5,16 @@ from Configuration.configuration import mlcluster_key
 from Logging.SimpleLogger import SimpleLogger
 from SHAPAnalysis.BruteforceSHAPCalculator import BruteforceSHAPCalculator
 from SurveyLogic.PromptBuilders.profileBuildersHelpers import createSHAPBruteforcePromptBuilders, \
-    createSHAPZeroPlusOnePromptBuilders
+    createSHAPZeroPlusOnePromptBuilders, createSHAPAllMinusOnePromptBuilders
 from SurveyLogic.SurveyResultsSerialization.SurveySerializer import SurveySerializer
 from SurveyLogic.Surveyers.AsyncSurveyer import AsyncSurveyer
 from SurveyLogic.surveyHelpers import copyPromptTemplatesToFolder, \
     getDatesFromStrings, createSHAPSurveyRunner
 
-experimentUniqueName='mlcluster_qwen36_async_shap_0_plus_1'
+experimentUniqueName='mlcluster_qwen36_async_shap_7_minus_1'
 profilesFolder = Path('./data/Target profiles')
-profilesCount = 100
+profilesCount = 1000
+
 resultsFolder = Path('data/Shap Results/')/experimentUniqueName
 copyPromptTemplatesToFolder(Path('SurveyLogic/PromptBuilders/Prompts/'), resultsFolder/'Prompts')
 
@@ -25,7 +26,7 @@ surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=mlcluster_key, logge
 #surveyer = StubSurveyer()
 
 surveySerializer = SurveySerializer(resultsFolder)
-systemPromptBuilder, promptBuilders, shapCalculator = createSHAPZeroPlusOnePromptBuilders()
+systemPromptBuilder, promptBuilders, shapCalculator = createSHAPAllMinusOnePromptBuilders()
 
 for surveyDate in surveyDates:
     runner = createSHAPSurveyRunner(profilesFolder, systemPromptBuilder, promptBuilders, shapCalculator, surveySerializer, surveyer, profilesCount,

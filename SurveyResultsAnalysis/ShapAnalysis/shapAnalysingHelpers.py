@@ -114,10 +114,14 @@ def plot_variable_distributions_normalized(
         center_zero: bool = True,
         variablesMap: dict[str, str] = None,
         totalObjects: int = None,
-        additional_desc: str = None
+        additional_desc: str = None,
+        quantile_range: float = 0.95  # Новый параметр: диапазон квантилей (0-1)
 ):
     """
     Версия с нормализованными гистограммами (плотности) для лучшего сравнения форм распределений.
+
+    Args:
+        quantile_range: Диапазон квантилей для определения границ оси X (0.95 = 2.5% - 97.5%)
     """
     if not variable_values:
         raise ValueError("No variable values to plot")
@@ -150,14 +154,31 @@ def plot_variable_distributions_normalized(
     if len(all_values) == 0:
         raise ValueError("No values found in filtered_variable_values")
 
-    # Вычисляем общий диапазон
+    # Вычисляем диапазон с использованием квантилей
     if center_zero:
-        max_abs = np.max(np.abs(all_values))
-        x_min = -max_abs * 1.2 if max_abs > 0 else -1.0
-        x_max = max_abs * 1.2 if max_abs > 0 else 1.0
+        # Для симметричного диапазона относительно нуля используем абсолютные значения
+        abs_values = np.abs(all_values)
+        # Вычисляем квантиль для верхней границы
+        upper_quantile = np.quantile(abs_values, quantile_range)
+        # Добавляем небольшой запас (10%)
+        x_max = upper_quantile * 1.1 if upper_quantile > 0 else 1.0
+        x_min = -x_max
     else:
-        x_min = np.min(all_values) * 1.1
-        x_max = np.max(all_values) * 1.1
+        # Для несимметричного диапазона используем квантили с обеих сторон
+        lower_quantile = (1 - quantile_range) / 2  # например, 0.025 для quantile_range=0.95
+        upper_quantile = 1 - lower_quantile  # например, 0.975 для quantile_range=0.95
+
+        x_min = np.quantile(all_values, lower_quantile)
+        x_max = np.quantile(all_values, upper_quantile)
+
+        # Добавляем небольшой запас (10%)
+        if x_min != x_max:
+            x_range = x_max - x_min
+            x_min = x_min - x_range * 0.1
+            x_max = x_max + x_range * 0.1
+        else:
+            x_min = x_min - 1.0
+            x_max = x_max + 1.0
 
     colors = plt.cm.Set3(np.linspace(0, 1, n_vars))
 
@@ -173,7 +194,7 @@ def plot_variable_distributions_normalized(
                     ha='center', va='center')
             continue
 
-        # Нормализованная гистограмма (плотность)
+        # Нормализованная гистограмма (плотность) с использованием вычисленного диапазона
         ax.hist(values, bins=20, alpha=0.7, color=colors[idx],
                 edgecolor='black', linewidth=0.5,
                 range=(x_min, x_max), density=True)
@@ -196,8 +217,15 @@ def plot_variable_distributions_normalized(
         # Статистика
         mean_val = np.mean(values)
         std_val = np.std(values)
+
+        # Добавляем линии среднего и стандартного отклонения
         ax.axvline(mean_val, color='red', linestyle='--', linewidth=2,
-                   label=f'μ = {mean_val:.3f}')
+                   label=f'μ = {mean_val:.3f}, σ = {std_val:.3f}')
+
+        # Опционально: добавить линии для ±σ
+        ax.axvline(mean_val - std_val, color='red', linestyle=':', linewidth=1, alpha=0.5)
+        ax.axvline(mean_val + std_val, color='red', linestyle=':', linewidth=1, alpha=0.5,
+                   label=f'±σ')
 
         # Получаем имя переменной из маппинга
         display_name = var_name
@@ -241,7 +269,8 @@ def plot_variable_distributions_normalized(
 
     # Формируем заголовок с учетом date_str
     if date_str:
-        fig.suptitle(f'Плотности распределений SHAP {additional_desc} значений для опроса {date_str} ({desc})', fontsize=14, y=1.02)
+        fig.suptitle(f'Плотности распределений SHAP {additional_desc} значений для опроса {date_str} ({desc})',
+                     fontsize=14, y=1.02)
     else:
         fig.suptitle(f'Плотности распределений SHAP {additional_desc} значений ({desc})', fontsize=14, y=1.02)
 
