@@ -3,17 +3,16 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 
 from SurveyResultsAnalysis.ShapAnalysis.shapAnalysingHelpers import load_json_files, extract_variable_values, \
-    extract_target_dates, plot_variable_distributions, plot_variable_distributions_aligned, \
-    plot_variable_distributions_boxplot, plot_variable_distributions_normalized
+    extract_target_dates, plot_variable_distributions_normalized
 
-caseName = 'mlcluster_qwen36_async_shap'
+caseName = 'mlcluster_qwen36_async_shap_0_plus_1'
 rootFolder = Path('../../data/Shap Results')
 
 input_folder = rootFolder/caseName  # Путь к вашей папке
 output_path = rootFolder/caseName  # Куда сохранить
 
 #dates = ['09.07.2026', '08.05.2018', '09.12.2014', '05.03.2020', '05.03.2022']
-dates = ['05.03.2020']
+dates = ['09.07.2026']
 
 for d in dates:
     print(f"Loading files for date {d} from: {input_folder}")
@@ -54,10 +53,11 @@ for d in dates:
 
     fig = plot_variable_distributions_normalized(
         variable_values=vv,
-        output_path=rootFolder/f'{d}_{caseName}_shap_values.png',
+        output_path=output_path/f'{d}_{caseName}_shap_values.png',
         dates=dates,
         #show_stats=True,
-        totalObjects=len(data)
+        totalObjects=len(data),
+        additional_desc='(0+1)'
     )
 
     plt.show()  # Опционально, если хотите посмотреть график

@@ -113,7 +113,8 @@ def plot_variable_distributions_normalized(
         figsize: Tuple[int, int] = (15, 10),
         center_zero: bool = True,
         variablesMap: dict[str, str] = None,
-        totalObjects: int = None
+        totalObjects: int = None,
+        additional_desc: str = None
 ):
     """
     Версия с нормализованными гистограммами (плотности) для лучшего сравнения форм распределений.
@@ -121,23 +122,35 @@ def plot_variable_distributions_normalized(
     if not variable_values:
         raise ValueError("No variable values to plot")
 
-    n_vars = len(variable_values)
+    # Фильтруем None значения для каждой переменной
+    filtered_variable_values = {}
+    for var_name, values in variable_values.items():
+        if values is not None:
+            # Фильтруем None внутри списка
+            filtered_values = [v for v in values if v is not None]
+            if filtered_values:  # Оставляем только непустые списки
+                filtered_variable_values[var_name] = filtered_values
+
+    if not filtered_variable_values:
+        raise ValueError("No valid (non-None) values found in variable_values")
+
+    n_vars = len(filtered_variable_values)
     n_cols = 3
     n_rows = (n_vars + n_cols - 1) // n_cols
 
     fig, axes = plt.subplots(n_rows, n_cols, figsize=figsize)
     axes = axes.flatten()
 
-    # Исправленный сбор всех значений
+    # Сбор всех значений для определения общего диапазона
     all_values = []
-    for values in variable_values.values():
-        all_values.extend(values)  # Используем extend, а не append
+    for values in filtered_variable_values.values():
+        all_values.extend(values)
     all_values = np.array(all_values)
 
-    # Вычисляем общий диапазон
     if len(all_values) == 0:
-        raise ValueError("No values found in variable_values")
+        raise ValueError("No values found in filtered_variable_values")
 
+    # Вычисляем общий диапазон
     if center_zero:
         max_abs = np.max(np.abs(all_values))
         x_min = -max_abs * 1.2 if max_abs > 0 else -1.0
@@ -148,7 +161,7 @@ def plot_variable_distributions_normalized(
 
     colors = plt.cm.Set3(np.linspace(0, 1, n_vars))
 
-    for idx, (var_name, values) in enumerate(variable_values.items()):
+    for idx, (var_name, values) in enumerate(filtered_variable_values.items()):
         if idx >= len(axes):
             break
 
@@ -186,22 +199,24 @@ def plot_variable_distributions_normalized(
         ax.axvline(mean_val, color='red', linestyle='--', linewidth=2,
                    label=f'μ = {mean_val:.3f}')
 
-        if variablesMap is not None:
-            var_name = variablesMap[var_name]
+        # Получаем имя переменной из маппинга
+        display_name = var_name
+        if variablesMap is not None and var_name in variablesMap:
+            display_name = variablesMap[var_name]
 
         # Подпись с датами
         if dates:
             # Берем даты только для этого набора значений
-            # (предполагаем, что порядок соответствует)
             var_dates = dates[:len(values)]
             unique_dates = sorted(set(var_dates))
             if len(unique_dates) <= 3:
                 date_str = ", ".join(unique_dates)
             else:
                 date_str = f"{unique_dates[0]} ... {unique_dates[-1]}"
-            title_text = f"{var_name}"
+            title_text = f"{display_name}"
         else:
-            title_text = var_name
+            title_text = display_name
+            date_str = ""
 
         ax.set_title(title_text, fontsize=10)
         ax.set_xlabel('SHAP Value', fontsize=8)
@@ -210,7 +225,7 @@ def plot_variable_distributions_normalized(
         ax.grid(True, alpha=0.3)
         ax.legend(fontsize=7, loc='upper right')
 
-        # Информация о количестве точек
+        # Информация о количестве точек (учитываем только не-None значения)
         ax.text(0.95, 0.95, f'n={len(values)}', transform=ax.transAxes,
                 fontsize=8, verticalalignment='top', horizontalalignment='right',
                 bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
@@ -224,7 +239,11 @@ def plot_variable_distributions_normalized(
     else:
         desc = 'число опрошенных индивидов не указано'
 
-    fig.suptitle(f'Плотности распределений SHAP значений для опроса {date_str} ({desc})', fontsize=14, y=1.02)
+    # Формируем заголовок с учетом date_str
+    if date_str:
+        fig.suptitle(f'Плотности распределений SHAP {additional_desc} значений для опроса {date_str} ({desc})', fontsize=14, y=1.02)
+    else:
+        fig.suptitle(f'Плотности распределений SHAP {additional_desc} значений ({desc})', fontsize=14, y=1.02)
 
     plt.tight_layout()
 
