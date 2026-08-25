@@ -6,7 +6,7 @@ from SurveyResultsAnalysis.RegressionAnalysis.SurveyRegressionService import Sur
 from SurveyResultsAnalysis.RegressionAnalysis.regressionHelpers import loadSurveyResults, getSurveyVisualization
 from SurveyResultsAnalysis.TimeSeriesVisualizer import TimeSeriesVisualizer
 from SurveyResultsAnalysis.helpers import load_from_official_statistics, load_official_inflation, \
-    load_official_analytics_expectation
+    load_official_analytics_expectation, load_usdrub
 
 rootFolder = Path('../data/SurveyResults/')
 
@@ -16,18 +16,20 @@ modellingResults = [
         ('mlcluster_qwen36_async_all_two_weekbefore', 'QWEN 3.6 (все данные, -2w от Инфом)'),
         ('mlcluster_qwen36_async_nousdrub_time_week_before', 'QWEN 3.6 (без usdrub, -7d от Инфом)'),
         ('mlcluster_qwen36_async_nousdrub_time', 'QWEN 3.6 (без usdrub, в день Инфом)'),
-        ('mlcluster_qwen36_async_norlms_weekbefore', 'QWEN 3.6 (без RLMS, -7d от Инфом)')
+        ('mlcluster_qwen36_async_norlms_weekbefore', 'QWEN 3.6 (без RLMS, -7d от Инфом)'),
+        ('mlcluster_qwen36_async_only_rlms_-1week', 'QWEN 3.6 (только RLMS, -7d от Инфом)')
 ]
 
 surveyResults = loadSurveyResults(rootFolder, modellingResults)
 
 directEstimations = load_from_official_statistics(visualizationConfiguration.directInflationEstimationsPath, 1)
 officialInflation = load_official_inflation(visualizationConfiguration.officialInflationPath)
-surveyRegressionService = SurveyRegressionService(directEstimations, officialInflation)
+usdrubRate = load_usdrub(visualizationConfiguration.usdrubPath)
+surveyRegressionService = SurveyRegressionService(directEstimations, officialInflation, usdrubRate)
 visualizer = RegressionVisualizer()
 
 visualizationResults = {}
-variables = {'IE(t-1), I-12m(t), LLM_IE(t)':['X1', 'X2', 'X3'], 'IE(t-1), I-12m(t)': ['X1', 'X2'], 'I-12m(t), LLM_IE(t)': ['X2', 'X3']}
+variables = {'X1=IE(t-1), X2=I-12m(t), X3=LLM_IE(t), X4=UsdRub':['X1', 'X2', 'X3', 'X4'], 'X1=IE(t-1), X2=I-12m(t), X4=UsdRub': ['X1', 'X2', 'X4'], 'X2=I-12m(t), X3=LLM_IE(t), X4=UsdRub': ['X2', 'X3', 'X4']}
 for vn, v in variables.items():
     regressionResults = {}
     prefix = vn

@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 from SurveyResultsAnalysis.ShapAnalysis.shapAnalysingHelpers import load_json_files, extract_variable_values, \
     extract_target_dates, plot_variable_distributions_normalized
 
+#caseName = 'mlcluster_qwen36_async_shap'
+#additionalDescription = '(2^7)'
+
 caseName = 'mlcluster_qwen36_async_shap_7_minus_1'
 additionalDescription = '(7-1)'
 

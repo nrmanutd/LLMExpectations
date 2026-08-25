@@ -85,11 +85,22 @@ class RegressionVisualizer:
         margin = (global_max - global_min) * 0.05
         axis_limits = (global_min - margin, global_max + margin)
 
-        # Сортируем модели для красивого отображения
-        sorted_models = sorted(regression_results.items(), key=lambda x: x[0])
+        # ============================================
+        # СОРТИРУЕМ МОДЕЛИ ПО УБЫВАНИЮ R²
+        # ============================================
+        # Вычисляем R² для каждой модели
+        models_with_r2 = []
+        for model_name, (actual, predicted, model) in regression_results.items():
+            actual_values = actual.values.flatten()
+            predicted_values = predicted.values.flatten()
+            r2 = r2_score(actual_values, predicted_values)
+            models_with_r2.append((r2, model_name, actual, predicted, model))
+
+        # Сортируем по убыванию R²
+        sorted_models = sorted(models_with_r2, key=lambda x: x[0], reverse=True)
 
         # Рисуем каждый график
-        for idx, (model_name, (actual, predicted, model)) in enumerate(sorted_models):
+        for idx, (r2, model_name, actual, predicted, model) in enumerate(sorted_models):
             row = idx // n_cols
             col = idx % n_cols
 
@@ -184,8 +195,8 @@ class RegressionVisualizer:
 
         ax.grid(True, alpha=0.3)
 
-        # Заголовок с названием модели
-        ax.set_title(f'{model_name}', fontsize=11, fontweight='bold')
+        # Заголовок с названием модели (добавляем R² в заголовок для наглядности)
+        ax.set_title(f'{model_name} R² = {r2:.4f}', fontsize=11, fontweight='bold')
 
         # Добавляем статистику на график
         if show_stats and model is not None:

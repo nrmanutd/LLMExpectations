@@ -130,6 +130,12 @@ def transform_date(date_str: str) -> datetime:
         new_date = datetime(year, month + 1, 1)
     return new_date
 
+def transform_value(value: str) -> float:
+    # Парсим строку в формате MM.YYYY
+    a, b = map(int, value.split(','))
+
+    return a + b / 10000
+
 def load_official_inflation(path: Path):
     df = pd.read_excel(path, header=0, dtype={'Дата': str})
 
@@ -145,6 +151,16 @@ def load_official_inflation(path: Path):
 
     return df
 
+def load_usdrub(path: Path):
+    df = pd.read_excel(path, header=0, decimal=',')
+
+    # Устанавливаем индекс по датам
+    df = df.set_index('data')
+
+    # Сортируем по индексу (по датам) для удобства
+    df = df.sort_index()
+
+    return df
 
 def parse_dates_from_file(file_path: Path) -> dict:
     """
