@@ -6,10 +6,9 @@ class SurveyRegressionService:
         self.pastYearInflation = pastYearInflation
         self.inflationExpectations = inflationExpectations
 
-    def fit(self, survey):
+    def fit(self, survey, vars):
         df = self._createDataset(survey)
-        print(df)
-        x = df[['X1', 'X2', 'X3']]
+        x = df[vars]
         y = df['Y']
 
         dates = df['D']
@@ -36,12 +35,12 @@ class SurveyRegressionService:
             X2 = self._getInflation(current_date)
             X3 = survey['exp_mean'].iloc[i]
 
-            print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
+            #print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
             if X2 is None:
                 continue
 
             if self._calcDifference(current_date, prev_date) > 1:
-                print(f'Skipping date {current_date} because of prev date = {prev_date} is older for 1 month')
+                #print(f'Skipping date {current_date} because of prev date = {prev_date} is older for 1 month')
                 continue
 
             row = {

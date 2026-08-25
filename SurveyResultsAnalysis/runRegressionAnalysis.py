@@ -13,10 +13,10 @@ rootFolder = Path('../data/SurveyResults/')
 modellingResults = [
         ('mlcluster_qwen36_async_all_time', 'QWEN 3.6 (все данные, в день Инфом)'),
         ('mlcluster_qwen36_async_all_time_week_before', 'QWEN 3.6 (все данные, -7d от Инфом)'),
-        #('mlcluster_qwen36_async_all_two_weekbefore', 'QWEN 3.6 (все данные, -2w от Инфом)'),
-        #('mlcluster_qwen36_async_nousdrub_time_week_before', 'QWEN 3.6 (без usdrub, -7d от Инфом)'),
-        #('mlcluster_qwen36_async_nousdrub_time', 'QWEN 3.6 (без usdrub, в день Инфом)'),
-        #('mlcluster_qwen36_async_norlms_weekbefore', 'QWEN 3.6 (без RLMS, -7d от Инфом)')
+        ('mlcluster_qwen36_async_all_two_weekbefore', 'QWEN 3.6 (все данные, -2w от Инфом)'),
+        ('mlcluster_qwen36_async_nousdrub_time_week_before', 'QWEN 3.6 (без usdrub, -7d от Инфом)'),
+        ('mlcluster_qwen36_async_nousdrub_time', 'QWEN 3.6 (без usdrub, в день Инфом)'),
+        ('mlcluster_qwen36_async_norlms_weekbefore', 'QWEN 3.6 (без RLMS, -7d от Инфом)')
 ]
 
 surveyResults = loadSurveyResults(rootFolder, modellingResults)
@@ -27,18 +27,20 @@ surveyRegressionService = SurveyRegressionService(directEstimations, officialInf
 visualizer = RegressionVisualizer()
 
 visualizationResults = {}
-variables = [['X1', 'X2', 'X3'], ['X1', 'X2'], ['X2', 'X3']]
-for v in variables:
+variables = {'IE(t-1), I-12m(t), LLM_IE(t)':['X1', 'X2', 'X3'], 'IE(t-1), I-12m(t)': ['X1', 'X2'], 'I-12m(t), LLM_IE(t)': ['X2', 'X3']}
+for vn, v in variables.items():
     regressionResults = {}
-    prefix = '_'.join(v)
+    prefix = vn
 
     for name, survey in surveyResults.items():
-        survey.to_excel(f'{name}.xlsx')
-        y, r, m, dates = surveyRegressionService.fit(survey)
+        y, r, m, dates = surveyRegressionService.fit(survey, v)
         regressionResults[name] = (y, r, m)
         visualizationResults[f'Прогноз {prefix} {name}'] = getSurveyVisualization(r, dates)
 
-    visualizer.visualize(regressionResults, save_path=f'{prefix}_regression.png')
+    visualizer.visualize(regressionResults, save_path=f'{prefix}_regression.png', additional_title=prefix)
+
+for k, v in surveyResults.items():
+    visualizationResults[k] = v
 
 keyDates = {'15.12.2014': 'Черный понедельник', '31.01.2020': 'COVID-19 в РФ', '24.02.2022': 'Начало СВО', '18.06.2026': 'НПЗ в Московской области', '01.05.2018': 'Топливный кризис в РФ'}
 

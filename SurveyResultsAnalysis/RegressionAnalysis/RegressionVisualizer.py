@@ -37,7 +37,8 @@ class RegressionVisualizer:
                   n_cols: int = 2,
                   save_path: Optional[str] = None,
                   show_stats: bool = True,
-                  figsize_per_plot: Optional[Tuple[float, float]] = None) -> None:
+                  figsize_per_plot: Optional[Tuple[float, float]] = None,
+                  additional_title: str = '') -> None:
         """
         Визуализирует результаты всех регрессионных моделей.
 
@@ -112,7 +113,7 @@ class RegressionVisualizer:
                 fig.add_subplot(gs[row, col]).set_visible(False)
 
         # Общий заголовок
-        fig.suptitle('Сравнение регрессионных моделей инфляционных ожиданий',
+        fig.suptitle(f'Сравнение регрессионных моделей инфляционных ожиданий ({additional_title})',
                      fontsize=16, fontweight='bold', y=0.98)
 
         plt.tight_layout()
