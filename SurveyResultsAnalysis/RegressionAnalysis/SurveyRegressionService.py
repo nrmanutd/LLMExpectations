@@ -12,13 +12,14 @@ class SurveyRegressionService:
         x = df[['X1', 'X2', 'X3']]
         y = df['Y']
 
-        # Обучение модели
+        dates = df['D']
+
         x_const = sm.add_constant(x)
         model_sm = sm.OLS(y, x_const).fit()
 
         prediction = model_sm.predict(x_const)
 
-        return y, prediction, model_sm
+        return y, prediction, model_sm, dates
 
     def _createDataset(self, survey):
         rows = []
@@ -35,17 +36,20 @@ class SurveyRegressionService:
             X2 = self._getInflation(current_date)
             X3 = survey['exp_mean'].iloc[i]
 
+            print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
             if X2 is None:
                 continue
 
             if self._calcDifference(current_date, prev_date) > 1:
+                print(f'Skipping date {current_date} because of prev date = {prev_date} is older for 1 month')
                 continue
 
             row = {
                 'Y': Y,
                 'X1': X1,
                 'X2': X2,
-                'X3': X3
+                'X3': X3,
+                'D': current_date
             }
             rows.append(row)
 
@@ -77,5 +81,11 @@ class SurveyRegressionService:
             actualValue = current_value
             actualValueDate = current_date
 
-        return None
+        if actualValueDate is None:
+            return None
+
+        month_diff = self._calcDifference(date, actualValueDate)
+        if month_diff > 1:
+            return None
+        return actualValue
 
