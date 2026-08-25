@@ -8,6 +8,9 @@ from SurveyResultsAnalysis.ShapAnalysis.shapAnalysingHelpers import load_json_fi
 caseName = 'mlcluster_qwen36_async_shap_7_minus_1'
 additionalDescription = '(7-1)'
 
+#caseName = 'mlcluster_qwen36_async_shap_0_plus_1'
+#additionalDescription = '(0+1)'
+
 rootFolder = Path('../../data/Shap Results')
 
 input_folder = rootFolder/caseName  # Путь к вашей папке

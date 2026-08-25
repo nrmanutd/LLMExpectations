@@ -115,7 +115,7 @@ def plot_variable_distributions_normalized(
         variablesMap: dict[str, str] = None,
         totalObjects: int = None,
         additional_desc: str = None,
-        quantile_range: float = 0.95  # Новый параметр: диапазон квантилей (0-1)
+        quantile_range: float = 0.99  # Диапазон квантилей (0-1)
 ):
     """
     Версия с нормализованными гистограммами (плотности) для лучшего сравнения форм распределений.
@@ -194,10 +194,32 @@ def plot_variable_distributions_normalized(
                     ha='center', va='center')
             continue
 
+        # ---- ИЗМЕНЕНИЕ ЗДЕСЬ ----
+        # Вычисляем количество бинов на основе диапазона
+        # Чтобы получить шаг примерно 1, либо фиксированное количество бинов
+        data_range = x_max - x_min
+
+        # Вариант 1: Шаг = 1 (если диапазон позволяет)
+        bin_width = 1.0
+        n_bins = max(1, int(np.ceil(data_range / bin_width)))
+        # Ограничиваем количество бинов, чтобы не было слишком много
+        n_bins = min(n_bins, 50)  # Максимум 50 бинов
+
+        # Вариант 2: Если хотите всегда 20 бинов (закомментируйте вариант 1 и раскомментируйте этот)
+        # n_bins = 20
+
+        # Создаем явные границы бинов с шагом bin_width
+        bins = np.arange(x_min, x_max + bin_width, bin_width)
+        # Если бинов получилось слишком мало, используем 20 бинов
+        if len(bins) < 5:
+            n_bins = 20
+            bins = n_bins
+        # ---- КОНЕЦ ИЗМЕНЕНИЯ ----
+
         # Нормализованная гистограмма (плотность) с использованием вычисленного диапазона
-        ax.hist(values, bins=20, alpha=0.7, color=colors[idx],
+        ax.hist(values, bins=bins, alpha=0.7, color=colors[idx],
                 edgecolor='black', linewidth=0.5,
-                range=(x_min, x_max), density=True)
+                density=True)
 
         # Вычисляем и отображаем ядерную оценку плотности (KDE)
         try:
