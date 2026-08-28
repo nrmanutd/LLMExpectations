@@ -3,6 +3,8 @@ from SurveyLogic.PromptBuilders.CompositePromptBuilder import CompositePromptBui
 from SurveyLogic.PromptBuilders.ConstantPromptBuilder import ConstantPromptBuilder
 from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.MarkerGoodsInflationPromptBuilder import \
     MarkerGoodsInflationPromptBuilder
+from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.PrevoiusInflationExpectationsPromptBuilder import \
+    PrevoiusInflationExpectationsPromptBuilder
 from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.RegionalInflationContextPromptBuilder import \
     RegionalInflationContextPromptBuilder
 from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.StateEconomyContextPromptBuilder import \
@@ -22,6 +24,7 @@ from SurveyLogic.PromptBuilders.Prompts import prompts
 from SurveyLogic.PromptBuilders.StatisticsProviders.AverageExpensesProvider import AverageExpensesProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.ConvertingAverageExpensesProvider import \
     ConvertingAverageExpensesProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationExpectationsProvider import InflationExpectationsProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseSingleMonthInflationProvider import \
     BaseSingleMonthInflationProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.ConvertingInflationProvider import \
@@ -84,6 +87,8 @@ class PromptBuilderFactory:
         self.taskPromptBuilder = TaskPromptBuilder(prompts.taskPrompt)
 
         self.markerGoodsInflationProvider = MarkerGoodsInflationPromptBuilder(inflationProvider, configuration.regularMarkerGoods, configuration.durableMarkerGoods, configuration.servicesMarker)
+        inflationExpectationsProvider = InflationExpectationsProvider(configuration.inflationExpectations)
+        self.previousInflationExpectationsPromptBuilder = PrevoiusInflationExpectationsPromptBuilder(inflationExpectationsProvider)
 
     def _createSingleMonthInflationProvider(self) -> BaseSingleMonthInflationProvider:
         files = [configuration.inflation20092014DataPath, configuration.inflation20152020DataPath,
@@ -137,6 +142,12 @@ class PromptBuilderFactory:
         else:
             builders.append(self.noInformationPromptBuilder)
         headers.append('Основная информация об экономических показателях РФ в целом в мире')
+
+        if cfg.usePreviousInflationExpectations:
+            builders.append(self.previousInflationExpectationsPromptBuilder)
+        else:
+            builders.append(self.noInformationPromptBuilder)
+        headers.append('Предыдущие агрегированные инфляционные ожидания')
 
         if cfg.usePolitics:
             builders.append(self.politicsProvider)

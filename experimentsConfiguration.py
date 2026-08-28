@@ -8,6 +8,7 @@ class ExperimentsConfiguration:
     useFamilyInformation: bool = False
     useFamilyExpenses: bool = False
     useStateExpenses: bool = False
+    usePreviousInflationExpectations: bool = False
     useIndividualRLMSData: bool = False
 
     def get_active_features(self) -> list:
@@ -27,6 +28,8 @@ class ExperimentsConfiguration:
             features.append('state_exp')
         if self.useIndividualRLMSData:
             features.append('individual_info')
+        if self.usePreviousInflationExpectations:
+            features.append('previous_exp')
         return features
 
     def get_feature_names_en(self) -> list[str]:
@@ -38,7 +41,8 @@ class ExperimentsConfiguration:
             'family_info': 'Family Information',
             'family_exp': 'Family Expenses',
             'state_exp': 'State Expenses',
-            'individual_info': 'Individual Information'
+            'individual_info': 'Individual Information',
+            'previous_exp': 'Previous Inflation Expectations'
         }
         active = self.get_active_features()
         return [names_map[f] for f in active]
@@ -52,7 +56,8 @@ class ExperimentsConfiguration:
             'family_info': 'FamInf',
             'family_exp': 'FamExp',
             'state_exp': 'StExp',
-            'individual_info': 'IndInfo'
+            'individual_info': 'IndInfo',
+            'previous_exp': 'PrevInfExp'
         }
         active = self.get_active_features()
         if not active:

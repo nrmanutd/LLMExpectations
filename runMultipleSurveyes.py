@@ -21,10 +21,10 @@ profilesCount = 100
 resultsFolder = Path('data/SurveyResults/')/experimentUniqueName
 copyPromptTemplatesToFolder(Path('SurveyLogic/PromptBuilders/Prompts/'), resultsFolder/'Prompts')
 
-surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDays=offsetDays)
+#surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDays=offsetDays)
 
 #surveyDates = getDatesRowWithMonthlyStep('2020.12.01', '2021.01.01')
-#surveyDates = getDatesRowWithWeeklyStep('2022.01.12', '2022.05.07')
+surveyDates = getDatesRowWithWeeklyStep('2022.03.12', '2022.05.07')
 
 cfg = ExperimentsConfiguration(
     useIndividualRLMSData=True,
@@ -32,7 +32,8 @@ cfg = ExperimentsConfiguration(
     useFamilyExpenses=True,
     useStateExpenses=True,
     useEconomy=True,
-    useInflation=True
+    useInflation=True,
+    usePreviousInflationExpectations=True
     )
 
 saveExperimentConfiguration(cfg, resultsFolder)
