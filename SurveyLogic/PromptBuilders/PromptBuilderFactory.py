@@ -1,6 +1,8 @@
 from Configuration import configuration
 from SurveyLogic.PromptBuilders.CompositePromptBuilder import CompositePromptBuilder
 from SurveyLogic.PromptBuilders.ConstantPromptBuilder import ConstantPromptBuilder
+from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.MarkerGoodsInflationPromptBuilder import \
+    MarkerGoodsInflationPromptBuilder
 from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.RegionalInflationContextPromptBuilder import \
     RegionalInflationContextPromptBuilder
 from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.StateEconomyContextPromptBuilder import \
@@ -81,6 +83,8 @@ class PromptBuilderFactory:
         self.politicsProvider = MonthlyFromFilePromptBuilder(prompts.politicsPath)
         self.taskPromptBuilder = TaskPromptBuilder(prompts.taskPrompt)
 
+        self.markerGoodsInflationProvider = MarkerGoodsInflationPromptBuilder(inflationProvider, configuration.regularMarkerGoods, configuration.durableMarkerGoods, configuration.servicesMarker)
+
     def _createSingleMonthInflationProvider(self) -> BaseSingleMonthInflationProvider:
         files = [configuration.inflation20092014DataPath, configuration.inflation20152020DataPath,
                  configuration.inflation20212026DataPath]
@@ -120,17 +124,13 @@ class PromptBuilderFactory:
         headers.append(
             'Детальная наиболее свежая информация об инфляции на уровне Российской Федерации в целом на товары, покупаемые домохозяйством')
 
-        if cfg.useStateInflation:
-            builders.append(self.stateInflationProvider)
+        if cfg.useInflation:
+            inflationBuilders = [self.stateInflationProvider, self.regionInflationProvider, self.markerGoodsInflationProvider]
+            inflationPromptBuilder = CompositePromptBuilder(inflationBuilders, ['Инфляция по РФ в целом', 'Инфляция по региону проживания', 'Инфляция по товарам-маркерам в РФ и регионе проживания'])
+            builders.append(inflationPromptBuilder)
         else:
             builders.append(self.noInformationPromptBuilder)
         headers.append('Официальная государственная статистика по инфляции')
-
-        if cfg.useRegionalInflation:
-            builders.append(self.regionInflationProvider)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append('Официальная государственная статистика по инфляции в регионе проживания индивида')
 
         if cfg.useEconomy:
             builders.append(self.stateEconomyContextPromptBuilder)

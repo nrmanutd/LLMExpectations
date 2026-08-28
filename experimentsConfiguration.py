@@ -4,8 +4,7 @@ from dataclasses import dataclass
 class ExperimentsConfiguration:
     useEconomy: bool = False
     usePolitics: bool = False
-    useStateInflation: bool = False
-    useRegionalInflation: bool = False
+    useInflation: bool = False
     useFamilyInformation: bool = False
     useFamilyExpenses: bool = False
     useStateExpenses: bool = False
@@ -18,10 +17,8 @@ class ExperimentsConfiguration:
             features.append('economy')
         if self.usePolitics:
             features.append('politics')
-        if self.useStateInflation:
-            features.append('state_inf')
-        if self.useRegionalInflation:
-            features.append('regional_inf')
+        if self.useInflation:
+            features.append('inf')
         if self.useFamilyInformation:
             features.append('family_info')
         if self.useFamilyExpenses:
@@ -37,8 +34,7 @@ class ExperimentsConfiguration:
         names_map = {
             'economy': 'Economy',
             'politics': 'Politics',
-            'state_inf': 'State Inflation',
-            'regional_inf': 'Regional Inflation',
+            'inf': 'Inflation info',
             'family_info': 'Family Information',
             'family_exp': 'Family Expenses',
             'state_exp': 'State Expenses',
@@ -52,8 +48,7 @@ class ExperimentsConfiguration:
         abbr_map = {
             'economy': 'Econ',
             'politics': 'Pol',
-            'state_inf': 'StInf',
-            'regional_inf': 'RegInf',
+            'inf': 'Inf',
             'family_info': 'FamInf',
             'family_exp': 'FamExp',
             'state_exp': 'StExp',

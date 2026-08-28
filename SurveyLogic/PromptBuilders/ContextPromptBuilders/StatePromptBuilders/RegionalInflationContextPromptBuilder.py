@@ -3,8 +3,9 @@ from datetime import date
 from SurveyLogic.PromptBuilders import constants
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.PromptBuilders.Profiles.ProfileData import ProfileData
-from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseInflationProvider import BaseInflationProvider
-from SurveyLogic.PromptBuilders.commonHelpers import showInflation, getDescriptionMonth
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseInflationProvider import \
+    BaseInflationProvider
+from SurveyLogic.PromptBuilders.commonHelpers import getDescriptionMonth
 
 
 class RegionalInflationContextPromptBuilder(BasePromptBuilder):
