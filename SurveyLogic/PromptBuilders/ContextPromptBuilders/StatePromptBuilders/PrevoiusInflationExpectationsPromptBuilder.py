@@ -13,4 +13,7 @@ class PrevoiusInflationExpectationsPromptBuilder(BasePromptBuilder):
     def buildPrompt(self, surveyDate: date, profile: ProfileData):
         previousInflationExpectations = self.inflationExpectationsProvider.getInflationExpectations(surveyDate)
 
+        if previousInflationExpectations is None:
+            return f'По последней доступной до текущего опроса волне общероссийского опроса данные об ожидаемой населением инфляции на следующие 12 месяцев отсутствуют.'
+
         return f'По последней доступной до текущего опроса волне общероссийского опроса медианная оценка ожидаемой населением инфляции на следующие 12 месяцев составляла {previousInflationExpectations: .1f}%.'

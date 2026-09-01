@@ -15,7 +15,7 @@ from SurveyLogic.surveyHelpers import createAsyncSurveyRunner, extractDatesFromF
 from experimentsConfiguration import ExperimentsConfiguration
 
 offsetDays = -6
-experimentUniqueName=f'mlcluster_qwen38_async_all_{offsetDays}d'
+experimentUniqueName=f'mlcluster_qwen38_async_no_rlms_prevexp_{offsetDays}d'
 profilesFolder = Path('./data/Target profiles')
 profilesCount = 100
 resultsFolder = Path('data/SurveyResults/')/experimentUniqueName
@@ -27,10 +27,10 @@ surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDa
 #surveyDates = getDatesRowWithWeeklyStep('2022.03.12', '2022.05.07')
 
 cfg = ExperimentsConfiguration(
-    useIndividualRLMSData=True,
-    useFamilyInformation=True,
-    useFamilyExpenses=True,
-    useStateExpenses=True,
+    useIndividualRLMSData=False,
+    useFamilyInformation=False,
+    useFamilyExpenses=False,
+    useStateExpenses=False,
     useEconomy=True,
     useInflation=True,
     usePreviousInflationExpectations=True
@@ -42,8 +42,8 @@ factory = PromptBuilderFactory()
 systemPromptBuilder, promptBuilder = factory.createCustomPromptBuilder(cfg)
 logger = SimpleLogger()
 
-#surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.8-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
-surveyer = StubSurveyer()
+surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.8-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
+#surveyer = StubSurveyer()
 
 surveySerializer = SurveySerializer(resultsFolder)
 

@@ -1,5 +1,7 @@
 import pandas as pd
 import statsmodels.api as sm
+from scipy.stats import stats
+
 
 class SurveyRegressionService:
     def __init__(self, inflationExpectations, pastYearInflation, usdrubRate):
@@ -18,6 +20,21 @@ class SurveyRegressionService:
 
         x_const = sm.add_constant(x)
         model_sm = sm.OLS(y, x_const).fit()
+
+        print(f'Checking...{vars}')
+        print(model_sm.rsquared)
+        print(stats.pearsonr(
+            x.iloc[:, 0].to_numpy(),
+            y.to_numpy()
+        )[0] ** 2)
+
+        x_arr = x.iloc[:, 0].to_numpy()
+        y_arr = y.to_numpy()
+
+        print("SECOND:")
+        print("n =", len(x_arr))
+        print("X =", x_arr)
+        print("Y =", y_arr)
 
         prediction = model_sm.predict(x_const)
 

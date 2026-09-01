@@ -958,136 +958,371 @@ class TimeSeriesVisualizer:
                          cut_date: Optional[Union[str, datetime]] = None):
         """
         Строит графики корреляции между истинным рядом и каждым модельным рядом.
-        Каждая модель отображается на отдельном subplot.
-        Сопоставление происходит по ПОРЯДКОВОМУ НОМЕРУ.
+
+        ВАЖНО:
+        Сопоставление true_series и model_series происходит строго
+        ПО ПОЗИЦИОННОМУ ИНДЕКСУ.
+
+        Даты start_date, end_date и cut_date применяются ТОЛЬКО
+        к true_series. После определения подходящих позиций те же самые
+        позиции выбираются из каждого model_series.
+
+        Поэтому даты model_series не используются для фильтрации:
+        i-й элемент model_series всегда сопоставляется с i-м элементом
+        true_series.
 
         Args:
             ncols: количество колонок в сетке subplots
-            cut_date: дата, до которой отсекаются точки (удаляются все точки до этой даты)
+            cut_date: оставить наблюдения true_series с датой >= cut_date
+
+            use_intersection:
+                Сохраняется для обратной совместимости с существующим API.
+                При позиционном сопоставлении даты модельных рядов не участвуют
+                в определении выборки, поэтому этот параметр не изменяет
+                фильтрацию.
         """
         from scipy import stats
 
-        # Определяем колонки
+        # ------------------------------------------------------------
+        # 1. Определяем необходимые колонки
+        # ------------------------------------------------------------
         if variable == 'observable':
             true_col = 'observable_inflation'
             model_col = 'obs_mean'
-            default_title = f'Correlation: Observable Inflation - Models vs True'
+            default_title = 'Correlation: Observable Inflation - Models vs True'
         else:
             true_col = 'expected_inflation'
             model_col = 'exp_mean'
-            default_title = f'Correlation: Expected Inflation - Models vs True'
+            default_title = 'Correlation: Expected Inflation - Models vs True'
 
-        # Настройки цветов
+        # ------------------------------------------------------------
+        # 2. Настройки цветов
+        # ------------------------------------------------------------
         default_colors = {}
-        model_colors = ['#E74C3C', '#2ECC71', '#F39C12', '#9B59B6', '#1ABC9C', '#E67E22', '#3498DB', '#E74C3C']
+
+        model_colors = [
+            '#E74C3C',
+            '#2ECC71',
+            '#F39C12',
+            '#9B59B6',
+            '#1ABC9C',
+            '#E67E22',
+            '#3498DB',
+            '#E74C3C'
+        ]
+
         for i, name in enumerate(self.model_series.keys()):
             default_colors[name] = model_colors[i % len(model_colors)]
 
         colors = colors or {}
         all_colors = {**default_colors, **colors}
 
-        # Определяем диапазон дат
-        start, end = self._get_date_range(start_date, end_date, use_intersection)
-
-        # Фильтруем данные
-        true_filtered, model_filtered = self._filter_data_by_date(start, end)
-
-        if true_filtered.empty:
+        # ------------------------------------------------------------
+        # 3. Истинный ряд является ЕДИНСТВЕННЫМ источником фильтрации
+        # ------------------------------------------------------------
+        if self.true_series.empty:
             print("⚠️ Нет данных для истинного ряда")
             return None, None
 
-        # Применяем cut_date для отсечения первых точек
-        cut_idx = 0
-        if cut_date is not None:
-            cut_date = pd.to_datetime(cut_date)
+        if true_col not in self.true_series.columns:
+            raise ValueError(
+                f"Колонка '{true_col}' отсутствует в true_series"
+            )
 
-            # Находим индекс первой даты после cut_date
-            true_dates = true_filtered.index
-            cut_idx = np.searchsorted(true_dates, cut_date, side='left')
+        true_dates = pd.DatetimeIndex(self.true_series.index)
 
-            # Если есть даты после cut_date
-            if cut_idx < len(true_dates):
-                # Обрезаем true_filtered
-                true_filtered = true_filtered.iloc[cut_idx:]
+        # Начинаем со всех позиций исходного true_series
+        position_mask = np.ones(len(self.true_series), dtype=bool)
 
-                # Обрезаем все модели на то же количество точек с начала
-                for name in model_filtered:
-                    if not model_filtered[name].empty:
-                        model_filtered[name] = model_filtered[name].iloc[cut_idx:]
+        # ------------------------------------------------------------
+        # 4. start_date / end_date применяем ТОЛЬКО к true_series
+        # ------------------------------------------------------------
+        parsed_start_date = (
+            pd.to_datetime(start_date)
+            if start_date is not None
+            else None
+        )
 
-                print(f"✂️ Отсечено {cut_idx} точек до даты {cut_date}")
-            else:
-                print(f"⚠️ Нет точек после даты {cut_date}")
-                return None, None
+        parsed_end_date = (
+            pd.to_datetime(end_date)
+            if end_date is not None
+            else None
+        )
 
-        # Формируем заголовок с информацией о cut_date
-        if title is None:
-            if cut_date is not None:
-                title = f'{default_title} (cut-off: {cut_date.strftime("%Y-%m-%d")}, removed {cut_idx} points)'
-            else:
-                title = default_title
+        # Сохраняем старое поведение: если даты перепутаны,
+        # меняем их местами
+        if (parsed_start_date is not None and
+                parsed_end_date is not None and
+                parsed_start_date > parsed_end_date):
+            print(
+                f"⚠️ Начальная дата ({parsed_start_date}) позже "
+                f"конечной ({parsed_end_date}). Меняем местами."
+            )
 
-        # Определяем порядок отображения
+            parsed_start_date, parsed_end_date = (
+                parsed_end_date,
+                parsed_start_date
+            )
+
+        if parsed_start_date is not None:
+            position_mask &= (true_dates >= parsed_start_date)
+
+        if parsed_end_date is not None:
+            position_mask &= (true_dates <= parsed_end_date)
+
+        # ------------------------------------------------------------
+        # 5. cut_date также применяется ТОЛЬКО к true_series
+        # ------------------------------------------------------------
+        parsed_cut_date = (
+            pd.to_datetime(cut_date)
+            if cut_date is not None
+            else None
+        )
+
+        # Сколько наблюдений именно cut_date удаляет из уже заданного
+        # start/end диапазона
+        removed_by_cut = 0
+
+        if parsed_cut_date is not None:
+            before_cut_mask = position_mask.copy()
+
+            position_mask &= (true_dates >= parsed_cut_date)
+
+            removed_by_cut = int(
+                np.sum(before_cut_mask & (true_dates < parsed_cut_date))
+            )
+
+        # ------------------------------------------------------------
+        # 6. Получаем ПОЗИЦИИ в исходном массиве true_series
+        # ------------------------------------------------------------
+        selected_positions = np.flatnonzero(position_mask)
+
+        if len(selected_positions) == 0:
+            print("⚠️ После фильтрации не осталось наблюдений")
+            return None, None
+
+        # Выбираем true по найденным позициям
+        true_filtered = self.true_series.iloc[selected_positions]
+
+        print(
+            f"📊 Выбрано {len(selected_positions)} из "
+            f"{len(self.true_series)} наблюдений true_series"
+        )
+
+        if parsed_start_date is not None:
+            print(f"   start_date: {parsed_start_date.strftime('%Y-%m-%d')}")
+
+        if parsed_end_date is not None:
+            print(f"   end_date:   {parsed_end_date.strftime('%Y-%m-%d')}")
+
+        if parsed_cut_date is not None:
+            print(
+                f"✂️ cut_date: {parsed_cut_date.strftime('%Y-%m-%d')}, "
+                f"удалено {removed_by_cut} наблюдений"
+            )
+
+        # ------------------------------------------------------------
+        # 7. Определяем порядок моделей
+        # ------------------------------------------------------------
         if model_order is None:
-            model_names = list(model_filtered.keys())
+            model_names = list(self.model_series.keys())
         else:
-            model_names = [name for name in model_order if name in model_filtered]
-
-        # Убираем пустые модели
-        model_names = [name for name in model_names if not model_filtered[name].empty]
+            model_names = [
+                name
+                for name in model_order
+                if name in self.model_series
+            ]
 
         if not model_names:
             print("⚠️ Нет моделей с данными")
             return None, None
 
-        # Определяем количество subplots
+        # ------------------------------------------------------------
+        # 8. Проверяем ключевое условие:
+        #    модель и true_series должны иметь одинаковую длину
+        # ------------------------------------------------------------
+        valid_model_names = []
+
+        for name in model_names:
+            df = self.model_series[name]
+
+            if df.empty:
+                continue
+
+            if model_col not in df.columns:
+                raise ValueError(
+                    f"Колонка '{model_col}' отсутствует "
+                    f"в model_series['{name}']"
+                )
+
+            if len(df) != len(self.true_series):
+                raise ValueError(
+                    f"Невозможно гарантировать позиционное соответствие "
+                    f"для модели '{name}':\n"
+                    f"len(true_series) = {len(self.true_series)}, "
+                    f"len(model_series['{name}']) = {len(df)}.\n"
+                    f"Для корректной корреляции ряды должны иметь "
+                    f"одинаковую исходную длину."
+                )
+
+            valid_model_names.append(name)
+
+        model_names = valid_model_names
+
+        if not model_names:
+            print("⚠️ Нет моделей с данными")
+            return None, None
+
+        # ------------------------------------------------------------
+        # 9. Формируем заголовок
+        # ------------------------------------------------------------
+        if title is None:
+            title_parts = [default_title]
+
+            filter_info = []
+
+            if parsed_start_date is not None:
+                filter_info.append(
+                    f"start={parsed_start_date.strftime('%Y-%m-%d')}"
+                )
+
+            if parsed_end_date is not None:
+                filter_info.append(
+                    f"end={parsed_end_date.strftime('%Y-%m-%d')}"
+                )
+
+            if parsed_cut_date is not None:
+                filter_info.append(
+                    f"cut-off={parsed_cut_date.strftime('%Y-%m-%d')}"
+                )
+
+            if filter_info:
+                title_parts.append(
+                    "(" + ", ".join(filter_info) + ")"
+                )
+
+            title = " ".join(title_parts)
+
+        # ------------------------------------------------------------
+        # 10. Создаем subplots
+        # ------------------------------------------------------------
         n_models = len(model_names)
-        nrows = (n_models + ncols - 1) // ncols
 
-        # Создаем фигуру с subplots
-        fig, axes = plt.subplots(nrows, ncols, figsize=figsize)
+        # Нет смысла создавать больше колонок, чем моделей
+        actual_ncols = max(1, min(ncols, n_models))
+        nrows = (n_models + actual_ncols - 1) // actual_ncols
 
-        # Если只有一个 subplot, преобразуем в список
-        if n_models == 1:
-            axes = np.array([axes])
-        else:
-            axes = axes.flatten()
+        fig, axes = plt.subplots(
+            nrows,
+            actual_ncols,
+            figsize=figsize
+        )
 
-        # Получаем значения истинного ряда
-        true_values = true_filtered[true_col].values
+        # Работает корректно и при одной модели
+        axes = np.atleast_1d(axes).ravel()
 
-        # Для каждой модели строим отдельный subplot
+        # Значения true уже выбраны по нужным ПОЗИЦИЯМ
+        true_values_all = (
+            pd.to_numeric(
+                true_filtered[true_col],
+                errors='coerce'
+            )
+            .to_numpy(dtype=float)
+        )
+
+        # ------------------------------------------------------------
+        # 11. Строим корреляцию для каждой модели
+        # ------------------------------------------------------------
         for idx, name in enumerate(model_names):
             ax = axes[idx]
-            df = model_filtered[name]
 
-            # Получаем значения модели
-            model_values = df[model_col].values
+            original_model_df = self.model_series[name]
 
-            # Сопоставляем по порядковому номеру
-            min_len = min(len(true_values), len(model_values))
-            true_aligned = true_values[:min_len]
-            model_aligned = model_values[:min_len]
+            # --------------------------------------------------------
+            # КЛЮЧЕВОЙ МОМЕНТ:
+            #
+            # НЕ фильтруем модель по ее датам.
+            #
+            # Берем ровно те же ПОЗИЦИИ исходного массива,
+            # которые были выбраны из true_series.
+            # --------------------------------------------------------
+            model_filtered = original_model_df.iloc[selected_positions]
 
-            # Строим scatter plot
-            ax.scatter(model_aligned, true_aligned,
-                       color=all_colors.get(name, '#E74C3C'),
-                       s=markersize,
-                       alpha=alpha,
-                       label='Data points')
+            model_values_all = (
+                pd.to_numeric(
+                    model_filtered[model_col],
+                    errors='coerce'
+                )
+                .to_numpy(dtype=float)
+            )
 
-            # Вычисляем статистику
+            # Позиционное соответствие здесь уже строго 1:1
+            true_aligned = true_values_all.copy()
+            model_aligned = model_values_all.copy()
+
+            print("FIRST:")
+            print("n =", len(model_aligned))
+            print("X =", model_aligned)
+            print("Y =", true_aligned)
+
+            # Если где-то есть NaN/inf, удаляем именно ПАРУ,
+            # не нарушая позиционное соответствие
+            valid_mask = (
+                    np.isfinite(true_aligned) &
+                    np.isfinite(model_aligned)
+            )
+
+            true_aligned = true_aligned[valid_mask]
+            model_aligned = model_aligned[valid_mask]
+
+            # Диагностика
+            print(f"\n{name}")
+            print(
+                "True positions:",
+                selected_positions[valid_mask]
+            )
+            print(
+                "True dates:",
+                true_filtered.index[valid_mask].strftime('%Y-%m-%d').tolist()
+            )
+            print(f"True values:  {true_aligned}")
+            print(f"Model values: {model_aligned}")
+
+            # --------------------------------------------------------
+            # Scatter
+            # --------------------------------------------------------
+            ax.scatter(
+                model_aligned,
+                true_aligned,
+                color=all_colors.get(name, '#E74C3C'),
+                s=markersize,
+                alpha=alpha,
+                label='Data points'
+            )
+
+            # --------------------------------------------------------
+            # Статистика
+            # --------------------------------------------------------
             if len(model_aligned) > 2:
-                # Проверяем, есть ли вариация в данных
-                if np.std(model_aligned) > 1e-10 and np.std(true_aligned) > 1e-10:
-                    # Корреляция Пирсона
-                    correlation, p_value = stats.pearsonr(model_aligned, true_aligned)
+
+                if (
+                        np.std(model_aligned) > 1e-10 and
+                        np.std(true_aligned) > 1e-10
+                ):
+                    correlation, p_value = stats.pearsonr(
+                        model_aligned,
+                        true_aligned
+                    )
+
                     r_squared = correlation ** 2
 
-                    # Коэффициент зависимости (наклон линейной регрессии)
-                    slope, intercept, r_value, p_value_reg, std_err = stats.linregress(model_aligned, true_aligned)
+                    slope, intercept, r_value, p_value_reg, std_err = (
+                        stats.linregress(
+                            model_aligned,
+                            true_aligned
+                        )
+                    )
 
-                    # Определяем звездочки для p-value
                     if p_value < 0.001:
                         stars = '***'
                     elif p_value < 0.01:
@@ -1097,77 +1332,168 @@ class TimeSeriesVisualizer:
                     else:
                         stars = 'ns'
 
-                    # Добавляем линию регрессии
-                    x_line = np.array([model_aligned.min(), model_aligned.max()])
+                    # Регрессионная линия
+                    x_line = np.array([
+                        model_aligned.min(),
+                        model_aligned.max()
+                    ])
+
                     y_line = slope * x_line + intercept
-                    ax.plot(x_line, y_line,
-                            color=all_colors.get(name, '#E74C3C'),
-                            linestyle='--',
-                            alpha=0.7,
-                            linewidth=2,
-                            label=f'Regression (slope={slope:.3f})')
 
-                    # Добавляем текст с статистикой в правый верхний угол
-                    stats_text = (f'r = {correlation:.4f}{stars}\n'
-                                  f'R² = {r_squared:.4f}\n'
-                                  f'p = {p_value:.4e}\n'
-                                  f'n = {len(model_aligned)}')
+                    ax.plot(
+                        x_line,
+                        y_line,
+                        color=all_colors.get(name, '#E74C3C'),
+                        linestyle='--',
+                        alpha=0.7,
+                        linewidth=2,
+                        label=f'Regression (slope={slope:.3f})'
+                    )
 
-                    ax.text(0.95, 0.95, stats_text,
-                            transform=ax.transAxes,
-                            fontsize=10,
-                            verticalalignment='top',
-                            horizontalalignment='right',
-                            bbox=dict(boxstyle='round,pad=0.5',
-                                      facecolor='white',
-                                      edgecolor=all_colors.get(name, '#E74C3C'),
-                                      alpha=0.9))
+                    stats_text = (
+                        f'r = {correlation:.4f}{stars}\n'
+                        f'R² = {r_squared:.4f}\n'
+                        f'p = {p_value:.4e}\n'
+                        f'n = {len(model_aligned)}'
+                    )
+
+                    ax.text(
+                        0.95,
+                        0.95,
+                        stats_text,
+                        transform=ax.transAxes,
+                        fontsize=10,
+                        verticalalignment='top',
+                        horizontalalignment='right',
+                        bbox=dict(
+                            boxstyle='round,pad=0.5',
+                            facecolor='white',
+                            edgecolor=all_colors.get(
+                                name,
+                                '#E74C3C'
+                            ),
+                            alpha=0.9
+                        )
+                    )
+
                 else:
-                    ax.text(0.5, 0.5, 'No variation in data',
-                            transform=ax.transAxes,
-                            fontsize=12,
-                            ha='center', va='center',
-                            bbox=dict(boxstyle='round,pad=0.5',
-                                      facecolor='yellow',
-                                      alpha=0.5))
-            else:
-                ax.text(0.5, 0.5, f'Not enough points (n={len(model_aligned)})',
+                    ax.text(
+                        0.5,
+                        0.5,
+                        'No variation in data',
                         transform=ax.transAxes,
                         fontsize=12,
-                        ha='center', va='center',
-                        bbox=dict(boxstyle='round,pad=0.5',
-                                  facecolor='yellow',
-                                  alpha=0.5))
+                        ha='center',
+                        va='center',
+                        bbox=dict(
+                            boxstyle='round,pad=0.5',
+                            facecolor='yellow',
+                            alpha=0.5
+                        )
+                    )
 
-            # Линия y=x для справки
-            min_val = min(ax.get_xlim()[0], ax.get_ylim()[0])
-            max_val = max(ax.get_xlim()[1], ax.get_ylim()[1])
-            ax.plot([min_val, max_val], [min_val, max_val],
-                    'k--', alpha=0.2, linewidth=1, label='y = x')
+            else:
+                ax.text(
+                    0.5,
+                    0.5,
+                    f'Not enough points (n={len(model_aligned)})',
+                    transform=ax.transAxes,
+                    fontsize=12,
+                    ha='center',
+                    va='center',
+                    bbox=dict(
+                        boxstyle='round,pad=0.5',
+                        facecolor='yellow',
+                        alpha=0.5
+                    )
+                )
 
-            # Настройки subplot
-            ax.set_title(f'{name}', fontsize=12, fontweight='bold')
-            ax.set_xlabel('Model Values', fontsize=10)
-            ax.set_ylabel('True Values', fontsize=10)
-            ax.legend(loc='lower right', fontsize=8)
+            # --------------------------------------------------------
+            # y = x
+            # --------------------------------------------------------
+            if len(model_aligned) > 0:
+                min_val = min(
+                    ax.get_xlim()[0],
+                    ax.get_ylim()[0]
+                )
+
+                max_val = max(
+                    ax.get_xlim()[1],
+                    ax.get_ylim()[1]
+                )
+
+                ax.plot(
+                    [min_val, max_val],
+                    [min_val, max_val],
+                    'k--',
+                    alpha=0.2,
+                    linewidth=1,
+                    label='y = x'
+                )
+
+            # --------------------------------------------------------
+            # Оформление subplot
+            # --------------------------------------------------------
+            ax.set_title(
+                name,
+                fontsize=12,
+                fontweight='bold'
+            )
+
+            ax.set_xlabel(
+                'Model Values',
+                fontsize=10
+            )
+
+            ax.set_ylabel(
+                'True Values',
+                fontsize=10
+            )
+
+            ax.legend(
+                loc='lower right',
+                fontsize=8
+            )
 
             if grid:
-                ax.grid(True, alpha=0.3)
+                ax.grid(
+                    True,
+                    alpha=0.3
+                )
 
             ax.axis('equal')
 
-        # Скрываем неиспользуемые subplots
-        for idx in range(len(model_names), len(axes)):
+        # ------------------------------------------------------------
+        # 12. Скрываем лишние subplot
+        # ------------------------------------------------------------
+        for idx in range(n_models, len(axes)):
             axes[idx].set_visible(False)
 
-        # Общий заголовок с информацией о cut_date
-        fig.suptitle(title, fontsize=14, fontweight='bold', y=0.98)
+        # ------------------------------------------------------------
+        # 13. Общий заголовок
+        # ------------------------------------------------------------
+        fig.suptitle(
+            title,
+            fontsize=14,
+            fontweight='bold',
+            y=0.98
+        )
 
         plt.tight_layout()
 
+        # ------------------------------------------------------------
+        # 14. Сохранение
+        # ------------------------------------------------------------
         if save_path:
-            plt.savefig(save_path, dpi=300, bbox_inches='tight')
-            print(f"✅ График корреляции сохранен: {save_path}")
+            plt.savefig(
+                save_path,
+                dpi=300,
+                bbox_inches='tight'
+            )
+
+            print(
+                f"✅ График корреляции сохранен: {save_path}"
+            )
 
         if show:
             plt.show()
