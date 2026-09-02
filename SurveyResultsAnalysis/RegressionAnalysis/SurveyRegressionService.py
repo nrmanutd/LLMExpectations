@@ -1,5 +1,6 @@
 import pandas as pd
 import statsmodels.api as sm
+import numpy as np
 from scipy.stats import stats
 
 
@@ -9,36 +10,150 @@ class SurveyRegressionService:
         self.pastYearInflation = pastYearInflation
         self.inflationExpectations = inflationExpectations
 
-    def fit(self, survey, vars):
-        df = self._createDataset(survey)
+    def fit(self, survey, vars, isDelta:bool):
+        df = self._createDeltasDataset(survey) if isDelta else self._createDataset(survey)
+
         df.to_excel('temp.xlsx')
 
         x = df[vars]
         y = df['Y']
+        yt = df['YT']
 
         dates = df['D']
 
         x_const = sm.add_constant(x)
         model_sm = sm.OLS(y, x_const).fit()
 
-        print(f'Checking...{vars}')
-        print(model_sm.rsquared)
-        print(stats.pearsonr(
-            x.iloc[:, 0].to_numpy(),
-            y.to_numpy()
-        )[0] ** 2)
-
-        x_arr = x.iloc[:, 0].to_numpy()
-        y_arr = y.to_numpy()
-
-        print("SECOND:")
-        print("n =", len(x_arr))
-        print("X =", x_arr)
-        print("Y =", y_arr)
-
         prediction = model_sm.predict(x_const)
+        adjustedPrediction = prediction + yt
+        adjustedY = y + yt
 
-        return y, prediction, model_sm, dates
+        return adjustedY, adjustedPrediction, model_sm, dates
+
+    def fit_oos(self, survey, vars, isDelta: bool, start_n=30):
+        """
+        Построение регрессии с расширяющимся окном (expanding window)
+        для прогнозирования следующей точки.
+
+        Parameters:
+        -----------
+        survey : данные опроса
+        vars : список переменных для модели
+        start_n : int
+            Начальный размер обучающей выборки.
+
+        Returns:
+        --------
+        y_true : pd.Series
+            Фактические значения для OOS-периода.
+        predictions : pd.Series
+            OOS-прогнозы.
+        model_sm : str
+            Пустая строка для совместимости.
+        dates : list
+            Даты прогнозируемых точек.
+        """
+
+
+        if isDelta:
+            df = self._createDeltasDataset(survey)
+        else:
+            df = self._createDataset(survey)
+
+        df.to_excel('temp.xlsx')
+
+        x = df[vars].to_numpy(dtype=float)
+        y = df['Y'].to_numpy(dtype=float)
+        yt = df['YT'].to_numpy(dtype=float)
+        dates = df['D'].to_numpy()
+
+        total_n = len(df)
+
+        if total_n <= start_n:
+            raise ValueError(
+                f"Недостаточно данных: total_n={total_n}, start_n={start_n}"
+            )
+
+        y_true_list = []
+        pred_list = []
+        dates_list = []
+
+        for i in range(start_n, total_n):
+            # Expanding window:
+            # обучаемся на [0, ..., i-1]
+            x_train = x[:i]
+            y_train = y[:i]
+
+            # ВАЖНО:
+            # i:i+1 сохраняет двумерную форму (1, n_features)
+            x_test = x[i:i + 1]
+            y_test = y[i]
+
+            # Добавляем intercept
+            x_train_const = np.column_stack([
+                np.ones(x_train.shape[0]),
+                x_train
+            ])
+
+            x_test_const = np.column_stack([
+                np.ones(x_test.shape[0]),
+                x_test
+            ])
+
+            # OLS
+            model = sm.OLS(
+                y_train,
+                x_train_const
+            ).fit()
+
+            # Прогноз ровно одной следующей точки
+            pred = model.predict(x_test_const).item()
+
+            y_true_list.append(y_test + yt[i])
+            pred_list.append(pred + yt[i])
+            dates_list.append(dates[i])
+
+        y_true_result = pd.Series(
+            y_true_list,
+            index=dates_list,
+            name='actual'
+        )
+
+        pred_result = pd.Series(
+            pred_list,
+            index=dates_list,
+            name='prediction'
+        )
+
+        return y_true_result, pred_result, "", dates_list
+
+    def estimateCorr(self, survey):
+        df = self._createDataset(survey)
+
+        r = df['X3']  # pandas Series
+        y = df['Y']  # pandas Series
+
+        y_diff = y.diff().dropna()
+        r_minus_y_prev = (r - y.shift(1)).dropna()
+        r_diff = r.diff().dropna()
+
+        print('corr(y(t)-y(t-1), llm(t) - y(t-1))')
+        self._estimateCorrInternal(y_diff, r_minus_y_prev)
+
+        print('corr(y(t)-y(t-1), llm(t) - llm(t-1))')
+        self._estimateCorrInternal(y_diff, r_diff)
+
+    def _estimateCorrInternal(self, y_diff, r_diff):
+
+
+        # Проверяем, что длины совпадают
+        print(f"Длина x_diff: {len(y_diff)}")
+        print(f"Длина r_minus_x_prev: {len(r_diff)}")
+
+        # Считаем корреляцию
+        correlation = np.corrcoef(y_diff, r_diff)[0, 1]
+        print(f"Корреляция: {correlation}")
+        return correlation
 
     def _createDataset(self, survey):
         rows = []
@@ -56,7 +171,7 @@ class SurveyRegressionService:
             Y = current_value
             X1 = df['expected_inflation'].iloc[i - 1]
             X2 = self._getInflation(llm_survey_date)
-            X3 = survey['exp_mean'].iloc[i]
+            X3 = survey['exp_median'].iloc[i]
             X4 = self._get_usdrub(llm_survey_date)
 
             #print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
@@ -73,7 +188,47 @@ class SurveyRegressionService:
                 'X2': X2,
                 'X3': X3,
                 'X4': X4,
-                'D': llm_survey_date
+                'D': llm_survey_date,
+                'YT': 0
+            }
+            rows.append(row)
+
+        regression_df = pd.DataFrame(rows)
+        return regression_df
+
+    def _createDeltasDataset(self, survey):
+        rows = []
+        df = self.inflationExpectations
+
+        for i in range(1, len(df)):
+            prev_date = df.index[i - 1]
+            current_date = df.index[i]
+            llm_survey_date = survey.index[i]
+
+            prev_value = df['expected_inflation'].iloc[i - 1]
+            current_value = df['expected_inflation'].iloc[i]
+
+            Y = current_value - prev_value
+            X1 = self._get_usdrub(llm_survey_date)
+            X2 = self._getInflationDelta(llm_survey_date)
+            X3 = survey['exp_median'].iloc[i] - survey['exp_median'].iloc[i - 1]
+            YT = prev_value
+
+            #print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
+            if X1 is None or X2 is None:
+                continue
+
+            if self._calcDifference(current_date, prev_date) > 1:
+                #print(f'Skipping date {current_date} because of prev date = {prev_date} is older for 1 month')
+                continue
+
+            row = {
+                'Y': Y,
+                'X1': X1,
+                'X2': X2,
+                'X3': X3,
+                'D': llm_survey_date,
+                'YT': YT
             }
             rows.append(row)
 
@@ -103,6 +258,36 @@ class SurveyRegressionService:
                 return actualValue
 
             actualValue = current_value
+            actualValueDate = current_date
+
+        if actualValueDate is None:
+            return None
+
+        month_diff = self._calcDifference(date, actualValueDate)
+        if month_diff > 1:
+            return None
+        return actualValue
+
+    def _getInflationDelta(self, date):
+        df = self.pastYearInflation
+        actualValue = None
+        actualValueDate = None
+
+        for i in range(1, len(df)):
+            current_date = df.index[i]
+            prev_value = df['Значение'].iloc[i - 1]
+            current_value = df['Значение'].iloc[i]
+
+            if current_date > date:
+                if actualValueDate is None:
+                    return None
+
+                month_diff = self._calcDifference(date, actualValueDate)
+                if month_diff > 1:
+                    return None
+                return actualValue
+
+            actualValue = current_value - prev_value
             actualValueDate = current_date
 
         if actualValueDate is None:

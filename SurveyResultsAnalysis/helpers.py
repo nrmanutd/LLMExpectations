@@ -51,7 +51,7 @@ def getCategory(answeredCategory: str, type: str):
     if answeredCategory == 'выросли умеренно' or answeredCategory == 'выросли очень сильно' or answeredCategory == 'выросли незначительно' or answeredCategory == 'не изменились' or answeredCategory == 'затрудняюсь ответить' or answeredCategory == 'снизятся':
         return answeredCategory
 
-    if answeredCategory == 'снизились' or answeredCategory == 'снизлись' or answeredCategory == 'снизился' or answeredCategory == 'снизилась':
+    if answeredCategory == 'снизились' or answeredCategory == 'снизлись' or answeredCategory == 'снизилсь' or answeredCategory == 'снизился' or answeredCategory == 'снизилась':
         return 'снизились'
 
     if answeredCategory == 'снизился незначительно':
@@ -326,19 +326,27 @@ def aggregate_survey(surveys):
     Агрегирует данные по датам
 
     Returns:
-        DataFrame с индексом из дат и колонками 'obs_mean', 'obs_std', 'obs_count',
-        'exp_mean', 'exp_std', 'exp_count'
+        DataFrame с индексом из дат и колонками:
+        - 'obs_mean', 'obs_median', 'obs_q25', 'obs_q75', 'obs_std', 'obs_count'
+        - 'exp_mean', 'exp_median', 'exp_q25', 'exp_q75', 'exp_std', 'exp_count'
     """
     surveys['date'] = pd.to_datetime(surveys['date'])
 
-    quarterly_agg_df = surveys.groupby('date').agg({
-        'observable_12m': ['mean', 'std', 'count'],
-        'expected_12m': ['mean', 'std', 'count']
-    })
+    # Определяем функции агрегации
+    agg_funcs = {
+        'observable_12m': ['mean', 'median', lambda x: x.quantile(0.25),
+                          lambda x: x.quantile(0.75), 'std', 'count'],
+        'expected_12m': ['mean', 'median', lambda x: x.quantile(0.25),
+                        lambda x: x.quantile(0.75), 'std', 'count']
+    }
+
+    quarterly_agg_df = surveys.groupby('date').agg(agg_funcs)
 
     # Переименовываем колонки
-    quarterly_agg_df.columns = ['obs_mean', 'obs_std', 'obs_count',
-                                'exp_mean', 'exp_std', 'exp_count']
+    quarterly_agg_df.columns = [
+        'obs_mean', 'obs_median', 'obs_q25', 'obs_q75', 'obs_std', 'obs_count',
+        'exp_mean', 'exp_median', 'exp_q25', 'exp_q75', 'exp_std', 'exp_count'
+    ]
 
     print(quarterly_agg_df.head())
 

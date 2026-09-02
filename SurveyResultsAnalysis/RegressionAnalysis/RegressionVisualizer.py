@@ -32,6 +32,102 @@ class RegressionVisualizer:
         plt.style.use('seaborn-v0_8-darkgrid')
         self.colors = sns.color_palette("husl", 8)
 
+    def plot_llm_oos_gain(self, e_base: pd.Series, e_llm: pd.Series, title: str = None):
+        """
+        Визуализирует выигрыш OOS-прогноза от добавления LLM.
+
+        Верхний график:
+            e_base^2 - e_llm^2
+            > 0  -> LLM лучше baseline
+            < 0  -> LLM хуже baseline
+
+        Нижний график:
+            накопленная сумма e_base^2 - e_llm^2
+        """
+
+        # Выравниваем ряды по индексам и удаляем пропуски
+        errors = pd.concat(
+            [
+                e_base.rename("base"),
+                e_llm.rename("llm")
+            ],
+            axis=1
+        ).dropna()
+
+        # Pointwise improvement
+        delta_sq_error = (errors["base"] - errors["llm"])
+
+        # Cumulative improvement
+        cumulative_gain = delta_sq_error.cumsum()
+
+        fig, axes = plt.subplots(
+            2,
+            1,
+            figsize=(14, 9),
+            sharex=True
+        )
+
+        # --- 1. Pointwise gain ---
+        axes[0].plot(
+            delta_sq_error.index,
+            delta_sq_error.values,
+            marker="o",
+            markersize=3,
+            linewidth=1
+        )
+
+        axes[0].axhline(0, linewidth=1)
+
+        axes[0].set_ylabel(
+            r"$e_{base}^2 - e_{LLM}^2$"
+        )
+
+        axes[0].set_title(
+            f"Pointwise OOS gain from adding LLM {title}"
+        )
+
+        axes[0].grid(alpha=0.3)
+
+        # --- 2. Cumulative gain ---
+        axes[1].plot(
+            cumulative_gain.index,
+            cumulative_gain.values,
+            linewidth=2
+        )
+
+        axes[1].axhline(0, linewidth=1)
+
+        axes[1].set_xlabel("OOS observation")
+
+        axes[1].set_ylabel(
+            r"$\sum (e_{base}^2 - e_{LLM}^2)$"
+        )
+
+        axes[1].set_title(
+            f"Cumulative OOS gain from adding LLM {title}"
+        )
+
+        axes[1].grid(alpha=0.3)
+
+        plt.tight_layout()
+        plt.show()
+
+        # Несколько полезных summary statistics
+        print(
+            f"Mean gain: {delta_sq_error.mean():.4f}"
+        )
+        print(
+            f"Median gain: {delta_sq_error.median():.4f}"
+        )
+        print(
+            "Share where LLM is better: "
+            f"{(delta_sq_error > 0).mean():.2%}"
+        )
+        print(
+            "Final cumulative gain: "
+            f"{cumulative_gain.iloc[-1]:.4f}"
+        )
+
     def visualize(self,
                   regression_results: Dict[str, Tuple[pd.Series, pd.Series, object]],
                   n_cols: int = 2,
@@ -168,6 +264,9 @@ class RegressionVisualizer:
                 linewidth=1.5, label='y = x')
 
         # Линия регрессии (опционально, для визуализации смещения)
+        print(actual_values)
+        print(predicted_values)
+
         z = np.polyfit(actual_values, predicted_values, 1)
         p = np.poly1d(z)
         x_line = np.linspace(axis_limits[0], axis_limits[1], 100)
