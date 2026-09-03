@@ -129,9 +129,15 @@ class PromptBuilderFactory:
         headers.append(
             'Детальная наиболее свежая информация об инфляции на уровне Российской Федерации в целом на товары, покупаемые домохозяйством')
 
+        if cfg.useMarkerGoods:
+            builders.append(self.markerGoodsInflationProvider)
+        else:
+            builders.append(self.noInformationPromptBuilder)
+        headers.append('Инфляция по товарам-маркерам в РФ и регионе проживания')
+
         if cfg.useInflation:
-            inflationBuilders = [self.stateInflationProvider, self.regionInflationProvider, self.markerGoodsInflationProvider]
-            inflationPromptBuilder = CompositePromptBuilder(inflationBuilders, ['Инфляция по РФ в целом', 'Инфляция по региону проживания', 'Инфляция по товарам-маркерам в РФ и регионе проживания'])
+            inflationBuilders = [self.stateInflationProvider, self.regionInflationProvider]
+            inflationPromptBuilder = CompositePromptBuilder(inflationBuilders, ['Инфляция по РФ в целом', 'Инфляция по региону проживания'])
             builders.append(inflationPromptBuilder)
         else:
             builders.append(self.noInformationPromptBuilder)

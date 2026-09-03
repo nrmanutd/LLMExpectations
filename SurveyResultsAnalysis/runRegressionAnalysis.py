@@ -1,6 +1,9 @@
 from pathlib import Path
 
+import numpy as np
+
 from Configuration import visualizationConfiguration
+from SurveyResultsAnalysis.RegressionAnalysis.ForecastRobustness import ForecastRobustness
 from SurveyResultsAnalysis.RegressionAnalysis.RegressionVisualizer import RegressionVisualizer
 from SurveyResultsAnalysis.RegressionAnalysis.SurveyRegressionService import SurveyRegressionService
 from SurveyResultsAnalysis.RegressionAnalysis.regressionHelpers import loadSurveyResults, getSurveyVisualization
@@ -11,23 +14,28 @@ from SurveyResultsAnalysis.helpers import load_from_official_statistics, load_of
 rootFolder = Path('../data/SurveyResults/')
 
 modellingResults = [
-        ('mlcluster_qwen38_async_all_prevexp_-6d', 'QWEN 3.8 (все данные, -7d от Инфом)'),
+        #('mlcluster_qwen38_async_all_prevexp_-6d', 'QWEN 3.8 (все данные, -7d от Инфом)'),
         #('mlcluster_qwen36_async_all_time', 'QWEN 3.6 (все данные, в день Инфом)'),
-        #('mlcluster_qwen36_async_all_time_week_before', 'QWEN 3.6 (все данные, -7d от Инфом)'),
+        ('mlcluster_qwen36_async_all_time_week_before', 'QWEN 3.6 (все данные, -7d от Инфом)'),
         #('mlcluster_qwen36_async_all_two_weekbefore', 'QWEN 3.6 (все данные, -2w от Инфом)'),
-        #('mlcluster_qwen36_async_nousdrub_time_week_before', 'QWEN 3.6 (без usdrub, -7d от Инфом)'),
+        ('mlcluster_qwen36_async_nousdrub_time_week_before', 'QWEN 3.6 (без usdrub, -7d от Инфом)'),
         #('mlcluster_qwen36_async_nousdrub_time', 'QWEN 3.6 (без usdrub, в день Инфом)'),
         ('mlcluster_qwen36_async_norlms_weekbefore', 'QWEN 3.6 (без RLMS, -7d от Инфом)'),
-        #('mlcluster_qwen36_async_only_rlms_-1week', 'QWEN 3.6 (только RLMS, -7d от Инфом)'),
-        ('mlcluster_qwen38_async_no_rlms_prevexp_-6d', 'QWEN 3.8 (без RLMS, -7d от Инфом)')
+        ('mlcluster_qwen36_async_only_rlms_-1week', 'QWEN 3.6 (только RLMS, -7d от Инфом)'),
+        #('mlcluster_qwen38_async_no_rlms_prevexp_-6d', 'QWEN 3.8 (без RLMS, -7d от Инфом)'),
+        #('mlcluster_qwen38_async_no_goods_no_previous_ie_prevexp_-6d', 'QWEN 3.8 (RLMS паспорт + общ инфо, -7d от Инфом)')
 ]
+
+#datesToFilter = {np.datetime64('2022-04-02')}
+datesToFilter = set[np.datetime64]()
+threshold = 12
 
 surveyResults = loadSurveyResults(rootFolder, modellingResults)
 
 directEstimations = load_from_official_statistics(visualizationConfiguration.directInflationEstimationsPath, 1)
 officialInflation = load_official_inflation(visualizationConfiguration.officialInflationPath)
 usdrubRate = load_usdrub(visualizationConfiguration.usdrubPath)
-surveyRegressionService = SurveyRegressionService(directEstimations, officialInflation, usdrubRate)
+surveyRegressionService = SurveyRegressionService(directEstimations, officialInflation, usdrubRate, datesToFilter)
 visualizer = RegressionVisualizer()
 
 visualizationResults = {}
@@ -35,11 +43,8 @@ errors = []
 isDelta = True
 isOOS = True
 
-if isDelta:
-    variables = {'X1=UsdRub, X2=I-12m(t), X3=LLM_IE(t)': ['X1', 'X2', 'X3'], 'X1=UsdRub, X2=I-12m(t)': ['X1', 'X2'],
-                 'X2=I-12m(t), X3=LLM_IE(t)': ['X2', 'X3']}
-else:
-    variables = {'X1=IE(t-1), X2=I-12m(t), X3=LLM_IE(t), X4=UsdRub':['X1', 'X2', 'X3', 'X4'], 'X1=IE(t-1), X2=I-12m(t), X4=UsdRub': ['X1', 'X2', 'X4'], 'X2=I-12m(t), X3=LLM_IE(t), X4=UsdRub': ['X2', 'X3', 'X4']}
+#variables = {'X1=UsdRub, X2=I-12m(t), X3=LLM_IE(t)': ['X1', 'X2', 'X3'], 'X1=UsdRub, X2=I-12m(t)': ['X1', 'X2'], 'X2=I-12m(t), X3=LLM_IE(t)': ['X2', 'X3']}
+variables = {'X2=I-12m(t), X3=LLM_IE(t), X4=UsdRub, X5=delta IE (t-1)':['X2', 'X3', 'X4', 'X5'], 'X2=I-12m(t), X4=UsdRub, X5=delta IE (t-1)': ['X2', 'X4', 'X5']}
 
 postfix = f'{'OOS' if isOOS else ''}_{'delta' if isDelta else ''}'
 
@@ -53,19 +58,21 @@ for vn, v in variables.items():
         else:
             y, r, m, dates = surveyRegressionService.fit(survey, v, isDelta=isDelta)
 
-        print(name)
         surveyRegressionService.estimateCorr(survey)
-        errors.append((y - r)**2)
+        errors.append((y - r))
 
         regressionResults[name] = (y, r, m)
         visualizationResults[f'Прогноз {prefix} {name}'] = getSurveyVisualization(r, dates)
 
     visualizer.visualize(regressionResults, save_path=f'{prefix}_regression_{postfix}.png', additional_title=prefix)
 
-e_base = errors[len(modellingResults)]
 for i in range(len(modellingResults)):
+    print(f'Model: {modellingResults[i][1]}')
+    e_base = errors[i + len(modellingResults)]
     e_llm = errors[i]
-    visualizer.plot_llm_oos_gain(e_base, e_llm, modellingResults[i][0])
+    visualizer.plot_llm_oos_gain(e_base, e_llm, modellingResults[i][0], threshold=threshold)
+    fr = ForecastRobustness(e_llm, e_base)
+    fr.print_robustness_report(block_size=4, n_boot=10_000, hac_lags=3)
 
 for k, v in surveyResults.items():
     visualizationResults[k] = v

@@ -5,6 +5,7 @@ class ExperimentsConfiguration:
     useEconomy: bool = False
     usePolitics: bool = False
     useInflation: bool = False
+    useMarkerGoods: bool = False
     useFamilyInformation: bool = False
     useFamilyExpenses: bool = False
     useStateExpenses: bool = False
@@ -30,6 +31,8 @@ class ExperimentsConfiguration:
             features.append('individual_info')
         if self.usePreviousInflationExpectations:
             features.append('previous_exp')
+        if self.useMarkerGoods:
+            features.append('marker_goods')
         return features
 
     def get_feature_names_en(self) -> list[str]:
@@ -42,7 +45,8 @@ class ExperimentsConfiguration:
             'family_exp': 'Family Expenses',
             'state_exp': 'State Expenses',
             'individual_info': 'Individual Information',
-            'previous_exp': 'Previous Inflation Expectations'
+            'previous_exp': 'Previous Inflation Expectations',
+            'marker_goods': 'Marker Goods'
         }
         active = self.get_active_features()
         return [names_map[f] for f in active]
@@ -57,7 +61,8 @@ class ExperimentsConfiguration:
             'family_exp': 'FamExp',
             'state_exp': 'StExp',
             'individual_info': 'IndInfo',
-            'previous_exp': 'PrevInfExp'
+            'previous_exp': 'PrevInfExp',
+            'marker_goods': 'MGoods'
         }
         active = self.get_active_features()
         if not active:

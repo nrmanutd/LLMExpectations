@@ -5,7 +5,8 @@ from scipy.stats import stats
 
 
 class SurveyRegressionService:
-    def __init__(self, inflationExpectations, pastYearInflation, usdrubRate):
+    def __init__(self, inflationExpectations, pastYearInflation, usdrubRate, filteringDates: set[np.datetime64]):
+        self.filteringDates = filteringDates
         self.usdrubRate = usdrubRate
         self.pastYearInflation = pastYearInflation
         self.inflationExpectations = inflationExpectations
@@ -109,8 +110,14 @@ class SurveyRegressionService:
             # Прогноз ровно одной следующей точки
             pred = model.predict(x_test_const).item()
 
-            y_true_list.append(y_test + yt[i])
-            pred_list.append(pred + yt[i])
+            if dates[i] not in self.filteringDates:
+                y_true_list.append(y_test + yt[i])
+                pred_list.append(pred + yt[i])
+            else:
+                print(f'Fixing: {y_test + yt[i]} instead of prediction {pred + yt[i]} at date {dates[i]}')
+                y_true_list.append(y_test + yt[i])
+                pred_list.append(y_test + yt[i])
+
             dates_list.append(dates[i])
 
         y_true_result = pd.Series(
@@ -137,10 +144,10 @@ class SurveyRegressionService:
         r_minus_y_prev = (r - y.shift(1)).dropna()
         r_diff = r.diff().dropna()
 
-        print('corr(y(t)-y(t-1), llm(t) - y(t-1))')
+        #print('corr(y(t)-y(t-1), llm(t) - y(t-1))')
         self._estimateCorrInternal(y_diff, r_minus_y_prev)
 
-        print('corr(y(t)-y(t-1), llm(t) - llm(t-1))')
+        #print('corr(y(t)-y(t-1), llm(t) - llm(t-1))')
         self._estimateCorrInternal(y_diff, r_diff)
 
     def _estimateCorrInternal(self, y_diff, r_diff):
@@ -157,7 +164,6 @@ class SurveyRegressionService:
 
     def _createDataset(self, survey):
         rows = []
-        print(survey)
 
         df = self.inflationExpectations
 
@@ -200,22 +206,25 @@ class SurveyRegressionService:
         rows = []
         df = self.inflationExpectations
 
-        for i in range(1, len(df)):
+        for i in range(2, len(df)):
             prev_date = df.index[i - 1]
             current_date = df.index[i]
             llm_survey_date = survey.index[i]
 
+            prev_prev_value = df['expected_inflation'].iloc[i - 2]
             prev_value = df['expected_inflation'].iloc[i - 1]
             current_value = df['expected_inflation'].iloc[i]
 
             Y = current_value - prev_value
-            X1 = self._get_usdrub(llm_survey_date)
+            X1 = prev_value
             X2 = self._getInflationDelta(llm_survey_date)
             X3 = survey['exp_median'].iloc[i] - survey['exp_median'].iloc[i - 1]
+            X4 = self._get_usdrub(llm_survey_date)
+            X5 = prev_value - prev_prev_value
             YT = prev_value
 
             #print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
-            if X1 is None or X2 is None:
+            if X4 is None or X2 is None:
                 continue
 
             if self._calcDifference(current_date, prev_date) > 1:
@@ -227,6 +236,8 @@ class SurveyRegressionService:
                 'X1': X1,
                 'X2': X2,
                 'X3': X3,
+                'X4': X4,
+                'X5': X5,
                 'D': llm_survey_date,
                 'YT': YT
             }
