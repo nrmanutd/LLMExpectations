@@ -5,6 +5,7 @@ class ExperimentsConfiguration:
     useEconomy: bool = False
     usePolitics: bool = False
     useInflation: bool = False
+    useKeyRateIncrements: bool = False
     useMarkerGoods: bool = False
     useFamilyInformation: bool = False
     useFamilyExpenses: bool = False
@@ -22,6 +23,8 @@ class ExperimentsConfiguration:
             features.append('politics')
         if self.useInflation:
             features.append('inf')
+        if self.useKeyRateIncrements:
+            features.append('key')
         if self.useRegionalInflation:
             features.append('inf_reg')
         if self.useFamilyInformation:
@@ -44,6 +47,7 @@ class ExperimentsConfiguration:
             'economy': 'Economy',
             'politics': 'Politics',
             'inf': 'Inflation',
+            'key': 'Key Rate Increments',
             'inf_reg': 'Regional inflation',
             'family_info': 'Family Information',
             'family_exp': 'Family Expenses',
@@ -61,6 +65,7 @@ class ExperimentsConfiguration:
             'economy': 'Econ',
             'politics': 'Pol',
             'inf': 'Inf',
+            'key': 'Key',
             'inf_reg': 'InfReg',
             'family_info': 'FamInf',
             'family_exp': 'FamExp',

@@ -1,6 +1,8 @@
 from Configuration import configuration
 from SurveyLogic.PromptBuilders.CompositePromptBuilder import CompositePromptBuilder
 from SurveyLogic.PromptBuilders.ConstantPromptBuilder import ConstantPromptBuilder
+from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.KeyRatePromptBuilder import \
+    KeyRatePromptBuilder
 from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.MarkerGoodsInflationPromptBuilder import \
     MarkerGoodsInflationPromptBuilder
 from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.PrevoiusInflationExpectationsPromptBuilder import \
@@ -40,6 +42,7 @@ from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.Multi
     MultipleWeeklyInflationProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.RosstatWeeklyInflationProvider import \
     RosstatWeeklyInflationProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.KeyRateProvider import KeyRateProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.MROTProvider import MROTProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.USDRUBRateProvider import USDRUBRateProvider
 from SurveyLogic.PromptBuilders.SystemPromptBuilder import SystemPromptBuilder
@@ -89,6 +92,9 @@ class PromptBuilderFactory:
         self.markerGoodsInflationProvider = MarkerGoodsInflationPromptBuilder(inflationProvider, configuration.regularMarkerGoods, configuration.durableMarkerGoods, configuration.servicesMarker)
         inflationExpectationsProvider = InflationExpectationsProvider(configuration.inflationExpectations)
         self.previousInflationExpectationsPromptBuilder = PrevoiusInflationExpectationsPromptBuilder(inflationExpectationsProvider)
+
+        keyRateProvider = KeyRateProvider(configuration.keyRateFile)
+        self.keyRatePromptBuilder = KeyRatePromptBuilder(keyRateProvider)
 
     def _createSingleMonthInflationProvider(self) -> BaseSingleMonthInflationProvider:
         files = [configuration.inflation20092014DataPath, configuration.inflation20152020DataPath,
@@ -144,6 +150,10 @@ class PromptBuilderFactory:
         if cfg.usePolitics:
             builders.append(self.politicsProvider)
             headers.append('Основная политико-экономическая информация по РФ в целом')
+
+        if cfg.useKeyRateIncrements:
+            builders.append(self.keyRatePromptBuilder)
+            headers.append('Информация об изменениях ключевой ставки ЦБ')
 
         builders.append(self.taskPromptBuilder)
         headers.append('Задача')

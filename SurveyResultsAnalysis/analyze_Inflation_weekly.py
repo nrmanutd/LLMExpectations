@@ -15,16 +15,20 @@ modellingResults = [
         #('mlcluster_qwen36_async_nousdrub_time', 'QWEN 3.6 (без usdrub, в день Инфом)'),
         ('mlcluster_qwen36_async_norlms_weekbefore', 'QWEN 3.6 (без RLMS, -7d от Инфом)'),
         #('mlcluster_qwen38_async_all_prevexp_-6d', 'QWEN 3.8 (все данные, -7d от Инфом)'),
+        ('mlcluster_qwen38_async_no_goods_no_previous_ie_prevexp_-6d', 'QWEN 3.8 (RLMS паспорт + общ инфо, -7d от Инфом)'),
         ('mlcluster_qwen38_async_no_rlms_prevexp_-6d', 'QWEN 3.8 (без RLMS + IE + маркеры + инфляция + usdrub -7d от Инфом'),
         ('mlcluster_qwen38_async_no_rlms_-6d', 'QWEN 3.8 (без RLMS без IE без маркеров + рег и РФ инфляция, usdrub, -7d от Инфом'),
         ('mlcluster_qwen38_async_no_rlms_noregInflation_-6d', 'QWEN 3.8 (только usdrub и инфляция РФ, -7d от Инфом)'),
-        ('mlcluster_qwen36_async_no_rlms_noregInflation_-6d', 'QWEN 3.6 (только usdrub и инфляция РФ, -7d от Инфом)'),
-        ('mlcluster_qwen36_async_no_rlms_noregInflation_prompt_-6d', 'QWEN 3.6 *prompt (только usdrub и инфляция РФ, -7d от Инфом)'),
-        ('mlcluster_qwen36_async_no_rlms_noregInflation_prompt_notnoinf_-6d', 'QWEN 3.6 *prompt del noinf (только usdrub и инфляция РФ, -7d от Инфом)'),
+        #('mlcluster_qwen36_async_no_rlms_noregInflation_-6d', 'QWEN 3.6 (только usdrub и инфляция РФ, -7d от Инфом)'),
+        #('mlcluster_qwen36_async_no_rlms_noregInflation_prompt_-6d', 'QWEN 3.6 *prompt (только usdrub и инфляция РФ, -7d от Инфом)'),
+        #('mlcluster_qwen36_async_no_rlms_noregInflation_prompt_notnoinf_-6d', 'QWEN 3.6 *prompt del noinf (только usdrub и инфляция РФ, -7d от Инфом)'),
         #('mlcluster_qwen36_async_norlms_weekbefore_onceagain', 'QWEN 3.6*повторно без RLMS, инфляция РФ и usdrub, -7d до Инфом'),
-        ('mlcluster_qwen36_async_no_rlms_noregInflation_prompt_notnoinf_-6d', 'QWEN 3.6*(последняя ревизия) без RLMS, инфляция РФ и usdrub, -7d до Инфом'),
+        #('mlcluster_qwen36_async_no_rlms_noregInflation_prompt_notnoinf_-6d', 'QWEN 3.6*(последняя ревизия) без RLMS, инфляция РФ и usdrub, -7d до Инфом'),
         #('mlcluster_qwen36_async_norlms_weekbefore_onceagain_bh', 'QWEN 3.6*(последняя ревизия bothub) без RLMS, инфляция РФ и usdrub, -7d до Инфом'),
         #('mlcluster_qwen36_async_norlms_weekbefore_onceagain_ait', 'QWEN 3.6*(последняя ревизия aitunnel) без RLMS, инфляция РФ и usdrub, -7d до Инфом'),
+        ('mlcluster_qwen36_async_no_rlms_goods_both_inf_usdrub_-6d', '3.8 -RLMS + markers + inf -IE, -7d'),
+        ('mlcluster_qwen36_async_rlms_passport_markers_both_inf_usdrub_-6d', '3.8+RLMS pass +markers +inf -IE, -7d'),
+        ('mlcluster_qwen36_async_rlms_expenses_markers_both_inf_usdrub_-6d', '3.8+RLMS exp +markers +inf - IE, -7d')
 ]
 
 officialInflation = load_official_inflation(visualizationConfiguration.officialInflationPath)
