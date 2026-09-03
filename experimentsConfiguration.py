@@ -9,6 +9,7 @@ class ExperimentsConfiguration:
     useFamilyInformation: bool = False
     useFamilyExpenses: bool = False
     useStateExpenses: bool = False
+    useRegionalInflation: bool = False
     usePreviousInflationExpectations: bool = False
     useIndividualRLMSData: bool = False
 
@@ -21,6 +22,8 @@ class ExperimentsConfiguration:
             features.append('politics')
         if self.useInflation:
             features.append('inf')
+        if self.useRegionalInflation:
+            features.append('inf_reg')
         if self.useFamilyInformation:
             features.append('family_info')
         if self.useFamilyExpenses:
@@ -40,7 +43,8 @@ class ExperimentsConfiguration:
         names_map = {
             'economy': 'Economy',
             'politics': 'Politics',
-            'inf': 'Inflation info',
+            'inf': 'Inflation',
+            'inf_reg': 'Regional inflation',
             'family_info': 'Family Information',
             'family_exp': 'Family Expenses',
             'state_exp': 'State Expenses',
@@ -57,6 +61,7 @@ class ExperimentsConfiguration:
             'economy': 'Econ',
             'politics': 'Pol',
             'inf': 'Inf',
+            'inf_reg': 'InfReg',
             'family_info': 'FamInf',
             'family_exp': 'FamExp',
             'state_exp': 'StExp',

@@ -39,7 +39,7 @@ def getCategory(answeredCategory: str, type: str):
     if answeredCategory == 'вырастут незначительно' or answeredCategory == 'little_growth':
         return 'вырастут незначительно' if type == 'expected' else 'выросли незначительно'
 
-    if answeredCategory == 'не изменятся' or answeredCategory == 'no_change':
+    if answeredCategory == 'не изменятся' or answeredCategory == 'no_change' or answeredCategory == 'неизменятся':
         return 'не изменятся' if type == 'expected' else 'не изменились'
 
     if answeredCategory == 'снизились' or answeredCategory == 'снизятся':

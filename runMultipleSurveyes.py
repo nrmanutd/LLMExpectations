@@ -15,13 +15,13 @@ from SurveyLogic.surveyHelpers import createAsyncSurveyRunner, extractDatesFromF
 from experimentsConfiguration import ExperimentsConfiguration
 
 offsetDays = -6
-experimentUniqueName=f'mlcluster_qwen38_async_no_rlms_{offsetDays}d'
+experimentUniqueName=f'mlcluster_qwen36_async_no_rlms_noregInflation_{offsetDays}d'
 profilesFolder = Path('./data/Target profiles')
 profilesCount = 100
 resultsFolder = Path('data/SurveyResults/')/experimentUniqueName
 copyPromptTemplatesToFolder(Path('SurveyLogic/PromptBuilders/Prompts/'), resultsFolder/'Prompts')
 
-surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDays=offsetDays)
+surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDays=offsetDays, start_date=datetime.strptime('2021.12.01', '%Y.%m.%d'), end_date=datetime.strptime('2022.06.01', '%Y.%m.%d'))
 
 #surveyDates = getDatesRowWithMonthlyStep('2020.12.01', '2021.01.01')
 #surveyDates = getDatesRowWithWeeklyStep('2022.03.12', '2022.05.07')
@@ -33,6 +33,7 @@ cfg = ExperimentsConfiguration(
     useStateExpenses=False,
     useMarkerGoods=False,
     useEconomy=True,
+    useRegionalInflation=False,
     useInflation=True,
     usePreviousInflationExpectations=False
     )
@@ -43,7 +44,7 @@ factory = PromptBuilderFactory()
 systemPromptBuilder, promptBuilder = factory.createCustomPromptBuilder(cfg)
 logger = SimpleLogger()
 
-surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.8-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
+surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
 #surveyer = StubSurveyer()
 
 surveySerializer = SurveySerializer(resultsFolder)
