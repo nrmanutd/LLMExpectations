@@ -105,65 +105,45 @@ class PromptBuilderFactory:
 
         if cfg.useIndividualRLMSData:
             builders.append(self.commonProfilePromptBuilder)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append('Основные параметры опроса и респондента')
+            headers.append('Основные параметры опроса и респондента')
 
         if cfg.useFamilyInformation:
             builders.append(self.householdInformationBuilder)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append('Детальная информация о домохозяйстве, членом которого является индивид')
+            headers.append('Детальная информация о домохозяйстве, членом которого является индивид')
 
         if cfg.useFamilyExpenses:
             builders.append(self.expensesProfilePromptBuilder)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append(
-            'Детальная информация об инфляции на уровне региона на товары в топ-расходах семьи индивида (регулярные траты, товары длительного использования, услуги)')
+            headers.append(
+                'Детальная информация об инфляции на уровне региона на товары в топ-расходах семьи индивида (регулярные траты, товары длительного использования, услуги)')
 
         if cfg.useStateExpenses:
             builders.append(self.stateExpensesPromptBuilder)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append(
-            'Детальная наиболее свежая информация об инфляции на уровне Российской Федерации в целом на товары, покупаемые домохозяйством')
+            headers.append(
+                'Детальная наиболее свежая информация об инфляции на уровне Российской Федерации в целом на товары, покупаемые домохозяйством')
 
         if cfg.useMarkerGoods:
             builders.append(self.markerGoodsInflationProvider)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append('Инфляция по товарам-маркерам в РФ и регионе проживания')
+            headers.append('Инфляция по товарам-маркерам в РФ и регионе проживания')
 
         if cfg.useRegionalInflation:
             builders.append(self.regionInflationProvider)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append('Официальная государственная статистика по инфляции в регионе проживания в целом')
+            headers.append('Официальная государственная статистика по инфляции в регионе проживания в целом')
 
         if cfg.useInflation:
             builders.append(self.stateInflationProvider)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append('Официальная государственная статистика по инфляции по РФ в целом')
+            headers.append('Официальная государственная статистика по инфляции по РФ в целом')
 
         if cfg.useEconomy:
             builders.append(self.stateEconomyContextPromptBuilder)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append('Основная информация об экономических показателях РФ в целом в мире')
+            headers.append('Основная информация об экономических показателях РФ в целом в мире')
 
         if cfg.usePreviousInflationExpectations:
             builders.append(self.previousInflationExpectationsPromptBuilder)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append('Предыдущие агрегированные инфляционные ожидания')
+            headers.append('Предыдущие агрегированные инфляционные ожидания')
 
         if cfg.usePolitics:
             builders.append(self.politicsProvider)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append('Основная политико-экономическая информация по РФ в целом')
+            headers.append('Основная политико-экономическая информация по РФ в целом')
 
         builders.append(self.taskPromptBuilder)
         headers.append('Задача')
