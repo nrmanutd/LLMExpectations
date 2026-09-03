@@ -15,7 +15,7 @@ from SurveyLogic.surveyHelpers import createAsyncSurveyRunner, extractDatesFromF
 from experimentsConfiguration import ExperimentsConfiguration
 
 offsetDays = -6
-experimentUniqueName=f'mlcluster_qwen36_async_no_rlms_noregInflation_prompt_notnoinf_{offsetDays}d'
+experimentUniqueName=f'mlcluster_qwen36_async_no_rlms_goods_both_inf_usdrub_{offsetDays}d'
 profilesFolder = Path('./data/Target profiles')
 profilesCount = 100
 resultsFolder = Path('data/SurveyResults/')/experimentUniqueName
@@ -31,9 +31,9 @@ cfg = ExperimentsConfiguration(
     useFamilyInformation=False,
     useFamilyExpenses=False,
     useStateExpenses=False,
-    useMarkerGoods=False,
+    useMarkerGoods=True,
     useEconomy=True,
-    useRegionalInflation=False,
+    useRegionalInflation=True,
     useInflation=True,
     usePreviousInflationExpectations=False
     )
@@ -44,7 +44,9 @@ factory = PromptBuilderFactory()
 systemPromptBuilder, promptBuilder = factory.createCustomPromptBuilder(cfg)
 logger = SimpleLogger()
 
-surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.6-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
+surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.8-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
+#surveyer = AsyncSurveyer(modelToUse='qwen3.6-35b-a3b', key=bothub_key, logger=logger, baseUrl=configuration.bothubUrl)
+#surveyer = AsyncSurveyer(modelToUse='qwen3.6-27b', key=aitunnel_key, logger=logger, baseUrl=configuration.aitunnelUrl, maxAttempts=100)
 #surveyer = StubSurveyer()
 
 surveySerializer = SurveySerializer(resultsFolder)

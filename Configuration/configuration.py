@@ -8,6 +8,9 @@ bothubUrl = 'https://openai.bothub.chat/v1'
 mlcluster_key = Path(f'{path}/mlcluster_key.txt').read_text(encoding="utf-8")
 mlclusterUrl = 'https://litellm.mlcluster.ru'
 
+aitunnel_key = Path(f'{path}/aitunnel_key.txt').read_text(encoding="utf-8")
+aitunnelUrl = 'https://api.aitunnel.ru/v1/'
+
 rlmsToInflationRegionsPath = Path(f'data/rlmsToInflationRegionsMapping.txt')
 rlmsToInflationProductsPath = Path(f'data/rlmsToInflationProductsMapping.txt')
 rlmsToAverageSalaryRegionsPath = Path(f'data/rlmsToAverageSalaryRegionsMapping.txt')
