@@ -153,7 +153,7 @@ class PromptBuilderFactory:
 
         if cfg.useKeyRateIncrements:
             builders.append(self.keyRatePromptBuilder)
-            headers.append('Информация об изменениях ключевой ставки ЦБ')
+            headers.append('Общий макроэкономический фон: последние изменения ключевой ставки ЦБ')
 
         builders.append(self.taskPromptBuilder)
         headers.append('Задача')

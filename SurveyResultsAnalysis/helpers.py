@@ -51,7 +51,7 @@ def getCategory(answeredCategory: str, type: str):
     if answeredCategory == 'выросли умеренно' or answeredCategory == 'выросли очень сильно' or answeredCategory == 'выросли незначительно' or answeredCategory == 'не изменились' or answeredCategory == 'затрудняюсь ответить' or answeredCategory == 'снизятся':
         return answeredCategory
 
-    if answeredCategory == 'снизились' or answeredCategory == 'снизлись' or answeredCategory == 'снизилсь' or answeredCategory == 'снизился' or answeredCategory == 'снизилась':
+    if answeredCategory == 'снизились' or answeredCategory == 'снизилось' or answeredCategory == 'снизлись' or answeredCategory == 'снизилсь' or answeredCategory == 'снизился' or answeredCategory == 'снизилась':
         return 'снизились'
 
     if answeredCategory == 'снизился незначительно':

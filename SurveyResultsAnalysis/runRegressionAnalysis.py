@@ -24,12 +24,13 @@ modellingResults = [
         #('mlcluster_qwen36_async_only_rlms_-1week', 'QWEN 3.6 (только RLMS, -7d от Инфом)'),
         #('mlcluster_qwen38_async_no_rlms_prevexp_-6d', 'QWEN 3.8 (без RLMS, -7d от Инфом)'),
         #('mlcluster_qwen38_async_no_goods_no_previous_ie_prevexp_-6d', 'QWEN 3.8 (RLMS паспорт + общ инфо, -7d от Инфом)'),
-        ('mlcluster_qwen38_async_no_rlms_-6d', 'QWEN 3.8 (без RLMS без IE без маркеров + общ инфо, -7d от Инфом')
+        ('mlcluster_qwen38_async_no_rlms_-6d', 'QWEN 3.8 (без RLMS без IE без маркеров + общ инфо, -7d от Инфом'),
+        ('mlcluster_qwen36_async_norlms_noIE_keyrate_-6d', 'QWEN 3.8 (без RLMS без IE + ключ, -7d от Инфом)')
 ]
 
 #datesToFilter = {np.datetime64('2022-04-02')}
 datesToFilter = set[np.datetime64]()
-threshold = 12
+threshold = 6
 
 surveyResults = loadSurveyResults(rootFolder, modellingResults)
 
