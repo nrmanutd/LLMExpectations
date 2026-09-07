@@ -7,7 +7,8 @@ from SurveyLogic.PromptBuilders.StatisticsProviders.BaseKeyRateProvider import B
 
 
 class SurveyRegressionService:
-    def __init__(self, inflationExpectations, pastYearInflation, usdrubRate, keyRateProvider: BaseKeyRateProvider, filteringDates: set[np.datetime64]):
+    def __init__(self, inflationExpectations, pastYearInflation, usdrubRate, keyRateProvider: BaseKeyRateProvider, filteringDates: set[np.datetime64], datesToExclude):
+        self.datesToExclude = datesToExclude
         self.keyRateProvider = keyRateProvider
         self.filteringDates = filteringDates
         self.usdrubRate = usdrubRate
@@ -205,6 +206,9 @@ class SurveyRegressionService:
             if X2 is None or X4 is None:
                 continue
 
+            if self.datesToExclude[0] <= llm_survey_date < self.datesToExclude[1]:
+                continue
+
             if self._calcDifference(current_date, prev_date) > 1:
                 #print(f'Skipping date {current_date} because of prev date = {prev_date} is older for 1 month')
                 continue
@@ -252,6 +256,9 @@ class SurveyRegressionService:
 
             #print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
             if X4 is None or X2 is None:
+                continue
+
+            if self.datesToExclude[0] <= llm_survey_date < self.datesToExclude[1]:
                 continue
 
             if self._calcDifference(current_date, prev_date) > 1:
