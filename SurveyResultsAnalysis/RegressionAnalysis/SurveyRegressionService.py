@@ -29,7 +29,7 @@ class SurveyRegressionService:
             dates_list.append(dates[i])
 
         x_const = sm.add_constant(x)
-        model_sm = sm.OLS(y, x_const).fit()
+        model_sm = sm.OLS(y, x_const).fit(cov_type='HAC',cov_kwds={'maxlags': 4},use_t=True)
 
         prediction = model_sm.predict(x_const)
         adjustedPrediction = prediction + yt

@@ -50,8 +50,8 @@ visualizer = RegressionVisualizer()
 
 visualizationResults = {}
 errors = []
-isDelta = False
-isOOS = False
+isDelta = True
+isOOS = True
 isFWL = False
 
 if isDelta:
@@ -59,15 +59,20 @@ if isDelta:
         variables = {'dY: X2=I-12m(t), X4=UsdRub, X5=delta IE (t-1)': (['X2', 'X4', 'X5', 'X6'], 'X3'), 'dLLM: X2=I-12m(t), X4=UsdRub, X5=delta IE (t-1)': (['X2', 'X4', 'X5', 'X6'], 'Y')}
     else:
         variables = {'X2=I-12m(t), X3=LLM_IE(t), X4=UsdRub, X5=delta IE (t-1)':(['X2', 'X3', 'X4', 'X5'],'Y'), 'X2=I-12m(t), X4=UsdRub, X5=delta IE (t-1)': (['X2', 'X4', 'X5'], 'Y')}
+        #variables = {'X3=dLLM_IE(t)': (['X3'], 'Y'), 'X5=dIE-12m(t), X3=dLLM_IE(t)': (['X5', 'X3'], 'Y')}
+        #variables = {'X5=dIE-12m(t)': (['X5'], 'Y')}
 else:
     if isFWL:
         variables = {'X1=IE, X2=I-12m(t), X3=LLM_IE(t)': (['X1', 'X2', 'X4', 'X6'], 'X3'),
                      'X1=IE, X2=I-12m(t)': (['X1', 'X2', 'X4', 'X6'], 'Y')}
     else:
-        variables = {'X1=IE, X2=I-12m(t), X3=LLM_IE(t)': (['X1', 'X2', 'X3', 'X4', 'X6'], 'Y'), 'X1=IE, X2=I-12m(t)': (['X1', 'X2', 'X4', 'X6'], 'Y')}
+        #variables = {'X1=IE, X2=I-12m(t), X3=LLM_IE(t)': (['X1', 'X2', 'X3', 'X4', 'X6'], 'Y'), 'X1=IE, X2=I-12m(t)': (['X1', 'X2', 'X4', 'X6'], 'Y')}
+        #variables = {'X3=LLM_IE(t)': (['X3'], 'Y'), 'X1=IE, X3=LLM_IE(t)': (['X1', 'X3'], 'Y')}
+        variables = {'X1=IE, X3=LLM_IE(t)': (['X1', 'X3'], 'Y')}
 
 
 postfix = f'{'OOS' if isOOS else ''}_{'delta' if isDelta else ''}'
+trainedModels = []
 
 for vn, v in variables.items():
     regressionResults = {}
@@ -79,6 +84,7 @@ for vn, v in variables.items():
         else:
             y, r, m, dates = surveyRegressionService.fit(survey, v, isDelta=isDelta)
 
+        trainedModels.append(m)
         surveyRegressionService.estimateCorr(survey)
         errors.append((y - r))
 
@@ -91,6 +97,13 @@ for i in range(len(modellingResults)):
     print(f'Model: {modellingResults[i][1]}')
     e_base = errors[i + len(modellingResults)]
     e_llm = errors[i]
+
+    #model_macro_base = trainedModels[i + len(modellingResults)]
+    #model_macro_llm = trainedModels[i]
+
+    #partial_r2_llm = (model_macro_base.ssr - model_macro_llm.ssr) / model_macro_base.ssr
+    #print(f'Partial R^2: {partial_r2_llm}')
+
     visualizer.plot_llm_oos_gain(e_base, e_llm, modellingResults[i][1], threshold=threshold)
     fr = ForecastRobustness(e_llm, e_base)
     fr.print_robustness_report(block_size=4, n_boot=10_000, hac_lags=3)

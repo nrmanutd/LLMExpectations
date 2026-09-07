@@ -309,7 +309,7 @@ class RegressionVisualizer:
         ax.grid(True, alpha=0.3)
 
         # Заголовок с названием модели (добавляем R² в заголовок для наглядности)
-        ax.set_title(f'{model_name} R² = {r2:.4f}', fontsize=11, fontweight='bold')
+        ax.set_title(f'{model_name} Predicted R² = {r2:.4f}', fontsize=11, fontweight='bold')
 
         # Добавляем статистику на график
         if show_stats and model is not None:
@@ -322,7 +322,7 @@ class RegressionVisualizer:
                     bbox=props, family='monospace')
 
         # Добавляем метрики в правом верхнем углу
-        metrics_text = f'R² = {r2:.4f}\nRMSE = {rmse:.4f}\nMAE = {mae:.4f}'
+        metrics_text = f'Prediction R² = {r2:.4f}\nRMSE = {rmse:.4f}\nMAE = {mae:.4f}'
         props = dict(boxstyle='round', facecolor='lightblue', alpha=0.7)
         ax.text(0.98, 0.98, metrics_text, transform=ax.transAxes,
                 fontsize=8, verticalalignment='top', horizontalalignment='right',
@@ -356,8 +356,10 @@ class RegressionVisualizer:
                         stats_text += f'{var_name}: {coef:.4f} (p={pval:.4f}{stars})\n'
 
                     # Добавляем информацию о модели
+                    if hasattr(model, 'rsquared'):
+                        stats_text += f'Model R² = {model.rsquared:.4f}\n'
                     if hasattr(model, 'rsquared_adj'):
-                        stats_text += f'Adj. R² = {model.rsquared_adj:.4f}\n'
+                        stats_text += f'Model Adj. R² = {model.rsquared_adj:.4f}\n'
                     if hasattr(model, 'fvalue') and hasattr(model, 'f_pvalue'):
                         stats_text += f'F = {model.fvalue:.2f} (p={model.f_pvalue:.4f})'
 
