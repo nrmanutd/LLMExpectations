@@ -201,9 +201,11 @@ class RegressionVisualizer:
         # ============================================
         # Вычисляем R² для каждой модели
         models_with_r2 = []
+
         for model_name, (actual, predicted, model) in regression_results.items():
             actual_values = actual.values.flatten()
             predicted_values = predicted.values.flatten()
+
             r2 = r2_score(actual_values, predicted_values)
             models_with_r2.append((r2, model_name, actual, predicted, model))
 

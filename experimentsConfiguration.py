@@ -4,6 +4,7 @@ from dataclasses import dataclass
 class ExperimentsConfiguration:
     useEconomy: bool = False
     usePolitics: bool = False
+    useNews: bool = False
     useInflation: bool = False
     useKeyRateIncrements: bool = False
     useMarkerGoods: bool = False
@@ -21,6 +22,8 @@ class ExperimentsConfiguration:
             features.append('economy')
         if self.usePolitics:
             features.append('politics')
+        if self.useNews:
+            features.append('news')
         if self.useInflation:
             features.append('inf')
         if self.useKeyRateIncrements:
@@ -46,6 +49,7 @@ class ExperimentsConfiguration:
         names_map = {
             'economy': 'Economy',
             'politics': 'Politics',
+            'news': 'News',
             'inf': 'Inflation',
             'key': 'Key Rate Increments',
             'inf_reg': 'Regional inflation',
@@ -64,6 +68,7 @@ class ExperimentsConfiguration:
         abbr_map = {
             'economy': 'Econ',
             'politics': 'Pol',
+            'news': 'News',
             'inf': 'Inf',
             'key': 'Key',
             'inf_reg': 'InfReg',

@@ -21,6 +21,25 @@ class InflationExpectationsProvider(BaseInflationExpectationsProvider):
         # Исправление: обращаемся к строке по индексу, а не к столбцу
         return self.df.loc[closest_date, 'expected_inflation']
 
+    def getInflationExpectationsDelta(self, d: date):
+        mask = self.df.index <= pd.Timestamp(d)
+        valid_dates = self.df.index[mask]
+
+        if len(valid_dates) <= 1:
+            return None
+
+        lastIdx = len(valid_dates) - 1
+
+        prev_closest_date = valid_dates[lastIdx - 1]
+        closest_date = valid_dates[lastIdx]
+
+        # Исправление: обращаемся к строке по индексу, а не к столбцу
+        prevValue = self.df.loc[prev_closest_date, 'expected_inflation']
+        value = self.df.loc[closest_date, 'expected_inflation']
+        delta = value - prevValue
+
+        return delta
+
     def _load_expectations(self, path: Path):
         directEstimations = pd.read_excel(path, index_col=0)
         directEstimations.rename(

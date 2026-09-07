@@ -6,3 +6,7 @@ class BaseInflationExpectationsProvider(ABC):
     @abstractmethod
     def getInflationExpectations(self, surveyDate: date):
         pass
+
+    @abstractmethod
+    def getInflationExpectationsDelta(self, surveyDate: date):
+        pass

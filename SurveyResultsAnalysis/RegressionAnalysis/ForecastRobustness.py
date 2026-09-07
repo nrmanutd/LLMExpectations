@@ -46,8 +46,10 @@ class ForecastRobustness:
             hac_lags=3
     ):
         """
-        Запускает все три robustness-теста
-        и выводит компактный отчет.
+        Запускает robustness-тесты и выводит компактный отчет.
+
+        Дополнительно считает Pearson correlation между
+        OOS-ошибками baseline и модели с LLM.
         """
 
         loo_results, loo = self.leave_one_out_gain()
@@ -62,48 +64,93 @@ class ForecastRobustness:
             hac_lags=hac_lags
         )
 
+        # ---------------------------------------------------------
+        # Correlation between forecast errors
+        # ---------------------------------------------------------
+
+        error_corr, error_corr_pvalue = stats.pearsonr(
+            self.e_base.to_numpy(),
+            self.e_llm.to_numpy()
+        )
+
         # Наиболее влиятельное наблюдение:
         # после его исключения gain минимален
         influential_date = loo_results["gain"].idxmin()
+
         influential_gain = loo_results.loc[
-            influential_date, "gain_percent"
+            influential_date,
+            "gain_percent"
         ]
 
         # Насколько полный gain уменьшается
         # после исключения наиболее влиятельной точки
-        impact_share = (
-                               loo["full_gain"] - loo["loo_min"]
-                       ) / loo["full_gain"]
+        if abs(loo["full_gain"]) > 1e-12:
+            impact_share = (
+                                   loo["full_gain"] - loo["loo_min"]
+                           ) / loo["full_gain"]
+        else:
+            impact_share = np.nan
 
         print("=" * 65)
         print("OOS FORECAST ROBUSTNESS REPORT")
         print("=" * 65)
 
+        # ---------------------------------------------------------
+        # 1. Full-sample gain
+        # ---------------------------------------------------------
+
         print("\n1. FULL-SAMPLE FORECAST GAIN")
         print("-" * 65)
+
         print(
             f"LLM reduction in SSE: "
             f"{loo['full_gain_percent']:.2f}%"
         )
 
-        print("\n2. LEAVE-ONE-OUT SENSITIVITY")
+        # ---------------------------------------------------------
+        # 2. Error correlation
+        # ---------------------------------------------------------
+
+        print("\n2. CORRELATION OF OOS FORECAST ERRORS")
         print("-" * 65)
+
+        print(
+            f"corr(e_base, e_llm):     "
+            f"{error_corr:.4f}"
+        )
+
+        print(
+            f"Pearson p-value:         "
+            f"{error_corr_pvalue:.4g}"
+        )
+
+        # ---------------------------------------------------------
+        # 3. Leave-one-out
+        # ---------------------------------------------------------
+
+        print("\n3. LEAVE-ONE-OUT SENSITIVITY")
+        print("-" * 65)
+
         print(
             f"Mean LOO gain:          "
             f"{loo['loo_mean'] * 100:.2f}%"
         )
+
         print(
             f"Median LOO gain:        "
             f"{loo['loo_median'] * 100:.2f}%"
         )
+
         print(
             f"Minimum LOO gain:       "
             f"{loo['loo_min_percent']:.2f}%"
         )
+
         print(
             f"Maximum LOO gain:       "
             f"{loo['loo_max_percent']:.2f}%"
         )
+
         print(
             f"Positive in all LOO:    "
             f"{loo['share_positive']:.2%}"
@@ -113,50 +160,68 @@ class ForecastRobustness:
             f"\nMost influential date:  "
             f"{influential_date}"
         )
+
         print(
             f"Gain without this date: "
             f"{influential_gain:.2f}%"
         )
+
         print(
             f"Share of full gain associated "
             f"with this observation: "
             f"{impact_share:.2%}"
         )
 
-        print("\n3. MOVING-BLOCK BOOTSTRAP")
+        # ---------------------------------------------------------
+        # 4. Bootstrap
+        # ---------------------------------------------------------
+
+        print("\n4. MOVING-BLOCK BOOTSTRAP")
         print("-" * 65)
+
         print(
             f"Block size:             "
             f"{boot['block_size']}"
         )
+
         print(
             f"Bootstrap replications: "
             f"{boot['n_boot']:,}"
         )
+
         print(
             f"Bootstrap mean gain:    "
             f"{boot['bootstrap_mean'] * 100:.2f}%"
         )
+
         print(
             f"Bootstrap median gain:  "
             f"{boot['bootstrap_median'] * 100:.2f}%"
         )
+
         print(
             f"95% CI:                 "
             f"[{boot['ci_lower_percent']:.2f}%, "
             f"{boot['ci_upper_percent']:.2f}%]"
         )
+
         print(
             f"P(gain <= 0):           "
             f"{boot['prob_gain_le_zero']:.3f}"
         )
 
-        print("\n4. CLARK-WEST TEST")
+        # ---------------------------------------------------------
+        # 5. Clark-West
+        # ---------------------------------------------------------
+
+        print("\n5. CLARK-WEST TEST")
         print("-" * 65)
+
         print(
             f"CW statistic:           "
             f"{cw['cw_statistic']:.3f}"
         )
+
         print(
             f"One-sided p-value:      "
             f"{cw['p_value_one_sided']:.4f}"
@@ -179,6 +244,8 @@ class ForecastRobustness:
         print("\n" + "=" * 65)
 
         return {
+            "error_correlation": error_corr,
+            "error_correlation_pvalue": error_corr_pvalue,
             "loo_results": loo_results,
             "loo_summary": loo,
             "bootstrap_summary": boot,
@@ -252,11 +319,7 @@ class ForecastRobustness:
                 (results["gain"] > 0).mean()
         }
 
-        print(summary)
-
         # Какие наблюдения сильнее всего влияют
-        print(results.sort_values("gain").head(10))
-
         return results, summary
 
     # ---------------------------------------------------------
@@ -396,7 +459,7 @@ class ForecastRobustness:
             "n_boot": n_boot
         }
 
-        print(summary)
+        #print(summary)
 
         return bootstrap_gains, summary
 
@@ -502,6 +565,6 @@ class ForecastRobustness:
                 p_value < 0.01
         }
 
-        print(result)
+        #print(result)
 
         return result

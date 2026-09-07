@@ -3,9 +3,12 @@ import statsmodels.api as sm
 import numpy as np
 from scipy.stats import stats
 
+from SurveyLogic.PromptBuilders.StatisticsProviders.BaseKeyRateProvider import BaseKeyRateProvider
+
 
 class SurveyRegressionService:
-    def __init__(self, inflationExpectations, pastYearInflation, usdrubRate, filteringDates: set[np.datetime64]):
+    def __init__(self, inflationExpectations, pastYearInflation, usdrubRate, keyRateProvider: BaseKeyRateProvider, filteringDates: set[np.datetime64]):
+        self.keyRateProvider = keyRateProvider
         self.filteringDates = filteringDates
         self.usdrubRate = usdrubRate
         self.pastYearInflation = pastYearInflation
@@ -16,11 +19,14 @@ class SurveyRegressionService:
 
         df.to_excel('temp.xlsx')
 
-        x = df[vars]
-        y = df['Y']
+        x = df[vars[0]]
+        y = df[vars[1]]
         yt = df['YT']
 
-        dates = df['D']
+        dates = df['D'].to_numpy()
+        dates_list = []
+        for i in range(len(dates)):
+            dates_list.append(dates[i])
 
         x_const = sm.add_constant(x)
         model_sm = sm.OLS(y, x_const).fit()
@@ -29,7 +35,19 @@ class SurveyRegressionService:
         adjustedPrediction = prediction + yt
         adjustedY = y + yt
 
-        return adjustedY, adjustedPrediction, model_sm, dates
+        ay = pd.Series(
+            adjustedY.to_numpy().tolist(),
+            index=dates_list,
+            name='actual'
+        )
+
+        ap = pd.Series(
+            adjustedPrediction.to_numpy().tolist(),
+            index=dates_list,
+            name='prediction'
+        )
+
+        return ay, ap, model_sm, dates_list
 
     def fit_oos(self, survey, vars, isDelta: bool, start_n=30):
         """
@@ -63,8 +81,8 @@ class SurveyRegressionService:
 
         df.to_excel('temp.xlsx')
 
-        x = df[vars].to_numpy(dtype=float)
-        y = df['Y'].to_numpy(dtype=float)
+        x = df[vars[0]].to_numpy(dtype=float)
+        y = df[vars[1]].to_numpy(dtype=float)
         yt = df['YT'].to_numpy(dtype=float)
         dates = df['D'].to_numpy()
 
@@ -145,17 +163,15 @@ class SurveyRegressionService:
         r_diff = r.diff().dropna()
 
         #print('corr(y(t)-y(t-1), llm(t) - y(t-1))')
-        self._estimateCorrInternal(y_diff, r_minus_y_prev)
+        #self._estimateCorrInternal(y_diff, r_minus_y_prev)
 
         #print('corr(y(t)-y(t-1), llm(t) - llm(t-1))')
         self._estimateCorrInternal(y_diff, r_diff)
 
     def _estimateCorrInternal(self, y_diff, r_diff):
-
-
         # Проверяем, что длины совпадают
-        print(f"Длина x_diff: {len(y_diff)}")
-        print(f"Длина r_minus_x_prev: {len(r_diff)}")
+        print(f"Длина y(t) - y(t-1): {len(y_diff)}")
+        print(f"Длина llm(t) - llm(t-1): {len(r_diff)}")
 
         # Считаем корреляцию
         correlation = np.corrcoef(y_diff, r_diff)[0, 1]
@@ -174,11 +190,16 @@ class SurveyRegressionService:
 
             current_value = df['expected_inflation'].iloc[i]
 
+            deltaKR = self.keyRateProvider.getKeyRateIncrements(llm_survey_date, 1)
+            if len(deltaKR) == 0:
+                continue
+
             Y = current_value
             X1 = df['expected_inflation'].iloc[i - 1]
             X2 = self._getInflation(llm_survey_date)
             X3 = survey['exp_median'].iloc[i]
             X4 = self._get_usdrub(llm_survey_date)
+            X6 = deltaKR[0]
 
             #print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
             if X2 is None or X4 is None:
@@ -194,6 +215,7 @@ class SurveyRegressionService:
                 'X2': X2,
                 'X3': X3,
                 'X4': X4,
+                'X6': X6,
                 'D': llm_survey_date,
                 'YT': 0
             }
@@ -215,12 +237,17 @@ class SurveyRegressionService:
             prev_value = df['expected_inflation'].iloc[i - 1]
             current_value = df['expected_inflation'].iloc[i]
 
+            deltaKR = self.keyRateProvider.getKeyRateIncrements(llm_survey_date, 1)
+            if len(deltaKR) == 0:
+                continue
+
             Y = current_value - prev_value
             X1 = prev_value
             X2 = self._getInflationDelta(llm_survey_date)
             X3 = survey['exp_median'].iloc[i] - survey['exp_median'].iloc[i - 1]
             X4 = self._get_usdrub(llm_survey_date)
             X5 = prev_value - prev_prev_value
+            X6 = deltaKR[0]
             YT = prev_value
 
             #print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
@@ -238,6 +265,7 @@ class SurveyRegressionService:
                 'X3': X3,
                 'X4': X4,
                 'X5': X5,
+                'X6': X6,
                 'D': llm_survey_date,
                 'YT': YT
             }

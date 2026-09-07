@@ -87,6 +87,8 @@ class PromptBuilderFactory:
         self.stateEconomyContextPromptBuilder = StateEconomyContextPromptBuilder(prompts.stateEconomyPrompt, currencyProvider)
 
         self.politicsProvider = MonthlyFromFilePromptBuilder(prompts.politicsPath)
+        self.newsProvider = MonthlyFromFilePromptBuilder(prompts.newsPath)
+
         self.taskPromptBuilder = TaskPromptBuilder(prompts.taskPrompt)
 
         self.markerGoodsInflationProvider = MarkerGoodsInflationPromptBuilder(inflationProvider, configuration.regularMarkerGoods, configuration.durableMarkerGoods, configuration.servicesMarker)
@@ -146,6 +148,10 @@ class PromptBuilderFactory:
         if cfg.usePreviousInflationExpectations:
             builders.append(self.previousInflationExpectationsPromptBuilder)
             headers.append('Предыдущие агрегированные инфляционные ожидания')
+
+        if cfg.useNews:
+            builders.append(self.newsProvider)
+            headers.append('Общий контекст (новости, события в РФ и в мире)')
 
         if cfg.usePolitics:
             builders.append(self.politicsProvider)
