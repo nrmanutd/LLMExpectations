@@ -33,12 +33,14 @@ modellingResults = [
         ('mlcluster_qwen36_async_rlms_expenses_noIE_keyrate_news_-6d', 'QWEN 3.8 (news + RLMS e - IE + ключ, 7d от Инфом)'),
         ('mlcluster_qwen36_async_norlms_pass_noIE_nokeyrate_-6d', 'QWEN 3.8 (news + RLMS e - IE - ключ, 7d от Инфом)'),
         ('mlcluster_qwen38_async_norlms_pass_noIE_nokeyrate_nonews_-6d', 'QWEN 3.8 (RLMS e -news -IE -ключ, 7d от Инфом)'),
-        ('mlcluster_qwen38_async_norlms_noIE_nokeyrate_-6d', 'QWEN 3.8 (-RLMS +news -IE -ключ, 7d от Инфом)')
+        ('mlcluster_qwen38_async_norlms_noIE_nokeyrate_-6d', 'QWEN 3.8 (-RLMS +news -IE -ключ, 7d от Инфом)'),
+        ('mlcluster_qwen38_async_rlmse_news_nomarkers_-6d', 'QWEN 3.8 (+RLMS e +news -markers, 7d)')
 ]
 
 #datesToFilter = {np.datetime64('2022-04-02')}
 datesToFilter = set[np.datetime64]()
 datesToExclude = (np.datetime64('2022-02-23'), np.datetime64('2022-06-01'))
+#datesToExclude = (np.datetime64('2027-02-23'), np.datetime64('2027-06-01'))
 
 threshold = 20
 
@@ -61,7 +63,7 @@ if isDelta:
     if isFWL:
         variables = {'dY: X2=I-12m(t), X4=UsdRub, X5=delta IE (t-1)': (['X2', 'X4', 'X5', 'X6'], 'X3'), 'dLLM: X2=I-12m(t), X4=UsdRub, X5=delta IE (t-1)': (['X2', 'X4', 'X5', 'X6'], 'Y')}
     else:
-        variables = {'X2=I-12m(t), X3=LLM_IE(t), X4=UsdRub, X5=delta IE (t-1)':(['X2', 'X3', 'X4', 'X5'],'Y'), 'X2=I-12m(t), X4=UsdRub, X5=delta IE (t-1)': (['X2', 'X4', 'X5'], 'Y')}
+        variables = {'X2=I-12m(t), X3=LLM_IE(t), X4=UsdRub, X5=delta IE (t-1)':(['X2', 'X3', 'X4', 'X5'],'Y'), 'X2=I-12m(t), X4=UsdRub, X5=delta IE (t-1)': (['X2', 'X4', 'X5'], 'Y'), 'X5=dIE(t-1)':(['X5'], 'Y'), 'X3=dLLM_IE(t-1)':(['X3'], 'Y')}
         #variables = {'X3=dLLM_IE(t)': (['X3'], 'Y'), 'X5=dIE-12m(t), X3=dLLM_IE(t)': (['X5', 'X3'], 'Y')}
         #variables = {'X5=dIE-12m(t)': (['X5'], 'Y')}
 else:
@@ -69,9 +71,9 @@ else:
         variables = {'X1=IE, X2=I-12m(t), X3=LLM_IE(t)': (['X1', 'X2', 'X4', 'X6'], 'X3'),
                      'X1=IE, X2=I-12m(t)': (['X1', 'X2', 'X4', 'X6'], 'Y')}
     else:
-        #variables = {'X1=IE, X2=I-12m(t), X3=LLM_IE(t)': (['X1', 'X2', 'X3', 'X4', 'X6'], 'Y'), 'X1=IE, X2=I-12m(t)': (['X1', 'X2', 'X4', 'X6'], 'Y')}
+        variables = {'X1=IE, X2=I-12m(t), X3=LLM_IE(t)': (['X1', 'X2', 'X3', 'X4', 'X6'], 'Y'), 'X1=IE, X2=I-12m(t)': (['X1', 'X2', 'X4', 'X6'], 'Y'), 'X3=LLM_IE(t)':(['X3'], 'Y')}
         #variables = {'X3=LLM_IE(t)': (['X3'], 'Y'), 'X1=IE, X3=LLM_IE(t)': (['X1', 'X3'], 'Y')}
-        variables = {'X1=IE, X3=LLM_IE(t)': (['X1', 'X3'], 'Y')}
+        #variables = {'X1=IE, X3=LLM_IE(t)': (['X1', 'X3'], 'Y')}
 
 
 postfix = f'{'OOS' if isOOS else ''}_{'delta' if isDelta else ''}'
@@ -97,7 +99,7 @@ for vn, v in variables.items():
     visualizer.visualize(regressionResults, save_path=f'{prefix}_regression_{postfix}.png', additional_title=prefix)
 
 for i in range(len(modellingResults)):
-    print(f'Model: {modellingResults[i][1]}')
+    print(f'Model: {modellingResults[i][1]}, errors: {len(errors)}, models: {len(modellingResults)}')
     e_base = errors[i + len(modellingResults)]
     e_llm = errors[i]
 
