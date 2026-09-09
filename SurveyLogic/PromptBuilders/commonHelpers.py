@@ -84,7 +84,7 @@ def getDescriptionMonth(inflation: float, month: int, isInflation: bool = False)
         return f'за {description} нет информации'
 
     direction = getDirection(inflation, isInflation)
-    if abs(inflation) < 0.00001:
+    if abs(inflation) < 0.01:
         return f"за {description} не изменилась"
 
     clearInflation = (inflation + 1)**(month/12) - 1

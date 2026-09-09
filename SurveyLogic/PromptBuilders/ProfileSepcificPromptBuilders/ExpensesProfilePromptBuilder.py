@@ -21,6 +21,7 @@ class ExpensesProfilePromptBuilder(BasePromptBuilder):
 
         goods = [profile.regular, profile.durable, profile.services]
         goodNames = [constants.regularTag, constants.durableTag, constants.servicesTag]
+        goodsStatus = [True, True, True]
 
         result = self.prompt
         for i in range(len(goods)):
@@ -31,7 +32,13 @@ class ExpensesProfilePromptBuilder(BasePromptBuilder):
             inflation6m = self.inflationProvider.getProductsRegionalYearInflationLastNMonth(surveyDate, profile.currentLocalityRegionCode, top5Goods, 6)
 
             currentPrompt = self._getCurrentGoodsPromptSet(top5Goods, inflation1m, inflation3m, inflation6m)
+            if 'нет информации' in currentPrompt:
+                goodsStatus[i] = False
+
             result = result.replace(goodNames[i], currentPrompt)
+
+        if not any(goodsStatus):
+            return None
 
         return result
 
@@ -44,7 +51,26 @@ class ExpensesProfilePromptBuilder(BasePromptBuilder):
             inflation6mDescription = getDescriptionMonth(inflation6m[i], 6)
             inflation12mDescription = getDescriptionMonth(inflation6m[i], 12)
 
-            result += f'#{i}. {top5Goods[i]}: {inflation1mDescription}, {inflation3mDescription}, {inflation6mDescription}, {inflation12mDescription}\n'
+            curDescription = ''
+            if 'нет информации' not in inflation1mDescription:
+                curDescription += f' {inflation1mDescription},'
+
+            if 'нет информации' not in inflation3mDescription:
+                curDescription += f' {inflation3mDescription},'
+
+            if 'нет информации' not in inflation6mDescription:
+                curDescription += f' {inflation6mDescription},'
+
+            if 'нет информации' not in inflation12mDescription:
+                curDescription += f' {inflation12mDescription}'
+
+            if curDescription == '':
+                continue
+
+            result += f'#{i}. {top5Goods[i]}:{curDescription}\n'
+
+        if result == '\n':
+            return 'нет информации'
 
         return result
 

@@ -36,7 +36,7 @@ class StateExpensesProfilePromptBuilder(BasePromptBuilder):
             result = result.replace(goodNames[i], currentPrompt)
 
         if allGoodsAreOff:
-            return 'Нет информации по недельныим данным'
+            return None
 
         return result
 

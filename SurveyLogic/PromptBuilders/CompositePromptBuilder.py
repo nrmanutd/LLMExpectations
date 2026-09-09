@@ -17,13 +17,16 @@ class CompositePromptBuilder(BasePromptBuilder):
             header = self.headers[i]
 
             curPrompt = builder.buildPrompt(surveyDate, profile)
+
+            if curPrompt is None:
+                continue
+
             h = f'======================{header}======================'
             board = "=" * len(h)
 
-            if i > 0:
-                prompts.append(board)
-                prompts.append(h)
-                prompts.append(board)
+            prompts.append(board)
+            prompts.append(h)
+            prompts.append(board)
 
             prompts.append(curPrompt)
 
