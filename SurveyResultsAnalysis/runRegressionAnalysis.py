@@ -15,32 +15,33 @@ from SurveyResultsAnalysis.helpers import load_from_official_statistics, load_of
 rootFolder = Path('../data/SurveyResults/')
 
 modellingResults = [
-        ('mlcluster_qwen38_async_all_prevexp_-6d', 'QWEN 3.8 (все данные + IE - markers, -7d от Инфом)'),
+        #('mlcluster_qwen38_async_all_prevexp_-6d', 'QWEN 3.8 (все данные + IE - markers, -7d от Инфом)'),
         #('mlcluster_qwen36_async_all_time', 'QWEN 3.6 (все данные, в день Инфом)'),
         #('mlcluster_qwen36_async_all_time_week_before', 'QWEN 3.6 (все данные, -7d от Инфом)'),
         #('mlcluster_qwen36_async_all_two_weekbefore', 'QWEN 3.6 (все данные, -2w от Инфом)'),
         #('mlcluster_qwen36_async_nousdrub_time_week_before', 'QWEN 3.6 (без usdrub, -7d от Инфом)'),
         #('mlcluster_qwen36_async_nousdrub_time', 'QWEN 3.6 (без usdrub, в день Инфом)'),
-        ('mlcluster_qwen36_async_norlms_weekbefore', 'QWEN 3.6 (без RLMS, -7d от Инфом)'),
+        #('mlcluster_qwen36_async_norlms_weekbefore', 'QWEN 3.6 (без RLMS, -7d от Инфом)'),
         #('mlcluster_qwen36_async_only_rlms_-1week', 'QWEN 3.6 (только RLMS, -7d от Инфом)'),
-        ('mlcluster_qwen38_async_no_rlms_prevexp_-6d', 'QWEN 3.8 (без RLMS + IE - markers, -7d от Инфом)'),
-        ('mlcluster_qwen38_async_no_goods_no_previous_ie_prevexp_-6d', 'QWEN 3.8 (RLMS pass - markers - IE - , -7d от Инфом)'),
-        ('mlcluster_qwen38_async_no_rlms_-6d', 'QWEN 3.8 (без RLMS без IE без маркеров + общ инфо, -7d от Инфом'),
-        ('mlcluster_qwen38_async_norlms_noIE_keyrate_-6d', 'QWEN 3.8 (без RLMS без IE + ключ, -7d от Инфом)'),
-        ('mlcluster_qwen36_async_rlms_pass_noIE_keyrate_-6d', 'QWEN 3.8 (RLMS pass -IE + ключ, -7d от Инфом)'),
-        ('mlcluster_qwen36_async_rlms_pass_noIE_keyrate_news_-6d', 'QWEN 3.8 (news + RLMS pass -IE + ключ, -7d от Инфом)'),
-        ('mlcluster_qwen36_async_no_rlms_pass_noIE_keyrate_news_-6d', 'QWEN 3.8 (news - RLMS - IE + ключ, 7d от Инфом)'),
-        ('mlcluster_qwen36_async_rlms_expenses_noIE_keyrate_news_-6d', 'QWEN 3.8 (news + RLMS e - IE + ключ, 7d от Инфом)'),
-        ('mlcluster_qwen36_async_norlms_pass_noIE_nokeyrate_-6d', 'QWEN 3.8 (news + RLMS e - IE - ключ, 7d от Инфом)'),
-        ('mlcluster_qwen38_async_norlms_pass_noIE_nokeyrate_nonews_-6d', 'QWEN 3.8 (RLMS e -news -IE -ключ, 7d от Инфом)'),
-        ('mlcluster_qwen38_async_norlms_noIE_nokeyrate_-6d', 'QWEN 3.8 (-RLMS +news -IE -ключ, 7d от Инфом)'),
-        ('mlcluster_qwen38_async_rlmse_news_nomarkers_-6d', 'QWEN 3.8 (+RLMS e +news -markers, 7d)')
+        #('mlcluster_qwen38_async_no_rlms_prevexp_-6d', 'QWEN 3.8 (без RLMS + IE - markers, -7d от Инфом)'),
+        #('mlcluster_qwen38_async_no_goods_no_previous_ie_prevexp_-6d', 'QWEN 3.8 (RLMS pass - markers - IE - , -7d от Инфом)'),
+        #('mlcluster_qwen38_async_no_rlms_-6d', 'QWEN 3.8 (без RLMS без IE без маркеров + общ инфо, -7d от Инфом'),
+        #('mlcluster_qwen38_async_norlms_noIE_keyrate_-6d', 'QWEN 3.8 (без RLMS без IE + ключ, -7d от Инфом)'),
+        #('mlcluster_qwen36_async_rlms_pass_noIE_keyrate_-6d', 'QWEN 3.8 (RLMS pass -IE + ключ, -7d от Инфом)'),
+        #('mlcluster_qwen36_async_rlms_pass_noIE_keyrate_news_-6d', 'QWEN 3.8 (news + RLMS pass -IE + ключ, -7d от Инфом)'),
+        #('mlcluster_qwen36_async_no_rlms_pass_noIE_keyrate_news_-6d', 'QWEN 3.8 (news - RLMS - IE + ключ, 7d от Инфом)'),
+        #('mlcluster_qwen36_async_rlms_expenses_noIE_keyrate_news_-6d', 'QWEN 3.8 (news + RLMS e - IE + ключ, 7d от Инфом)'),
+        #('mlcluster_qwen36_async_norlms_pass_noIE_nokeyrate_-6d', 'QWEN 3.8 (news + RLMS e - IE - ключ, 7d от Инфом)'),
+        #('mlcluster_qwen38_async_norlms_pass_noIE_nokeyrate_nonews_-6d', 'QWEN 3.8 (RLMS e -news -IE -ключ, 7d от Инфом)'),
+        #('mlcluster_qwen38_async_norlms_noIE_nokeyrate_-6d', 'QWEN 3.8 (-RLMS +news -IE -ключ, 7d от Инфом)'),
+        ('mlcluster_qwen38_async_rlmse_news_nomarkers_-6d', 'QWEN 3.8 (+RLMS e +news -markers, 7d)'),
+        ('mlcluster_qwen38_async_news_rlmse_reginf_-6d', 'QWEN 3.8 (+RLMS e +news +reg inf, 7d)')
 ]
 
 #datesToFilter = {np.datetime64('2022-04-02')}
 datesToFilter = set[np.datetime64]()
-datesToExclude = (np.datetime64('2022-02-23'), np.datetime64('2022-06-01'))
-#datesToExclude = (np.datetime64('2027-02-23'), np.datetime64('2027-06-01'))
+#datesToExclude = (np.datetime64('2022-02-23'), np.datetime64('2022-06-01'))
+datesToExclude = (np.datetime64('2027-02-23'), np.datetime64('2027-06-01'))
 
 threshold = 20
 
