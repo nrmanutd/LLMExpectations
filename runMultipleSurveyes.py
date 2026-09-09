@@ -21,8 +21,8 @@ profilesCount = 100
 resultsFolder = Path('data/SurveyResults/')/experimentUniqueName
 copyPromptTemplatesToFolder(Path('SurveyLogic/PromptBuilders/Prompts/'), resultsFolder/'Prompts')
 
-#surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDays=offsetDays, start_date=datetime.strptime('2021.12.01', '%Y.%m.%d'), end_date=datetime.strptime('2022.06.01', '%Y.%m.%d'))
-surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDays=offsetDays)
+surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDays=offsetDays, start_date=datetime.strptime('2018.03.08', '%Y.%m.%d'))
+#surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDays=offsetDays)
 
 #surveyDates = getDatesRowWithMonthlyStep('2020.12.01', '2021.01.01')
 #surveyDates = getDatesRowWithWeeklyStep('2022.03.12', '2022.05.07')
@@ -48,10 +48,10 @@ factory = PromptBuilderFactory()
 systemPromptBuilder, promptBuilder = factory.createCustomPromptBuilder(cfg)
 logger = SimpleLogger()
 
-#surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.8-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
+surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.8-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
 #surveyer = AsyncSurveyer(modelToUse='qwen3.6-35b-a3b', key=bothub_key, logger=logger, baseUrl=configuration.bothubUrl)
 #surveyer = AsyncSurveyer(modelToUse='qwen3.6-27b', key=aitunnel_key, logger=logger, baseUrl=configuration.aitunnelUrl, maxAttempts=100)
-surveyer = StubSurveyer()
+#surveyer = StubSurveyer()
 
 surveySerializer = SurveySerializer(resultsFolder)
 
