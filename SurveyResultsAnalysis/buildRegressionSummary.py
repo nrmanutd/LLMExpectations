@@ -44,7 +44,7 @@ OOSStartPoints = 30
 
 nStepsAhead = [1, 2, 3, 4, 5, 6]
 useDelta = [False]
-useOOS = [True]
+useOOS = [True, False]
 useExpandingOOS = [True]
 
 includeDatesFilter = []

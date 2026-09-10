@@ -699,6 +699,7 @@ def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
     green_max_flags: список bool длины len(matrices)
         True  -> зелёный = максимум, красный = минимум
         False -> наоборот
+        РАСКРАСКА ПРИМЕНЯЕТСЯ ОТДЕЛЬНО К КАЖДОМУ СТОЛБЦУ каждой матрицы.
     extra_df: pandas.DataFrame со своими колонками, число строк == n.
         Выводится СЛЕВА от всех matrices.
         Значения 'Да' / 'Нет' подсвечиваются зелёным / красным,
@@ -756,7 +757,7 @@ def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
     for i, rname in enumerate(row_names, start=3):
         ws.cell(row=i, column=1, value=rname).font = Font(bold=True)
 
-    # 3a) extra_df: названия колонок + данные + границы
+    # 3a) extra_df
     for j, cname in enumerate(extra_cols):
         c = ws.cell(row=2, column=extra_start_col + j, value=cname)
         c.font = Font(bold=True)
@@ -775,13 +776,11 @@ def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
     for j in range(m_extra):
         ws.cell(row=1, column=extra_start_col + j).border = cell_border
 
-    # 3a.1) Условное форматирование для extra_df:
-    #       'Да' -> зелёный, 'Нет' -> красный, '—' -> без заливки.
+    # 3a.1) Условное форматирование для extra_df
     first_cell = f"{get_column_letter(extra_start_col)}3"
     last_cell = f"{get_column_letter(extra_end_col)}{3 + n - 1}"
     extra_range = f"{first_cell}:{last_cell}"
 
-    # Зелёная заливка для 'Да'
     ws.conditional_formatting.add(
         extra_range,
         CellIsRule(
@@ -791,7 +790,6 @@ def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
             font=Font(color='006100'),
         )
     )
-    # Красная заливка для 'Нет'
     ws.conditional_formatting.add(
         extra_range,
         CellIsRule(
@@ -821,23 +819,27 @@ def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
             ws.cell(row=2, column=start_col + j).border = cell_border
             ws.cell(row=1, column=start_col + j).border = cell_border
 
-        first_cell = f"{get_column_letter(start_col)}3"
-        last_cell = f"{get_column_letter(start_col + m - 1)}{3 + n - 1}"
-        cell_range = f"{first_cell}:{last_cell}"
+        # 4) Условное форматирование ПО КАЖДОМУ СТОЛБЦУ
+        if green_max_flags[k]:
+            start_color, end_color = 'FF6B6B', '63BE7B'
+        else:
+            start_color, end_color = '63BE7B', 'FF6B6B'
 
-        if mat.min() != mat.max():
-            if green_max_flags[k]:
-                start_color, end_color = 'FF6B6B', '63BE7B'
-            else:
-                start_color, end_color = '63BE7B', 'FF6B6B'
+        for j in range(m):
+            col_letter = get_column_letter(start_col + j)
+            first_cell = f"{col_letter}3"
+            last_cell = f"{col_letter}{3 + n - 1}"
+            col_range = f"{first_cell}:{last_cell}"
 
-            ws.conditional_formatting.add(
-                cell_range,
-                ColorScaleRule(
-                    start_type='min', start_color=start_color,
-                    end_type='max',   end_color=end_color,
+            col_values = mat[:, j]
+            if col_values.min() != col_values.max():
+                ws.conditional_formatting.add(
+                    col_range,
+                    ColorScaleRule(
+                        start_type='min', start_color=start_color,
+                        end_type='max',   end_color=end_color,
+                    )
                 )
-            )
 
     # 5) Границы названий строк
     for i in range(3, 3 + n):
