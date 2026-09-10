@@ -249,7 +249,7 @@ class SurveyRegressionService:
         # ---------------------------------------------------------
         # Fixed chronological split
         # ---------------------------------------------------------
-        print(f'Date = {dates[train_n]}')
+        #print(f'Date = {dates[train_n]}')
 
         x_train = x[:train_n]
         y_train = y[:train_n]
@@ -441,15 +441,15 @@ class SurveyRegressionService:
                 continue
 
             if self.datesToExclude[0] <= llm_survey_date < self.datesToExclude[1]:
-                print(f'Excluding...{current_date}')
+                #print(f'Excluding...{current_date}')
                 continue
 
             if llm_survey_date < self.datesToInclude[0] or llm_survey_date > self.datesToInclude[1]:
-                print(f'Excluding...{current_date}')
+                #print(f'Excluding...{current_date}')
                 continue
 
             if self._calcDifference(current_date, prev_date) > nMonth:
-                print(f'Skipping date {current_date} because of prev date = {prev_date} is older for {nMonth} month')
+                #print(f'Skipping date {current_date} because of prev date = {prev_date} is older for {nMonth} month')
                 continue
 
             row = {

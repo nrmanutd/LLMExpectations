@@ -692,15 +692,21 @@ def generate_title_from_config(
     return title
 
 def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
-                        green_max_flags):
+                        green_max_flags, extra_df):
     """
-    green_max_flags: список bool длины len(matrices).
-        True  -> зелёный = максимум, красный = минимум (по умолчанию)
-        False -> наоборот: зелёный = минимум, красный = максимум
+    matrices: список numpy-матриц (n, m) в долях
+    headers:  список заголовков над каждой матрицей
+    green_max_flags: список bool длины len(matrices)
+        True  -> зелёный = максимум, красный = минимум
+        False -> наоборот
+    extra_df: pandas.DataFrame со своими колонками, число строк == n.
+        Выводится СЛЕВА от всех matrices.
+        Значения 'Да' / 'Нет' подсвечиваются зелёным / красным,
+        прочерк '—' — без заливки.
     """
     from openpyxl import Workbook
-    from openpyxl.styles import Alignment, Font, Border, Side
-    from openpyxl.formatting.rule import ColorScaleRule
+    from openpyxl.styles import Alignment, Font, Border, Side, PatternFill
+    from openpyxl.formatting.rule import ColorScaleRule, CellIsRule
     from openpyxl.utils import get_column_letter
 
     wb = Workbook()
@@ -712,18 +718,36 @@ def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
 
     assert len(green_max_flags) == K, \
         f"green_max_flags должен иметь длину {K}, получено {len(green_max_flags)}"
+    assert extra_df.shape[0] == n, \
+        f"extra_df должен иметь {n} строк, получено {extra_df.shape[0]}"
+
+    extra_cols = list(extra_df.columns)
+    m_extra = len(extra_cols)
 
     thin = Side(style='thin', color='FF000000')
     cell_border = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-    def matrix_start_col(k):
-        return 2 + k * (m + 1)
+    extra_start_col = 2
+    extra_end_col = extra_start_col + m_extra - 1
+    matrices_start_col = extra_end_col + 2
 
-    # 1) Заголовки над каждой матрицей
+    def matrix_start_col(k):
+        return matrices_start_col + k * (m + 1)
+
+    # 1a) Заголовок над extra_df
+    extra_title = "Extra"
+    ws.merge_cells(start_row=1, start_column=extra_start_col,
+                   end_row=1, end_column=extra_end_col)
+    c = ws.cell(row=1, column=extra_start_col, value=extra_title)
+    c.alignment = Alignment(horizontal='center', vertical='center')
+    c.font = Font(bold=True)
+
+    # 1b) Заголовки над матрицами
     for k, title in enumerate(headers):
         start_col = matrix_start_col(k)
         end_col = start_col + m - 1
-        ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
+        ws.merge_cells(start_row=1, start_column=start_col,
+                       end_row=1, end_column=end_col)
         c = ws.cell(row=1, column=start_col, value=title)
         c.alignment = Alignment(horizontal='center', vertical='center')
         c.font = Font(bold=True)
@@ -732,7 +756,53 @@ def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
     for i, rname in enumerate(row_names, start=3):
         ws.cell(row=i, column=1, value=rname).font = Font(bold=True)
 
-    # 3) Данные
+    # 3a) extra_df: названия колонок + данные + границы
+    for j, cname in enumerate(extra_cols):
+        c = ws.cell(row=2, column=extra_start_col + j, value=cname)
+        c.font = Font(bold=True)
+        c.alignment = Alignment(horizontal='center')
+        c.border = cell_border
+
+    for i in range(n):
+        for j in range(m_extra):
+            val = extra_df.iat[i, j]
+            if val is None or (isinstance(val, float) and val != val):
+                val = '—'
+            c = ws.cell(row=3 + i, column=extra_start_col + j, value=val)
+            c.border = cell_border
+            c.alignment = Alignment(horizontal='center')
+
+    for j in range(m_extra):
+        ws.cell(row=1, column=extra_start_col + j).border = cell_border
+
+    # 3a.1) Условное форматирование для extra_df:
+    #       'Да' -> зелёный, 'Нет' -> красный, '—' -> без заливки.
+    first_cell = f"{get_column_letter(extra_start_col)}3"
+    last_cell = f"{get_column_letter(extra_end_col)}{3 + n - 1}"
+    extra_range = f"{first_cell}:{last_cell}"
+
+    # Зелёная заливка для 'Да'
+    ws.conditional_formatting.add(
+        extra_range,
+        CellIsRule(
+            operator='equal',
+            formula=['"Да"'],
+            fill=PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid'),
+            font=Font(color='006100'),
+        )
+    )
+    # Красная заливка для 'Нет'
+    ws.conditional_formatting.add(
+        extra_range,
+        CellIsRule(
+            operator='equal',
+            formula=['"Нет"'],
+            fill=PatternFill(start_color='FFC7CE', end_color='FFC7CE', fill_type='solid'),
+            font=Font(color='9C0006'),
+        )
+    )
+
+    # 3b) Матрицы
     for k, mat in enumerate(matrices):
         start_col = matrix_start_col(k)
 
@@ -751,17 +821,14 @@ def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
             ws.cell(row=2, column=start_col + j).border = cell_border
             ws.cell(row=1, column=start_col + j).border = cell_border
 
-        # 4) Условное форматирование с учётом направления
         first_cell = f"{get_column_letter(start_col)}3"
         last_cell = f"{get_column_letter(start_col + m - 1)}{3 + n - 1}"
         cell_range = f"{first_cell}:{last_cell}"
 
         if mat.min() != mat.max():
             if green_max_flags[k]:
-                # зелёный максимум, красный минимум
                 start_color, end_color = 'FF6B6B', '63BE7B'
             else:
-                # красный максимум, зелёный минимум
                 start_color, end_color = '63BE7B', 'FF6B6B'
 
             ws.conditional_formatting.add(
@@ -777,8 +844,13 @@ def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
         ws.cell(row=i, column=1).border = cell_border
 
     # 6) Ширина колонок
-    for col in range(1, matrix_start_col(K - 1) + m):
+    last_col = matrix_start_col(K - 1) + m - 1
+    for col in range(1, last_col + 1):
         ws.column_dimensions[get_column_letter(col)].width = 12
+
+    sep_extra_col = extra_end_col + 1
+    ws.column_dimensions[get_column_letter(sep_extra_col)].width = 3
+
     for k in range(K - 1):
         sep_col = matrix_start_col(k) + m
         ws.column_dimensions[get_column_letter(sep_col)].width = 3
@@ -786,3 +858,18 @@ def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
     fileName = f'{filePrefix}.xlsx'
     wb.save(fileName)
     print(f"Готово: {fileName}")
+
+def getFeaturesDescriptions(fileName: Path, row_list: list[str]):
+    df = pd.read_excel(fileName, header=0)
+
+    df = df.set_index(df.columns[0]) if df.columns[0] != 'name' else df
+    # Проще и надёжнее так:
+    # df = df.set_index(df.columns[0])
+
+    # 2) Реиндексируем по нужному списку строк.
+    #    Для отсутствующих строк pandas подставит NaN.
+    result = df.reindex(row_list)
+
+    # 3) Заполняем NaN прочерками
+    result = result.fillna('—')
+    return result
