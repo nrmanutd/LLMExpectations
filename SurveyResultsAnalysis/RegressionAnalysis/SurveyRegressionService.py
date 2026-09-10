@@ -366,6 +366,14 @@ class SurveyRegressionService:
             current_date = df.index[i]
             llm_survey_date = survey.index[i - nMonth + 1]
 
+            #CPI as target variable
+            #if i + 1 < len(df):
+            #    llm_surveyNexDate = survey.index[i - nMonth + 2]
+            #    inflation =self._getInflation(llm_surveyNexDate)
+            #    current_value = inflation
+            #else:
+            #    continue
+
             current_value = df['expected_inflation'].iloc[i]
 
             deltaKR = self.keyRateProvider.getKeyRateIncrements(llm_survey_date, 1)
