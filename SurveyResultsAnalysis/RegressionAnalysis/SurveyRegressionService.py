@@ -7,19 +7,29 @@ from SurveyLogic.PromptBuilders.StatisticsProviders.BaseKeyRateProvider import B
 
 
 class SurveyRegressionService:
-    def __init__(self, inflationExpectations, pastYearInflation, usdrubRate, keyRateProvider: BaseKeyRateProvider, filteringDates: set[np.datetime64], datesToExclude, datesToInclude):
-        self.datesToInclude = datesToInclude
-        self.datesToExclude = datesToExclude
+    def __init__(self, inflationExpectations, pastYearInflation, usdrubRate, keyRateProvider: BaseKeyRateProvider, datesToExclude, datesToInclude = None, filteringDates: set[np.datetime64] = None):
+        self.datesToInclude = (np.datetime64('1900-01-01'), np.datetime64('2100-01-01')) if datesToInclude is None else datesToInclude
+        self.datesToExclude = (np.datetime64('2100-01-01'), np.datetime64('2100-01-01')) if datesToExclude is None else datesToExclude
         self.keyRateProvider = keyRateProvider
-        self.filteringDates = filteringDates
+        self.filteringDates = set[np.datetime64]() if filteringDates is None else filteringDates
         self.usdrubRate = usdrubRate
         self.pastYearInflation = pastYearInflation
         self.inflationExpectations = inflationExpectations
 
+    def fitWithConfig(self, survey, v, isDelta: bool, isOOS:bool, isExpandingOOS:bool, nMonth: int=1, start_n: int=30, train_share:float=0.8):
+        if isOOS:
+            if isExpandingOOS:
+                y, r, m, dates = self.fit_oos(survey, v, isDelta=isDelta, nMonth=nMonth,
+                                                                 start_n=start_n)
+            else:
+                y, r, m, dates = self.fit_oos_fixedsplit(survey, v, isDelta=isDelta, nMonth=nMonth)
+        else:
+            y, r, m, dates = self.fit(survey, v, isDelta=isDelta, nMonth=nMonth)
+
+        return y, r, m, dates
+
     def fit(self, survey, vars, isDelta:bool, nMonth=1):
         df = self._createDeltasDataset(survey, nMonth) if isDelta else self._createDataset(survey, nMonth)
-
-        df.to_excel('temp.xlsx')
 
         x = df[vars[0]]
         y = df[vars[1]]
@@ -80,8 +90,6 @@ class SurveyRegressionService:
         else:
             df = self._createDataset(survey, nMonth)
 
-        df.to_excel('temp.xlsx')
-
         x = df[vars[0]].to_numpy(dtype=float)
         y = df[vars[1]].to_numpy(dtype=float)
         yt = df['YT'].to_numpy(dtype=float)
@@ -133,7 +141,7 @@ class SurveyRegressionService:
                 y_true_list.append(y_test + yt[i])
                 pred_list.append(pred + yt[i])
             else:
-                print(f'Fixing: {y_test + yt[i]} instead of prediction {pred + yt[i]} at date {dates[i]}')
+                #print(f'Fixing: {y_test + yt[i]} instead of prediction {pred + yt[i]} at date {dates[i]}')
                 y_true_list.append(y_test + yt[i])
                 pred_list.append(y_test + yt[i])
 
@@ -213,8 +221,6 @@ class SurveyRegressionService:
             df = self._createDeltasDataset(survey, nMonth)
         else:
             df = self._createDataset(survey, nMonth)
-
-        df.to_excel('temp.xlsx')
 
         x = df[vars[0]].to_numpy(dtype=float)
         y = df[vars[1]].to_numpy(dtype=float)
@@ -373,20 +379,20 @@ class SurveyRegressionService:
             X4 = self._get_usdrub(llm_survey_date)
             X6 = deltaKR[0]
 
-            print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
+            #print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
             if X2 is None or X4 is None:
                 continue
 
             if self.datesToExclude[0] <= llm_survey_date < self.datesToExclude[1]:
-                print(f'Excluding...{current_date}')
+                #print(f'Excluding...{current_date}')
                 continue
 
             if llm_survey_date < self.datesToInclude[0] or llm_survey_date > self.datesToInclude[1]:
-                print(f'Excluding...{current_date}')
+                #print(f'Excluding...{current_date}')
                 continue
 
             if self._calcDifference(current_date, prev_date) > nMonth:
-                print(f'Skipping date {current_date} because of prev date = {prev_date} is older for {nMonth} month')
+                #print(f'Skipping date {current_date} because of prev date = {prev_date} is older for {nMonth} month')
                 continue
 
             row = {

@@ -5,6 +5,11 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font, Border, Side
+from openpyxl.formatting.rule import ColorScaleRule
+from openpyxl.utils import get_column_letter
+
 import pandas as pd
 
 from SurveyLogic.SurveyResults.InflationSurveyRespond import InflationSurveyRespond
@@ -685,3 +690,99 @@ def generate_title_from_config(
         title = title[:max_length - 3] + '...'
 
     return title
+
+def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
+                        green_max_flags):
+    """
+    green_max_flags: список bool длины len(matrices).
+        True  -> зелёный = максимум, красный = минимум (по умолчанию)
+        False -> наоборот: зелёный = минимум, красный = максимум
+    """
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, Border, Side
+    from openpyxl.formatting.rule import ColorScaleRule
+    from openpyxl.utils import get_column_letter
+
+    wb = Workbook()
+    ws = wb.active
+
+    n = len(row_names)
+    m = len(col_names)
+    K = len(matrices)
+
+    assert len(green_max_flags) == K, \
+        f"green_max_flags должен иметь длину {K}, получено {len(green_max_flags)}"
+
+    thin = Side(style='thin', color='FF000000')
+    cell_border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    def matrix_start_col(k):
+        return 2 + k * (m + 1)
+
+    # 1) Заголовки над каждой матрицей
+    for k, title in enumerate(headers):
+        start_col = matrix_start_col(k)
+        end_col = start_col + m - 1
+        ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
+        c = ws.cell(row=1, column=start_col, value=title)
+        c.alignment = Alignment(horizontal='center', vertical='center')
+        c.font = Font(bold=True)
+
+    # 2) Названия строк
+    for i, rname in enumerate(row_names, start=3):
+        ws.cell(row=i, column=1, value=rname).font = Font(bold=True)
+
+    # 3) Данные
+    for k, mat in enumerate(matrices):
+        start_col = matrix_start_col(k)
+
+        for j, cname in enumerate(col_names):
+            c = ws.cell(row=2, column=start_col + j, value=cname)
+            c.font = Font(bold=True)
+            c.alignment = Alignment(horizontal='center')
+
+        for i in range(n):
+            for j in range(m):
+                c = ws.cell(row=3 + i, column=start_col + j, value=float(mat[i, j]))
+                c.number_format = '0.00%'
+                c.border = cell_border
+
+        for j in range(m):
+            ws.cell(row=2, column=start_col + j).border = cell_border
+            ws.cell(row=1, column=start_col + j).border = cell_border
+
+        # 4) Условное форматирование с учётом направления
+        first_cell = f"{get_column_letter(start_col)}3"
+        last_cell = f"{get_column_letter(start_col + m - 1)}{3 + n - 1}"
+        cell_range = f"{first_cell}:{last_cell}"
+
+        if mat.min() != mat.max():
+            if green_max_flags[k]:
+                # зелёный максимум, красный минимум
+                start_color, end_color = 'FF6B6B', '63BE7B'
+            else:
+                # красный максимум, зелёный минимум
+                start_color, end_color = '63BE7B', 'FF6B6B'
+
+            ws.conditional_formatting.add(
+                cell_range,
+                ColorScaleRule(
+                    start_type='min', start_color=start_color,
+                    end_type='max',   end_color=end_color,
+                )
+            )
+
+    # 5) Границы названий строк
+    for i in range(3, 3 + n):
+        ws.cell(row=i, column=1).border = cell_border
+
+    # 6) Ширина колонок
+    for col in range(1, matrix_start_col(K - 1) + m):
+        ws.column_dimensions[get_column_letter(col)].width = 12
+    for k in range(K - 1):
+        sep_col = matrix_start_col(k) + m
+        ws.column_dimensions[get_column_letter(sep_col)].width = 3
+
+    fileName = f'{filePrefix}.xlsx'
+    wb.save(fileName)
+    print(f"Готово: {fileName}")
