@@ -15,21 +15,21 @@ from SurveyLogic.surveyHelpers import createAsyncSurveyRunner, extractDatesFromF
 from experimentsConfiguration import ExperimentsConfiguration
 
 offsetDays = -6
-experimentUniqueName=f'mlcluster_qwen38_async_news_rlmse_reginf_{offsetDays}d'
+experimentUniqueName=f'mlcluster_qwen38_async_no_news_rlmsfull_reginf_{offsetDays}d'
 profilesFolder = Path('./data/Target profiles')
 profilesCount = 100
 resultsFolder = Path('data/SurveyResults/')/experimentUniqueName
 copyPromptTemplatesToFolder(Path('SurveyLogic/PromptBuilders/Prompts/'), resultsFolder/'Prompts')
 
-surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDays=offsetDays, start_date=datetime.strptime('2018.03.08', '%Y.%m.%d'))
-#surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDays=offsetDays)
+#surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDays=offsetDays, start_date=datetime.strptime('2026.07.01', '%Y.%m.%d'))
+surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDays=offsetDays)
 
 #surveyDates = getDatesRowWithMonthlyStep('2020.12.01', '2021.01.01')
 #surveyDates = getDatesRowWithWeeklyStep('2022.03.12', '2022.05.07')
 
 cfg = ExperimentsConfiguration(
-    useIndividualRLMSData=False,
-    useFamilyInformation=False,
+    useIndividualRLMSData=True,
+    useFamilyInformation=True,
     useFamilyExpenses=True,
     useStateExpenses=True,
     useMarkerGoods=False,
@@ -39,7 +39,7 @@ cfg = ExperimentsConfiguration(
     useKeyRateIncrements=False,
     usePreviousInflationExpectations=False,
     usePolitics=False,
-    useNews=True
+    useNews=False
     )
 
 saveExperimentConfiguration(cfg, resultsFolder)
