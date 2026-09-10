@@ -14,6 +14,8 @@ from SurveyResultsAnalysis.helpers import load_from_official_statistics, load_of
 
 rootFolder = Path('../data/SurveyResults/')
 
+
+
 modellingResults = [
         #('mlcluster_qwen38_async_all_prevexp_-6d', 'QWEN 3.8 (все данные + IE - markers, -7d от Инфом)'),
         #('mlcluster_qwen36_async_all_time', 'QWEN 3.6 (все данные, в день Инфом)'),
@@ -31,17 +33,39 @@ modellingResults = [
         #('mlcluster_qwen36_async_rlms_pass_noIE_keyrate_news_-6d', 'QWEN 3.8 (news + RLMS pass -IE + ключ, -7d от Инфом)'),
         #('mlcluster_qwen36_async_no_rlms_pass_noIE_keyrate_news_-6d', 'QWEN 3.8 (news - RLMS - IE + ключ, 7d от Инфом)'),
         #('mlcluster_qwen36_async_rlms_expenses_noIE_keyrate_news_-6d', 'QWEN 3.8 (news + RLMS e - IE + ключ, 7d от Инфом)'),
+<<<<<<< HEAD
         #('mlcluster_qwen36_async_norlms_pass_noIE_nokeyrate_-6d', 'QWEN 3.8 (news + RLMS e - IE - ключ, 7d от Инфом)'),
         #('mlcluster_qwen38_async_norlms_pass_noIE_nokeyrate_nonews_-6d', 'QWEN 3.8 (RLMS e -news -IE -ключ, 7d от Инфом)'),
         #('mlcluster_qwen38_async_norlms_noIE_nokeyrate_-6d', 'QWEN 3.8 (-RLMS +news -IE -ключ, 7d от Инфом)'),
         ('mlcluster_qwen38_async_rlmse_news_nomarkers_-6d', 'QWEN 3.8 (+RLMS e +news -markers, 7d)'),
         ('mlcluster_qwen38_async_news_rlmse_reginf_-6d', 'QWEN 3.8 (+RLMS e +news +reg inf, 7d)')
+=======
+        ('mlcluster_qwen36_async_norlms_pass_noIE_nokeyrate_-6d', 'QWEN 3.8 (news + RLMS e - IE - ключ, 7d от Инфом)'),
+        #('mlcluster_qwen38_async_norlms_pass_noIE_nokeyrate_nonews_-6d', 'QWEN 3.8 (RLMS e -news -IE -ключ, 7d от Инфом)'),
+        #('mlcluster_qwen38_async_norlms_noIE_nokeyrate_-6d', 'QWEN 3.8 (-RLMS +news -IE -ключ, 7d от Инфом)'),
+        #('mlcluster_qwen38_async_rlmse_news_nomarkers_-6d', 'QWEN 3.8 (+RLMS e +news -markers, 7d)'),
+        ('mlcluster_qwen38_async_news_rlmse_reginf_-6d', 'QWEN 3.8 (+RLMS e, +news + reginf, 7d)')
+>>>>>>> origin/main
 ]
+
+isDelta = False
+isOOS = True
+isFWL = False
+isExpandingOOS = True
+nMonth = 4
+OOSStartPoints = 30
 
 #datesToFilter = {np.datetime64('2022-04-02')}
 datesToFilter = set[np.datetime64]()
+<<<<<<< HEAD
 #datesToExclude = (np.datetime64('2022-02-23'), np.datetime64('2022-06-01'))
 datesToExclude = (np.datetime64('2027-02-23'), np.datetime64('2027-06-01'))
+=======
+datesToExclude = (np.datetime64('2022-02-23'), np.datetime64('2022-07-01'))
+#datesToExclude = (np.datetime64('2022-01-01'), np.datetime64('2027-02-01'))
+#datesToExclude = (np.datetime64('2027-02-23'), np.datetime64('2027-06-01'))
+datesToInclude = (np.datetime64('2000-01-01'), np.datetime64('2030-07-01'))
+>>>>>>> origin/main
 
 threshold = 20
 
@@ -51,28 +75,27 @@ keyRateProvider = KeyRateProvider(visualizationConfiguration.keyRatePath)
 directEstimations = load_from_official_statistics(visualizationConfiguration.directInflationEstimationsPath, 1)
 officialInflation = load_official_inflation(visualizationConfiguration.officialInflationPath)
 usdrubRate = load_usdrub(visualizationConfiguration.usdrubPath)
-surveyRegressionService = SurveyRegressionService(directEstimations, officialInflation, usdrubRate, keyRateProvider, datesToFilter, datesToExclude)
+surveyRegressionService = SurveyRegressionService(directEstimations, officialInflation, usdrubRate, keyRateProvider, datesToFilter, datesToExclude, datesToInclude)
 visualizer = RegressionVisualizer()
 
 visualizationResults = {}
 errors = []
-isDelta = True
-isOOS = True
-isFWL = False
 
 if isDelta:
     if isFWL:
         variables = {'dY: X2=I-12m(t), X4=UsdRub, X5=delta IE (t-1)': (['X2', 'X4', 'X5', 'X6'], 'X3'), 'dLLM: X2=I-12m(t), X4=UsdRub, X5=delta IE (t-1)': (['X2', 'X4', 'X5', 'X6'], 'Y')}
     else:
-        variables = {'X2=I-12m(t), X3=LLM_IE(t), X4=UsdRub, X5=delta IE (t-1)':(['X2', 'X3', 'X4', 'X5'],'Y'), 'X2=I-12m(t), X4=UsdRub, X5=delta IE (t-1)': (['X2', 'X4', 'X5'], 'Y'), 'X5=dIE(t-1)':(['X5'], 'Y'), 'X3=dLLM_IE(t-1)':(['X3'], 'Y')}
-        #variables = {'X3=dLLM_IE(t)': (['X3'], 'Y'), 'X5=dIE-12m(t), X3=dLLM_IE(t)': (['X5', 'X3'], 'Y')}
+        #variables = {'X2=I-12m(t), X3=LLM_IE(t), X4=UsdRub, X5=delta IE (t-1)':(['X2', 'X3', 'X4', 'X5'],'Y'), 'X2=I-12m(t), X4=UsdRub, X5=delta IE (t-1)': (['X2', 'X4', 'X5'], 'Y'), 'X5=dIE(t-1)':(['X5'], 'Y'), 'X3=dLLM_IE(t-1)':(['X3'], 'Y')}
+        variables = {'X5=dIE-12m(t), X3=dLLM_IE(t)': (['X5', 'X3', 'X2'], 'Y'), 'X5=dLLM_IE(t)': (['X5', 'X2'], 'Y'), }
         #variables = {'X5=dIE-12m(t)': (['X5'], 'Y')}
 else:
     if isFWL:
         variables = {'X1=IE, X2=I-12m(t), X3=LLM_IE(t)': (['X1', 'X2', 'X4', 'X6'], 'X3'),
                      'X1=IE, X2=I-12m(t)': (['X1', 'X2', 'X4', 'X6'], 'Y')}
     else:
-        variables = {'X1=IE, X2=I-12m(t), X3=LLM_IE(t)': (['X1', 'X2', 'X3', 'X4', 'X6'], 'Y'), 'X1=IE, X2=I-12m(t)': (['X1', 'X2', 'X4', 'X6'], 'Y'), 'X3=LLM_IE(t)':(['X3'], 'Y')}
+        variables = {'X1=IE, X3=LLM_IE(t)': (['X1', 'X3'], 'Y'), 'X1=IE': (['X1'], 'Y')}
+        #variables = {'X1=IE, X2=I-12m(t), X3=LLM_IE(t)': (['X1', 'X2', 'X3', 'X4'], 'Y'), 'X1=IE, X2=I-12m(t)': (['X1', 'X2', 'X4'], 'Y')}
+        #variables = {'X1=IE, X3=LLM_IE(t)': (['X1', 'X3'], 'Y'), 'X1=IE': (['X1'], 'Y')}
         #variables = {'X3=LLM_IE(t)': (['X3'], 'Y'), 'X1=IE, X3=LLM_IE(t)': (['X1', 'X3'], 'Y')}
         #variables = {'X1=IE, X3=LLM_IE(t)': (['X1', 'X3'], 'Y')}
 
@@ -86,9 +109,12 @@ for vn, v in variables.items():
 
     for name, survey in surveyResults.items():
         if isOOS:
-            y, r, m, dates = surveyRegressionService.fit_oos(survey, v, isDelta=isDelta)
+            if isExpandingOOS:
+                y, r, m, dates = surveyRegressionService.fit_oos(survey, v, isDelta=isDelta, nMonth=nMonth, start_n=OOSStartPoints)
+            else:
+                y, r, m, dates = surveyRegressionService.fit_oos_fixedsplit(survey, v, isDelta=isDelta, nMonth=nMonth)
         else:
-            y, r, m, dates = surveyRegressionService.fit(survey, v, isDelta=isDelta)
+            y, r, m, dates = surveyRegressionService.fit(survey, v, isDelta=isDelta, nMonth=nMonth)
 
         trainedModels.append(m)
         surveyRegressionService.estimateCorr(survey)
@@ -135,16 +161,16 @@ colors = {
         'Model C': '#FFE66D'
 }
 
-viz.plot_timeseries(
-        variable='expected',
-        colors=colors,
-        xlabel='Дата',
-        ylabel='Инфляция, %',
-        show_date_labels=True,
-        date_labels_for='true',
-        title='Ожидаемая на год вперед инфляция: моделирование vs реальный опрос',
-        figsize=(16, 8),
-        label_offset_y=-0.1,
-        label_offset_x=0,
-        save_path=Path(f'timeseries_regression_{postfix}.png')
-    )
+#viz.plot_timeseries(
+#        variable='expected',
+#        colors=colors,
+#        xlabel='Дата',
+#        ylabel='Инфляция, %',
+#        show_date_labels=True,
+#        date_labels_for='true',
+#        title='Ожидаемая на год вперед инфляция: моделирование vs реальный опрос',
+#        figsize=(16, 8),
+#        label_offset_y=-0.1,
+#        label_offset_x=0,
+#        save_path=Path(f'timeseries_regression_{postfix}.png')
+#    )
