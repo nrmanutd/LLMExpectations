@@ -368,20 +368,22 @@ class SurveyRegressionService:
 
             #CPI as target variable
             #if i + 1 < len(df):
-            #    llm_surveyNexDate = survey.index[i - nMonth + 2]
-            #    inflation =self._getInflation(llm_surveyNexDate)
-            #    current_value = inflation
+            #    next_current_date = df.index[i + 1]
+            #    current_value = self._getInflation(next_current_date)
+            #    prev_currentValue = self._getInflation(llm_survey_date)
             #else:
             #    continue
 
+            #IE as target variable
             current_value = df['expected_inflation'].iloc[i]
+            prev_currentValue = df['expected_inflation'].iloc[i - nMonth]
 
             deltaKR = self.keyRateProvider.getKeyRateIncrements(llm_survey_date, 1)
             if len(deltaKR) == 0:
                 continue
 
             Y = current_value
-            X1 = df['expected_inflation'].iloc[i - nMonth]
+            X1 = prev_currentValue
             X2 = self._getInflation(llm_survey_date)
             X3 = survey['exp_median'].iloc[i - nMonth + 1]
             X4 = self._get_usdrub(llm_survey_date)
