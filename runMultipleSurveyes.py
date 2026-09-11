@@ -39,7 +39,8 @@ cfg = ExperimentsConfiguration(
     useKeyRateIncrements=False,
     usePreviousInflationExpectations=False,
     usePolitics=False,
-    useNews=False
+    useNews=False,
+    useANews=False
     )
 
 saveExperimentConfiguration(cfg, resultsFolder)

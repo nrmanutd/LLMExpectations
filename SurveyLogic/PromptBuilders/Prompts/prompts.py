@@ -4,6 +4,7 @@ promptsPath = 'SurveyLogic/PromptBuilders/Prompts'
 inflationPath = 'data/Inflation'
 politicsPath = 'data/Politics'
 newsPath = 'data/News'
+anonymizedNewsPath = 'data/AnonymizedNews'
 
 systemPrompt = Path(f'{promptsPath}/systemPromptTemplate_v1.txt').read_text(encoding="utf-8")
 respondentPrompt = Path(f'{promptsPath}/commonRespondentPromptTemplate.txt').read_text(encoding="utf-8")

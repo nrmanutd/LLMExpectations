@@ -5,6 +5,7 @@ class ExperimentsConfiguration:
     useEconomy: bool = False
     usePolitics: bool = False
     useNews: bool = False
+    useANews: bool = False
     useInflation: bool = False
     useKeyRateIncrements: bool = False
     useMarkerGoods: bool = False
@@ -24,6 +25,8 @@ class ExperimentsConfiguration:
             features.append('politics')
         if self.useNews:
             features.append('news')
+        if self.useANews:
+            features.append('a_news')
         if self.useInflation:
             features.append('inf')
         if self.useKeyRateIncrements:
@@ -50,6 +53,7 @@ class ExperimentsConfiguration:
             'economy': 'Economy',
             'politics': 'Politics',
             'news': 'News',
+            'a_news': 'ANews',
             'inf': 'Inflation',
             'key': 'Key Rate Increments',
             'inf_reg': 'Regional inflation',
@@ -69,6 +73,7 @@ class ExperimentsConfiguration:
             'economy': 'Econ',
             'politics': 'Pol',
             'news': 'News',
+            'a_news': 'ANews',
             'inf': 'Inf',
             'key': 'Key',
             'inf_reg': 'InfReg',

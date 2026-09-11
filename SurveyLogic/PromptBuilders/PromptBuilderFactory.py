@@ -88,6 +88,7 @@ class PromptBuilderFactory:
 
         self.politicsProvider = MonthlyFromFilePromptBuilder(prompts.politicsPath)
         self.newsProvider = MonthlyFromFilePromptBuilder(prompts.newsPath)
+        self.anonymizedNewsProvider = MonthlyFromFilePromptBuilder(prompts.anonymizedNewsPath)
 
         self.taskPromptBuilder = TaskPromptBuilder(prompts.taskPrompt)
 
@@ -152,6 +153,10 @@ class PromptBuilderFactory:
         if cfg.useNews:
             builders.append(self.newsProvider)
             headers.append('Общий контекст (новости, события в РФ и в мире)')
+
+        if cfg.useANews:
+            builders.append(self.anonymizedNewsProvider)
+            headers.append('Общий контекст (без указания конкретных новостей и событий)')
 
         if cfg.usePolitics:
             builders.append(self.politicsProvider)
