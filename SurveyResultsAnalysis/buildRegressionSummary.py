@@ -37,11 +37,12 @@ modellingResults = [
         ('mlcluster_qwen38_async_rlmse_news_nomarkers_-6d', 'QWEN 3.8 (+RLMS e +news -markers, 7d)'),
         ('mlcluster_qwen38_async_news_rlmse_reginf_-6d', 'QWEN 3.8 (+RLMS e +news +reg inf, 7d)'),
         ('mlcluster_qwen38_async_news_rlmsfull_reginf_-6d', 'QWEN 3.8 (+RLMS full  +news +reg inf, 7d)'),
-        ('mlcluster_qwen38_async_no_news_rlmsfull_reginf_-6d', 'QWEN 3.8 (+RLMS full  -news +reg inf, 7d)')
+        ('mlcluster_qwen38_async_no_news_rlmsfull_reginf_-6d', 'QWEN 3.8 (+RLMS full  -news +reg inf, 7d)'),
+        ('mlcluster_qwen38_async_no_news_rlms_e_reginf_-6d', 'QWEN 3.8 (+RLMS e  -news +reg inf, 7d)')
 ]
 
 featuresDescriptionPath = Path('../data/LLMSurveys_Configurations.xlsx')
-OOSStartPoints = 129
+OOSStartPoints = 30
 
 nStepsAhead = [1, 2, 3, 4, 5, 6]
 useDelta = [False]
@@ -50,7 +51,7 @@ useExpandingOOS = [True]
 
 includeDatesFilter = []
 excludeDatesFilter = [('До 01.01.2022', '2022-01-01', '2027-02-01'), ('Без начала СВО 23.02.22-01.06.22', '2022-02-23', '2022-06-01'), ('Весь период', '2030-01-01', '2030-01-02'), ('После 01.01.2022', '2000-01-01', '2022-01-01')]
-#excludeDatesFilter = [('После 01.01.2020', '2000-01-01', '2020-01-01')]
+#excludeDatesFilter = [('Весь период', '2030-01-01', '2030-01-02')]
 
 surveyResults = loadSurveyResults(rootFolder, modellingResults)
 

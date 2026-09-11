@@ -31,7 +31,7 @@ class ForecastRobustness:
 
         if len(errors) < 10:
             raise ValueError(
-                "Слишком мало совместных наблюдений."
+                f"Слишком мало совместных наблюдений = {len(errors)}"
             )
 
         self.errors = errors
