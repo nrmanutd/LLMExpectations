@@ -15,7 +15,7 @@ from SurveyLogic.surveyHelpers import createAsyncSurveyRunner, extractDatesFromF
 from experimentsConfiguration import ExperimentsConfiguration
 
 offsetDays = -6
-experimentUniqueName=f'mlcluster_qwen38_async_no_news_rlmsfull_reginf_{offsetDays}d'
+experimentUniqueName=f'mlcluster_qwen38_async_anews_rlms_e_reginf_{offsetDays}d'
 profilesFolder = Path('./data/Target profiles')
 profilesCount = 100
 resultsFolder = Path('data/SurveyResults/')/experimentUniqueName
@@ -28,8 +28,8 @@ surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDa
 #surveyDates = getDatesRowWithWeeklyStep('2022.03.12', '2022.05.07')
 
 cfg = ExperimentsConfiguration(
-    useIndividualRLMSData=True,
-    useFamilyInformation=True,
+    useIndividualRLMSData=False,
+    useFamilyInformation=False,
     useFamilyExpenses=True,
     useStateExpenses=True,
     useMarkerGoods=False,
@@ -40,7 +40,7 @@ cfg = ExperimentsConfiguration(
     usePreviousInflationExpectations=False,
     usePolitics=False,
     useNews=False,
-    useANews=False
+    useANews=True
     )
 
 saveExperimentConfiguration(cfg, resultsFolder)

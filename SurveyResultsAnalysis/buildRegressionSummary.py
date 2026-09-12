@@ -38,7 +38,8 @@ modellingResults = [
         ('mlcluster_qwen38_async_news_rlmse_reginf_-6d', 'QWEN 3.8 (+RLMS e +news +reg inf, 7d)'),
         ('mlcluster_qwen38_async_news_rlmsfull_reginf_-6d', 'QWEN 3.8 (+RLMS full  +news +reg inf, 7d)'),
         ('mlcluster_qwen38_async_no_news_rlmsfull_reginf_-6d', 'QWEN 3.8 (+RLMS full  -news +reg inf, 7d)'),
-        ('mlcluster_qwen38_async_no_news_rlms_e_reginf_-6d', 'QWEN 3.8 (+RLMS e  -news +reg inf, 7d)')
+        ('mlcluster_qwen38_async_no_news_rlms_e_reginf_-6d', 'QWEN 3.8 (+RLMS e  -news +reg inf, 7d)'),
+        ('mlcluster_qwen38_async_anews_rlms_full_reginf_-6d', 'QWEN 3.8 (+RLMS full  +anews +reg inf, 7d)')
 ]
 
 featuresDescriptionPath = Path('../data/LLMSurveys_Configurations.xlsx')
@@ -46,8 +47,9 @@ OOSStartPoints = 30
 
 nStepsAhead = [1, 2, 3, 4, 5, 6]
 useDelta = [False]
-useOOS = [True, False]
+useOOS = [True]
 useExpandingOOS = [True]
+useDummy = [True, False]
 
 includeDatesFilter = []
 excludeDatesFilter = [('До 01.01.2022', '2022-01-01', '2027-02-01'), ('Без начала СВО 23.02.22-01.06.22', '2022-02-23', '2022-06-01'), ('Весь период', '2030-01-01', '2030-01-02'), ('После 01.01.2022', '2000-01-01', '2022-01-01')]
@@ -74,62 +76,67 @@ for i_excludeDatesFilter in range(len(excludeDatesFilter)):
     for i_useDelta in range(len(useDelta)):
         for i_useOOS in range(len(useOOS)):
             for i_useExpandingOOS in range(len(useExpandingOOS)):
+                for i_useDummy in range(len(useDummy)):
+                    isDelta = useDelta[i_useDelta]
+                    isOOS = useOOS[i_useOOS]
+                    isExpandingOOS = useExpandingOOS[i_useExpandingOOS]
+                    excludeDate = excludeDatesFilter[i_excludeDatesFilter]
+                    isDummy = useDummy[i_useDummy]
 
-                isDelta = useDelta[i_useDelta]
-                isOOS = useOOS[i_useOOS]
-                isExpandingOOS = useExpandingOOS[i_useExpandingOOS]
-                excludeDate = excludeDatesFilter[i_excludeDatesFilter]
+                    baseVariables = 'X5' if isDelta else 'X1'
+                    datesToExclude = (np.datetime64(excludeDate[1]), np.datetime64(excludeDate[2]))
+                    surveyRegressionService = SurveyRegressionService(directEstimations, officialInflation, usdrubRate,
+                                                                      keyRateProvider, datesToExclude, isDummy)
 
-                baseVariables = 'X5' if isDelta else 'X1'
-                datesToExclude = (np.datetime64(excludeDate[1]), np.datetime64(excludeDate[2]))
-                surveyRegressionService = SurveyRegressionService(directEstimations, officialInflation, usdrubRate,
-                                                                  keyRateProvider, datesToExclude)
+                    relativeRMSEGain = np.zeros((len(modellingResults), len(nStepsAhead)))
+                    pValueCWTest = np.zeros((len(modellingResults), len(nStepsAhead)))
+                    shareOfLLMBetter = np.zeros((len(modellingResults), len(nStepsAhead)))
+                    loom = np.zeros((len(modellingResults), len(nStepsAhead)))
+                    minloo = np.zeros((len(modellingResults), len(nStepsAhead)))
+                    shareOfBestPoint = np.zeros((len(modellingResults), len(nStepsAhead)))
+                    adjRSquared = np.zeros((len(modellingResults), len(nStepsAhead)))
 
-                relativeRMSEGain = np.zeros((len(modellingResults), len(nStepsAhead)))
-                pValueCWTest = np.zeros((len(modellingResults), len(nStepsAhead)))
-                shareOfLLMBetter = np.zeros((len(modellingResults), len(nStepsAhead)))
-                loom = np.zeros((len(modellingResults), len(nStepsAhead)))
-                minloo = np.zeros((len(modellingResults), len(nStepsAhead)))
-                shareOfBestPoint = np.zeros((len(modellingResults), len(nStepsAhead)))
-                adjRSquared = np.zeros((len(modellingResults), len(nStepsAhead)))
+                    matrices = [relativeRMSEGain, pValueCWTest, shareOfLLMBetter, loom, minloo, shareOfBestPoint, adjRSquared]
 
-                matrices = [relativeRMSEGain, pValueCWTest, shareOfLLMBetter, loom, minloo, shareOfBestPoint, adjRSquared]
+                    for i in range(len(modellingResults)):
+                        print(f'[{time.time() - tStart:.2f}s] Model: {modellingResults[i][1]}')
+                        modelKey = modellingResults[i][1]
 
-                for i in range(len(modellingResults)):
-                    print(f'[{time.time() - tStart:.2f}s] Model: {modellingResults[i][1]}')
-                    modelKey = modellingResults[i][1]
+                        survey = surveyResults[modelKey]
 
-                    survey = surveyResults[modelKey]
+                        targetModelVariables = (['X3', baseVariables], 'Y')
+                        baseModelVariables = ([baseVariables], 'Y')
 
-                    targetModelVariables = (['X3', baseVariables], 'Y')
-                    baseModelVariables = ([baseVariables], 'Y')
+                        if isDummy:
+                            targetModelVariables[0].append('X7')
+                            baseModelVariables[0].append('X7')
 
-                    for j in range(len(nStepsAhead)):
-                        curNMonth=nStepsAhead[j]
+                        for j in range(len(nStepsAhead)):
+                            curNMonth=nStepsAhead[j]
 
-                        ty, tr, tm, tdates = surveyRegressionService.fitWithConfig(survey, targetModelVariables, isDelta, isOOS, isExpandingOOS, start_n=OOSStartPoints, nMonth=curNMonth)
-                        by, br, bm, bdates = surveyRegressionService.fitWithConfig(survey, baseModelVariables, isDelta, isOOS, isExpandingOOS, start_n=OOSStartPoints, nMonth=curNMonth)
+                            ty, tr, tm, tdates = surveyRegressionService.fitWithConfig(survey, targetModelVariables, isDelta, isOOS, isExpandingOOS, start_n=OOSStartPoints, nMonth=curNMonth)
+                            by, br, bm, bdates = surveyRegressionService.fitWithConfig(survey, baseModelVariables, isDelta, isOOS, isExpandingOOS, start_n=OOSStartPoints, nMonth=curNMonth)
 
-                        e_llm = ty - tr
-                        e_base = by - br
+                            e_llm = ty - tr
+                            e_base = by - br
 
-                        fr = ForecastRobustness(e_llm, e_base)
-                        #fr.print_robustness_report(block_size=4, n_boot=10_000, hac_lags=3)
-                        loo_results, loo = fr.leave_one_out_gain()
-                        cw = fr.clark_west_test()
+                            fr = ForecastRobustness(e_llm, e_base)
+                            #fr.print_robustness_report(block_size=4, n_boot=10_000, hac_lags=3)
+                            loo_results, loo = fr.leave_one_out_gain()
+                            cw = fr.clark_west_test()
 
-                        sse = loo['full_gain_percent']
-                        relativeRMSEGainValue = 1 - math.sqrt(1 - sse/100)
+                            sse = loo['full_gain_percent']
+                            relativeRMSEGainValue = 1 - math.sqrt(1 - sse/100)
 
-                        relativeRMSEGain[i, j] = relativeRMSEGainValue
-                        minloo[i, j] = loo['loo_min_percent'] / 100
-                        loom[i, j] = loo['loo_median']
-                        shareOfLLMBetter[i, j] = loo['share_positive']
-                        shareOfBestPoint[i, j] = (loo["full_gain"] - loo["loo_min"]) / loo["full_gain"]
-                        pValueCWTest[i, j] = cw["p_value_one_sided"]
+                            relativeRMSEGain[i, j] = relativeRMSEGainValue
+                            minloo[i, j] = loo['loo_min_percent'] / 100
+                            loom[i, j] = loo['loo_median']
+                            shareOfLLMBetter[i, j] = loo['share_positive']
+                            shareOfBestPoint[i, j] = (loo["full_gain"] - loo["loo_min"]) / loo["full_gain"]
+                            pValueCWTest[i, j] = cw["p_value_one_sided"]
 
-                        if not isOOS:
-                            adjRSquared[i, j] = tm.rsquared_adj - bm.rsquared_adj
+                            if not isOOS:
+                                adjRSquared[i, j] = tm.rsquared_adj - bm.rsquared_adj
 
-                filePrefix = f'{excludeDate[0]}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_start points={OOSStartPoints}'
-                saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names, green_max_flags, featuresMatrix)
+                    filePrefix = f'{excludeDate[0]}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_start points={OOSStartPoints}_{'dummy' if isDummy else 'no_dummy'}'
+                    saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names, green_max_flags, featuresMatrix)

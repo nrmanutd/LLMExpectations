@@ -1,13 +1,13 @@
+import numpy as np
 import pandas as pd
 import statsmodels.api as sm
-import numpy as np
-from scipy.stats import stats
 
 from SurveyLogic.PromptBuilders.StatisticsProviders.BaseKeyRateProvider import BaseKeyRateProvider
 
 
 class SurveyRegressionService:
-    def __init__(self, inflationExpectations, pastYearInflation, usdrubRate, keyRateProvider: BaseKeyRateProvider, datesToExclude, datesToInclude = None, filteringDates: set[np.datetime64] = None):
+    def __init__(self, inflationExpectations, pastYearInflation, usdrubRate, keyRateProvider: BaseKeyRateProvider, datesToExclude, isDummy: bool, datesToInclude = None, filteringDates: set[np.datetime64] = None):
+        self.isDummy = isDummy
         self.datesToInclude = (np.datetime64('1900-01-01'), np.datetime64('2100-01-01')) if datesToInclude is None else datesToInclude
         self.datesToExclude = (np.datetime64('2100-01-01'), np.datetime64('2100-01-01')) if datesToExclude is None else datesToExclude
         self.keyRateProvider = keyRateProvider
@@ -135,6 +135,10 @@ class SurveyRegressionService:
             ).fit()
 
             # Прогноз ровно одной следующей точки
+
+            if self.isDummy and x_test_const[0][2] == 1:
+                x_test_const[0][2] = 0
+
             pred = model.predict(x_test_const).item()
 
             if dates[i] not in self.filteringDates:
@@ -378,20 +382,21 @@ class SurveyRegressionService:
             current_value = df['expected_inflation'].iloc[i]
             prev_currentValue = df['expected_inflation'].iloc[i - nMonth]
 
-            deltaKR = self.keyRateProvider.getKeyRateIncrements(llm_survey_date, 1)
-            if len(deltaKR) == 0:
-                continue
+            #deltaKR = self.keyRateProvider.getKeyRateIncrements(llm_survey_date, 1)
+            #if len(deltaKR) == 0:
+            #    continue
 
             Y = current_value
             X1 = prev_currentValue
-            X2 = self._getInflation(llm_survey_date)
+            #X2 = self._getInflation(llm_survey_date)
             X3 = survey['exp_median'].iloc[i - nMonth + 1]
-            X4 = self._get_usdrub(llm_survey_date)
-            X6 = deltaKR[0]
+            #X4 = self._get_usdrub(llm_survey_date)
+            #X6 = deltaKR[0]
+            X7 = self._getDummy(current_date)
 
             #print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
-            if X2 is None or X4 is None:
-                continue
+            #if X2 is None or X4 is None:
+            #    continue
 
             if self.datesToExclude[0] <= llm_survey_date < self.datesToExclude[1]:
                 #print(f'Excluding...{current_date}')
@@ -408,10 +413,11 @@ class SurveyRegressionService:
             row = {
                 'Y': Y,
                 'X1': X1,
-                'X2': X2,
+                #'X2': X2,
                 'X3': X3,
-                'X4': X4,
-                'X6': X6,
+                #'X4': X4,
+                #'X6': X6,
+                'X7': X7,
                 'D': llm_survey_date,
                 'YT': 0
             }
@@ -433,22 +439,23 @@ class SurveyRegressionService:
             prev_value = df['expected_inflation'].iloc[i - nMonth]
             current_value = df['expected_inflation'].iloc[i]
 
-            deltaKR = self.keyRateProvider.getKeyRateIncrements(llm_survey_date, 1)
-            if len(deltaKR) == 0:
-                continue
+            #deltaKR = self.keyRateProvider.getKeyRateIncrements(llm_survey_date, 1)
+            #if len(deltaKR) == 0:
+            #    continue
 
             Y = current_value - prev_value
             X1 = prev_value
-            X2 = self._getInflationDelta(llm_survey_date)
+            #X2 = self._getInflationDelta(llm_survey_date)
             X3 = survey['exp_median'].iloc[i - nMonth + 1] - survey['exp_median'].iloc[i - 2*nMonth + 1]
-            X4 = self._get_usdrub(llm_survey_date)
+            #X4 = self._get_usdrub(llm_survey_date)
             X5 = prev_value - prev_prev_value
-            X6 = deltaKR[0]
+            #X6 = deltaKR[0]
+            X7 = self._getDummy(current_date)
             YT = prev_value
 
             #print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
-            if X4 is None or X2 is None:
-                continue
+            #if X4 is None or X2 is None:
+            #    continue
 
             if self.datesToExclude[0] <= llm_survey_date < self.datesToExclude[1]:
                 #print(f'Excluding...{current_date}')
@@ -465,11 +472,12 @@ class SurveyRegressionService:
             row = {
                 'Y': Y,
                 'X1': X1,
-                'X2': X2,
+                #'X2': X2,
                 'X3': X3,
-                'X4': X4,
+                #'X4': X4,
                 'X5': X5,
-                'X6': X6,
+                #'X6': X6,
+                'X7': X7,
                 'D': llm_survey_date,
                 'YT': YT
             }
@@ -596,3 +604,13 @@ class SurveyRegressionService:
             'positions_back': positions_back
         }
 
+    def _getDummy(self, ieSurveyDate):
+        if not self.isDummy:
+            return 0
+
+        dummyDate = pd.Timestamp('2022-03-11 00:00:00')
+
+        if ieSurveyDate == dummyDate:
+            return 1
+
+        return 0
