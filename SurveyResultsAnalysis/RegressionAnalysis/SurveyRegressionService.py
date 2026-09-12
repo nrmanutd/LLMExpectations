@@ -90,6 +90,7 @@ class SurveyRegressionService:
         else:
             df = self._createDataset(survey, nMonth)
 
+        df.to_excel('temp.xlsx')
         x = df[vars[0]].to_numpy(dtype=float)
         y = df[vars[1]].to_numpy(dtype=float)
         yt = df['YT'].to_numpy(dtype=float)
@@ -375,12 +376,14 @@ class SurveyRegressionService:
             #    next_current_date = df.index[i + 1]
             #    current_value = self._getInflation(next_current_date)
             #    prev_currentValue = self._getInflation(llm_survey_date)
+            #    dummyValue = self._getDummy(next_current_date)
             #else:
             #    continue
 
             #IE as target variable
             current_value = df['expected_inflation'].iloc[i]
             prev_currentValue = df['expected_inflation'].iloc[i - nMonth]
+            dummyValue = self._getDummy(current_date)
 
             #deltaKR = self.keyRateProvider.getKeyRateIncrements(llm_survey_date, 1)
             #if len(deltaKR) == 0:
@@ -392,7 +395,10 @@ class SurveyRegressionService:
             X3 = survey['exp_median'].iloc[i - nMonth + 1]
             #X4 = self._get_usdrub(llm_survey_date)
             #X6 = deltaKR[0]
-            X7 = self._getDummy(current_date)
+            X7 = dummyValue
+
+            if Y is None or X1 is None or X3 is None or X7 is None:
+                continue
 
             #print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
             #if X2 is None or X4 is None:
