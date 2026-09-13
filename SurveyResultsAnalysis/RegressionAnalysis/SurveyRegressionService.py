@@ -6,7 +6,8 @@ from SurveyLogic.PromptBuilders.StatisticsProviders.BaseKeyRateProvider import B
 
 
 class SurveyRegressionService:
-    def __init__(self, inflationExpectations, pastYearInflation, usdrubRate, keyRateProvider: BaseKeyRateProvider, datesToExclude, isDummy: bool, datesToInclude = None, filteringDates: set[np.datetime64] = None):
+    def __init__(self, inflationExpectations, pastYearInflation, usdrubRate, keyRateProvider: BaseKeyRateProvider, datesToExclude, isDummy: bool, targetVariable: str, datesToInclude = None, filteringDates: set[np.datetime64] = None):
+        self.targetVariable = targetVariable
         self.isDummy = isDummy
         self.datesToInclude = (np.datetime64('1900-01-01'), np.datetime64('2100-01-01')) if datesToInclude is None else datesToInclude
         self.datesToExclude = (np.datetime64('2100-01-01'), np.datetime64('2100-01-01')) if datesToExclude is None else datesToExclude
@@ -90,7 +91,6 @@ class SurveyRegressionService:
         else:
             df = self._createDataset(survey, nMonth)
 
-        df.to_excel('temp.xlsx')
         x = df[vars[0]].to_numpy(dtype=float)
         y = df[vars[1]].to_numpy(dtype=float)
         yt = df['YT'].to_numpy(dtype=float)
@@ -372,18 +372,21 @@ class SurveyRegressionService:
             llm_survey_date = survey.index[i - nMonth + 1]
 
             #CPI as target variable
-            #if i + 1 < len(df):
-            #    next_current_date = df.index[i + 1]
-            #    current_value = self._getInflation(next_current_date)
-            #    prev_currentValue = self._getInflation(llm_survey_date)
-            #    dummyValue = self._getDummy(next_current_date)
-            #else:
-            #    continue
-
-            #IE as target variable
-            current_value = df['expected_inflation'].iloc[i]
-            prev_currentValue = df['expected_inflation'].iloc[i - nMonth]
-            dummyValue = self._getDummy(current_date)
+            if self.targetVariable == 'CPI':
+                if i + 1 < len(df):
+                    next_current_date = df.index[i + 1]
+                    current_value = self._getInflation(next_current_date)
+                    prev_currentValue = self._getInflation(llm_survey_date)
+                    dummyValue = self._getDummy(next_current_date)
+                else:
+                    continue
+            elif self.targetVariable == 'IE':
+                #IE as target variable
+                current_value = df['expected_inflation'].iloc[i]
+                prev_currentValue = df['expected_inflation'].iloc[i - nMonth]
+                dummyValue = self._getDummy(current_date)
+            else:
+                raise ValueError(f'Unknown target variable name: {self.targetVariable}')
 
             #deltaKR = self.keyRateProvider.getKeyRateIncrements(llm_survey_date, 1)
             #if len(deltaKR) == 0:
