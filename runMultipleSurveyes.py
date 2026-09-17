@@ -15,7 +15,7 @@ from SurveyLogic.surveyHelpers import createAsyncSurveyRunner, extractDatesFromF
 from experimentsConfiguration import ExperimentsConfiguration
 
 offsetDays = -6
-experimentUniqueName=f'mlcluster_gemma_async_anews_rlms_e_reginf_{offsetDays}d'
+experimentUniqueName=f'mlcluster_qwen38_async_reginf_only_{offsetDays}d'
 profilesFolder = Path('./data/Target profiles')
 profilesCount = 100
 resultsFolder = Path('data/SurveyResults/')/experimentUniqueName
@@ -30,8 +30,8 @@ surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDa
 cfg = ExperimentsConfiguration(
     useIndividualRLMSData=False,
     useFamilyInformation=False,
-    useFamilyExpenses=True,
-    useStateExpenses=True,
+    useFamilyExpenses=False,
+    useStateExpenses=False,
     useMarkerGoods=False,
     useEconomy=False,
     useRegionalInflation=True,
@@ -40,7 +40,7 @@ cfg = ExperimentsConfiguration(
     usePreviousInflationExpectations=False,
     usePolitics=False,
     useNews=False,
-    useANews=True
+    useANews=False
     )
 
 saveExperimentConfiguration(cfg, resultsFolder)
@@ -49,8 +49,8 @@ factory = PromptBuilderFactory()
 systemPromptBuilder, promptBuilder = factory.createCustomPromptBuilder(cfg)
 logger = SimpleLogger()
 
-surveyer = AsyncSurveyer(modelToUse='google/gemma-3-27b-it', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
-#surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.8-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
+#surveyer = AsyncSurveyer(modelToUse='google/gemma-3-27b-it', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
+surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.8-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
 #surveyer = AsyncSurveyer(modelToUse='qwen3.6-35b-a3b', key=bothub_key, logger=logger, baseUrl=configuration.bothubUrl)
 #surveyer = AsyncSurveyer(modelToUse='qwen3.6-27b', key=aitunnel_key, logger=logger, baseUrl=configuration.aitunnelUrl, maxAttempts=100)
 #surveyer = StubSurveyer()
