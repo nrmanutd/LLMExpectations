@@ -78,7 +78,6 @@ usdrubRateProvider = PromptBuilderFactory.createCurrencyProvider()
 keyRateProvider = PromptBuilderFactory.createKeyRateProvider()
 inflationExpectationsProvider = PromptBuilderFactory.createInflationExpectationsProvider()
 
-headers = ['Relative RMSE Gain AR(1) + LLM vs AR(1)', 'Clark-West test AR(1) + LLM vs AR(1)', 'Share of points LLM is better', 'Median LOO', 'MIN LOO', 'Share of best point in total gain', 'Adj. R² gain']
 green_max_flags = [True, False, True, True, True, False, True]
 tStart = time.time()
 
@@ -102,8 +101,20 @@ for i_learner in range(len(useXGBoost)):
                             isDummy = useDummy[i_useDummy]
                             isXGBoost = useXGBoost[i_learner]
 
-                            variablesProvider = RegressionVariablesProvider(isDelta) if not isXGBoost else AllVariablesProvider(isDelta, featuresMatrix)
+                            if isXGBoost:
+                                variablesProvider = AllVariablesProvider(isDelta, featuresMatrix)
+                                m = 'XGBoost'
+                                learner = XGBoostLearner(isDummy)
+                            else:
+                                variablesProvider = RegressionVariablesProvider(isDelta)
+                                m = 'AR(1)'
+                                learner = RegressionLearner(isDummy)
+
                             datesToExclude = (np.datetime64(excludeDate[1]), np.datetime64(excludeDate[2]))
+
+                            headers = [f'Relative RMSE Gain {m} + LLM vs {m}',
+                                       f'Clark-West test {m} + LLM vs {m}', 'Share of points LLM is better',
+                                       'Median LOO', 'MIN LOO', 'Share of best point in total gain', 'Adj. R² gain']
 
                             relativeRMSEGain = np.zeros((len(modellingResults), len(nStepsAhead)))
                             pValueCWTest = np.zeros((len(modellingResults), len(nStepsAhead)))
@@ -134,7 +145,7 @@ for i_learner in range(len(useXGBoost)):
                                                                         keyRateProvider, inflationExpectationsProvider, var, isDelta, isDummy,
                                                                         datesToExclude)
 
-                                learner = RegressionLearner(isDummy) if not isXGBoost else XGBoostLearner(isDummy)
+
                                 surveyRegressionService = SurveyRegressionService(dataSetCreator, learner)
 
                                 for j in range(len(nStepsAhead)):
