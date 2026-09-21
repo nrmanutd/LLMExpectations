@@ -60,7 +60,7 @@ useOOS = [True]
 useExpandingOOS = [True]
 useDummy = [False]
 variables = ['IE', 'CPI']
-useXGBoost = [False, True]
+useXGBoost = [True]
 
 includeDatesFilter = []
 #excludeDatesFilter = [('До 01.01.2022', '2022-01-01', '2027-02-01'), ('Без начала СВО 23.02.22-01.06.22', '2022-02-23', '2022-06-01'), ('Весь период', '2030-01-01', '2030-01-02'), ('После 01.01.2022', '2000-01-01', '2022-01-01')]
