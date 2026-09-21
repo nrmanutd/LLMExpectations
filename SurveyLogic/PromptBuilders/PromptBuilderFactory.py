@@ -27,6 +27,8 @@ from SurveyLogic.PromptBuilders.StatisticsProviders.AverageExpensesProvider impo
 from SurveyLogic.PromptBuilders.StatisticsProviders.ConvertingAverageExpensesProvider import \
     ConvertingAverageExpensesProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationExpectationsProvider import InflationExpectationsProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseInflationProvider import \
+    BaseInflationProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseSingleMonthInflationProvider import \
     BaseSingleMonthInflationProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.ConvertingInflationProvider import \
@@ -61,30 +63,23 @@ class PromptBuilderFactory:
 
         self.commonProfilePromptBuilder = CommonProfilePromptBuilder(prompts.respondentPrompt, mrotProvider, averageBuyingsProvider)
 
-        multipleWeeklyProvider = MultipleWeeklyInflationProvider(configuration.weeklyInflationDataPath,
-                                                                 list(range(2022, 2027)))
-        weeklyInflationProvider = RosstatWeeklyInflationProvider(multipleWeeklyProvider)
-
-        singleMonthInflationProvider = self._createSingleMonthInflationProvider()
-        singleMonthInflationProvider = DateRoundingSingleMonthInflationProvider(singleMonthInflationProvider)
-
-        inflationProvider = InflationProvider(singleMonthInflationProvider, weeklyInflationProvider)
-        inflationProvider = ConvertingInflationProvider(inflationProvider, configuration.rlmsToInflationRegionsPath)
+        self.inflationProvider = self.createInflationProvider()
 
         self.householdInformationBuilder = HouseholdProfilePromptBuilder(prompts.househouldCommonPrompt,
                                                                         averageBuyingsProvider)
-        self.expensesProfilePromptBuilder = ExpensesProfilePromptBuilder(prompts.expensesPrompt, inflationProvider,
+        self.expensesProfilePromptBuilder = ExpensesProfilePromptBuilder(prompts.expensesPrompt, self.inflationProvider,
                                                                         [configuration.regularGoods,
                                                                          configuration.durableGoods,
                                                                          configuration.services])
         paths = [configuration.weeklyRegularGoods, configuration.weeklyDurableGoods, configuration.weeklyServices]
         self.stateExpensesPromptBuilder = StateExpensesProfilePromptBuilder(prompts.stateWeeklyExpensesPrompt,
-                                                                           inflationProvider, paths)
-        self.stateInflationProvider = StateInflationContextPromptBuilder(prompts.stateInflationPrompt, inflationProvider)
+                                                                           self.inflationProvider, paths)
+        self.stateInflationProvider = StateInflationContextPromptBuilder(prompts.stateInflationPrompt, self.inflationProvider)
         self.regionInflationProvider = RegionalInflationContextPromptBuilder(prompts.regionInflationPrompt,
-                                                                            inflationProvider)
-        currencyProvider = USDRUBRateProvider(configuration.usdrubDataPath)
-        self.stateEconomyContextPromptBuilder = StateEconomyContextPromptBuilder(prompts.stateEconomyPrompt, currencyProvider)
+                                                                            self.inflationProvider)
+        self.currencyProvider = self.createCurrencyProvider()
+
+        self.stateEconomyContextPromptBuilder = StateEconomyContextPromptBuilder(prompts.stateEconomyPrompt, self.currencyProvider)
 
         self.politicsProvider = MonthlyFromFilePromptBuilder(prompts.politicsPath)
         self.newsProvider = MonthlyFromFilePromptBuilder(prompts.newsPath)
@@ -92,14 +87,41 @@ class PromptBuilderFactory:
 
         self.taskPromptBuilder = TaskPromptBuilder(prompts.taskPrompt)
 
-        self.markerGoodsInflationProvider = MarkerGoodsInflationPromptBuilder(inflationProvider, configuration.regularMarkerGoods, configuration.durableMarkerGoods, configuration.servicesMarker)
-        inflationExpectationsProvider = InflationExpectationsProvider(configuration.inflationExpectations)
-        self.previousInflationExpectationsPromptBuilder = PrevoiusInflationExpectationsPromptBuilder(inflationExpectationsProvider)
+        self.markerGoodsInflationProvider = MarkerGoodsInflationPromptBuilder(self.inflationProvider, configuration.regularMarkerGoods, configuration.durableMarkerGoods, configuration.servicesMarker)
+        self.inflationExpectationsProvider = self.createInflationExpectationsProvider()
 
-        keyRateProvider = KeyRateProvider(configuration.keyRateFile)
-        self.keyRatePromptBuilder = KeyRatePromptBuilder(keyRateProvider)
+        self.previousInflationExpectationsPromptBuilder = PrevoiusInflationExpectationsPromptBuilder(self.inflationExpectationsProvider)
 
-    def _createSingleMonthInflationProvider(self) -> BaseSingleMonthInflationProvider:
+        self.keyRateProvider = self.createKeyRateProvider()
+        self.keyRatePromptBuilder = KeyRatePromptBuilder(self.keyRateProvider)
+
+    @staticmethod
+    def createInflationExpectationsProvider() -> InflationExpectationsProvider:
+        return InflationExpectationsProvider(configuration.inflationExpectations)
+
+    @staticmethod
+    def createKeyRateProvider() -> KeyRateProvider:
+        return KeyRateProvider(configuration.keyRateFile)
+
+    @staticmethod
+    def createCurrencyProvider() -> USDRUBRateProvider:
+        return USDRUBRateProvider(configuration.usdrubDataPath)
+
+    @staticmethod
+    def createInflationProvider() -> BaseInflationProvider:
+        multipleWeeklyProvider = MultipleWeeklyInflationProvider(configuration.weeklyInflationDataPath,
+                                                                 list(range(2022, 2027)))
+        weeklyInflationProvider = RosstatWeeklyInflationProvider(multipleWeeklyProvider)
+
+        singleMonthInflationProvider = PromptBuilderFactory._createSingleMonthInflationProvider()
+        singleMonthInflationProvider = DateRoundingSingleMonthInflationProvider(singleMonthInflationProvider)
+
+        inflationProvider = InflationProvider(singleMonthInflationProvider, weeklyInflationProvider)
+        inflationProvider = ConvertingInflationProvider(inflationProvider, configuration.rlmsToInflationRegionsPath)
+        return inflationProvider
+
+    @staticmethod
+    def _createSingleMonthInflationProvider() -> BaseSingleMonthInflationProvider:
         files = [configuration.inflation20092014DataPath, configuration.inflation20152020DataPath,
                  configuration.inflation20212026DataPath]
         yearsSets = [configuration.years20092014, configuration.years20152020, configuration.years20212026]

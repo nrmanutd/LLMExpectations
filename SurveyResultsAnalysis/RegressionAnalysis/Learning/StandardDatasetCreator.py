@@ -19,16 +19,13 @@ class StandardDatasetCreator(BaseDatasetCreator):
         self.usdrubRate = usdrubRate
         self.keyRateProvider = keyRateProvider
 
-    def getDataset(self, survey, nMonth: int = 1):
+    def getDataset(self, survey, variables: list[str], nMonth: int = 1):
         if self.isDelta:
-            return self._createDeltasDataset(survey, nMonth)
+            return self._createDeltasDataset(survey, variables, nMonth)
         else:
-            return self._createDataset(survey, nMonth)
+            return self._createDataset(survey, variables, nMonth)
 
-    def getDeltasDataset(self, survey, nMonth: int = 1):
-        raise NotImplementedError("getDeltasDataset not implemented")
-
-    def _createDataset(self, survey, nMonth):
+    def _createDataset(self, survey, variables, nMonth):
         rows = []
 
         df = self.inflationExpectations
@@ -102,7 +99,7 @@ class StandardDatasetCreator(BaseDatasetCreator):
         regression_df = pd.DataFrame(rows)
         return regression_df
 
-    def _createDeltasDataset(self, survey, nMonth):
+    def _createDeltasDataset(self, survey, variables, nMonth):
         rows = []
         df = self.inflationExpectations
 
