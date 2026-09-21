@@ -60,7 +60,7 @@ nStepsAhead = [1, 2, 3, 4, 5, 6]
 useDelta = [False]
 useOOS = [True]
 useExpandingOOS = [True]
-useDummy = [False]
+useDummy = [True]
 variables = ['CPI']
 useXGBoost = [True]
 
