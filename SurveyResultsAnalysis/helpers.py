@@ -47,7 +47,7 @@ def getCategory(answeredCategory: str, type: str):
     if answeredCategory == 'не изменятся' or answeredCategory == 'no_change' or answeredCategory == 'неизменятся':
         return 'не изменятся' if type == 'expected' else 'не изменились'
 
-    if answeredCategory == 'снизились' or answeredCategory == 'снизятся':
+    if answeredCategory == 'снизились' or answeredCategory == 'снизятся' or answeredCategory == 'снизелись':
         return 'снизятся' if type == 'expected' else 'снизились'
 
     if answeredCategory == 'no_answer':
