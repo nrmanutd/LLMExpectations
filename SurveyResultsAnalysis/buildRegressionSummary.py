@@ -7,6 +7,8 @@ import numpy as np
 from Configuration import visualizationConfiguration
 from SurveyLogic.PromptBuilders.StatisticsProviders.KeyRateProvider import KeyRateProvider
 from SurveyResultsAnalysis.RegressionAnalysis.ForecastRobustness import ForecastRobustness
+from SurveyResultsAnalysis.RegressionAnalysis.Learning.RegressionLearner import RegressionLearner
+from SurveyResultsAnalysis.RegressionAnalysis.Learning.StandardDatasetCreator import StandardDatasetCreator
 from SurveyResultsAnalysis.RegressionAnalysis.SurveyRegressionService import SurveyRegressionService
 from SurveyResultsAnalysis.RegressionAnalysis.regressionHelpers import loadSurveyResults
 from SurveyResultsAnalysis.helpers import load_from_official_statistics, load_official_inflation, \
@@ -41,9 +43,12 @@ modellingResults = [
         ('mlcluster_qwen38_async_no_news_rlms_e_reginf_-6d', 'QWEN 3.8 (+RLMS e  -news +reg inf, 7d)'),
         ('mlcluster_qwen38_async_anews_rlms_full_reginf_-6d', 'QWEN 3.8 (+RLMS full  +anews +reg inf, 7d)'),
         ('mlcluster_qwen38_async_anews_rlms_e_reginf_-6d', 'QWEN 3.8 (+RLMS e  +anews +reg inf, 7d)'),
-        ('mlcluster_qwen38_async_news_only_-6d', 'QWEN 3.8 (news only, 7d)'),
-        ('mlcluster_qwen38_async_news_reginf_only_-6d', 'QWEN 3.8 (+news +reg inf, 7d)')
+        #('mlcluster_qwen38_async_news_only_-6d', 'QWEN 3.8 (news only, 7d)'),
+        #('mlcluster_qwen38_async_news_reginf_only_-6d', 'QWEN 3.8 (+news +reg inf, 7d)'),
+        ('mlcluster_qwen38_async_reginf_only_-6d', 'QWEN 3.8 (reg inf, 7d)')
 ]
+
+modellingResults = [modellingResults[-1]]
 
 featuresDescriptionPath = Path('../data/LLMSurveys_Configurations.xlsx')
 OOSStartPoints = 30
@@ -56,8 +61,8 @@ useDummy = [True]
 variables = ['IE', 'CPI']
 
 includeDatesFilter = []
-excludeDatesFilter = [('До 01.01.2022', '2022-01-01', '2027-02-01'), ('Без начала СВО 23.02.22-01.06.22', '2022-02-23', '2022-06-01'), ('Весь период', '2030-01-01', '2030-01-02'), ('После 01.01.2022', '2000-01-01', '2022-01-01')]
-#excludeDatesFilter = [('Весь период', '2030-01-01', '2030-01-02')]
+#excludeDatesFilter = [('До 01.01.2022', '2022-01-01', '2027-02-01'), ('Без начала СВО 23.02.22-01.06.22', '2022-02-23', '2022-06-01'), ('Весь период', '2030-01-01', '2030-01-02'), ('После 01.01.2022', '2000-01-01', '2022-01-01')]
+excludeDatesFilter = [('Весь период', '2030-01-01', '2030-01-02')]
 
 surveyResults = loadSurveyResults(rootFolder, modellingResults)
 
@@ -90,8 +95,10 @@ for i_excludeDatesFilter in range(len(excludeDatesFilter)):
 
                         baseVariables = 'X5' if isDelta else 'X1'
                         datesToExclude = (np.datetime64(excludeDate[1]), np.datetime64(excludeDate[2]))
-                        surveyRegressionService = SurveyRegressionService(directEstimations, officialInflation, usdrubRate,
-                                                                          keyRateProvider, datesToExclude, isDummy, var)
+
+                        dataSetCreator = StandardDatasetCreator(directEstimations, officialInflation, usdrubRate, keyRateProvider, var, isDelta, isDummy, datesToExclude)
+                        learner = RegressionLearner(isDummy)
+                        surveyRegressionService = SurveyRegressionService(dataSetCreator, learner)
 
                         relativeRMSEGain = np.zeros((len(modellingResults), len(nStepsAhead)))
                         pValueCWTest = np.zeros((len(modellingResults), len(nStepsAhead)))
@@ -119,8 +126,8 @@ for i_excludeDatesFilter in range(len(excludeDatesFilter)):
                             for j in range(len(nStepsAhead)):
                                 curNMonth=nStepsAhead[j]
 
-                                ty, tr, tm, tdates = surveyRegressionService.fitWithConfig(survey, targetModelVariables, isDelta, isOOS, isExpandingOOS, start_n=OOSStartPoints, nMonth=curNMonth)
-                                by, br, bm, bdates = surveyRegressionService.fitWithConfig(survey, baseModelVariables, isDelta, isOOS, isExpandingOOS, start_n=OOSStartPoints, nMonth=curNMonth)
+                                ty, tr, tm, tdates = surveyRegressionService.fitWithConfig(survey, targetModelVariables, isOOS, isExpandingOOS, start_n=OOSStartPoints, nMonth=curNMonth)
+                                by, br, bm, bdates = surveyRegressionService.fitWithConfig(survey, baseModelVariables, isOOS, isExpandingOOS, start_n=OOSStartPoints, nMonth=curNMonth)
 
                                 e_llm = ty - tr
                                 e_base = by - br
@@ -143,5 +150,5 @@ for i_excludeDatesFilter in range(len(excludeDatesFilter)):
                                 if not isOOS:
                                     adjRSquared[i, j] = tm.rsquared_adj - bm.rsquared_adj
 
-                        filePrefix = f'{var}_{excludeDate[0]}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_start points={OOSStartPoints}_{'dummy' if isDummy else 'no_dummy'}'
+                        filePrefix = f'{var}_{excludeDate[0]}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_start points={OOSStartPoints}_{'dummy' if isDummy else 'no_dummy'}_({len(modellingResults)})'
                         saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names, green_max_flags, featuresMatrix)
