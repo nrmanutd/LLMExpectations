@@ -54,15 +54,15 @@ modellingResults = [
 modellingResults = [modellingResults[x] for x in [4]]
 
 featuresDescriptionPath = Path('data/LLMSurveys_Configurations.xlsx')
-OOSStartPoints = 110
+OOSStartPoints = 30
 
 nStepsAhead = [1, 2, 3, 4, 5, 6]
 useDelta = [False]
 useOOS = [True]
 useExpandingOOS = [True]
 useDummy = [True]
-variables = ['CPI']
-useXGBoost = [True]
+variables = ['IE', 'CPI']
+useXGBoost = [True, False]
 
 includeDatesFilter = []
 #excludeDatesFilter = [('До 01.01.2022', '2022-01-01', '2027-02-01'), ('Без начала СВО 23.02.22-01.06.22', '2022-02-23', '2022-06-01'), ('Весь период', '2030-01-01', '2030-01-02'), ('После 01.01.2022', '2000-01-01', '2022-01-01')]
