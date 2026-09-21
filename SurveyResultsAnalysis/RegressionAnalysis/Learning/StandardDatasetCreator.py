@@ -48,8 +48,8 @@ class StandardDatasetCreator(BaseDatasetCreator):
             if self.targetVariable == 'CPI':
                 if i + 1 < len(df):
                     next_current_date = df.index[i + 1]
-                    current_value = self._getInflation(next_current_date)
-                    prev_currentValue = self._getInflation(llm_survey_date)
+                    current_value = self.inflationProvider.getAverageCommonYearInflationLastNMonth(next_current_date, 1)
+                    prev_currentValue = self.inflationProvider.getAverageCommonYearInflationLastNMonth(llm_survey_date, 1)
                     dummyValue = self._getDummy(next_current_date)
                 else:
                     continue
@@ -199,25 +199,30 @@ class StandardDatasetCreator(BaseDatasetCreator):
             av.append(('X24', self.inflationProvider.getAverageCommonYearInflationLastNMonth(surveyDate, 12)))
 
         keyRates = self.keyRateProvider.getKeyRateIncrements(surveyDate, 3)
-        if 'X31' in variables:
+        if 'X31' in variables and len(keyRates) >= 1:
             av.append(('X31', keyRates[0]))
 
-        if 'X32' in variables:
+        if 'X32' in variables and len(keyRates) >= 2:
             av.append(('X32', keyRates[1]))
 
-        if 'X33' in variables:
+        if 'X33' in variables and len(keyRates) >= 3:
             av.append(('X33', keyRates[2]))
 
         regularGoods = configuration.regularMarkerGoods
-        if 'X41' in variables:
-            for i in range(len(regularGoods)):
-                good = regularGoods[i]
-                av.append((f'X41{i:2.0f}', self.inflationProvider.getProductsCommonWeeklyInflationLastNWeeks(surveyDate, [good], 1)[0]))
+        v1w = [f'X41{i:2.0f}' for i in range(len(regularGoods))]
+        v2w = [f'X42{i:2.0f}' for i in range(len(regularGoods))]
 
-        if 'X42' in variables:
-            for i in range(len(regularGoods)):
-                good = regularGoods[i]
-                av.append((f'X42{i:2.0f}', self.inflationProvider.getProductsCommonWeeklyInflationLastNWeeks(surveyDate, [good], 2)[0]))
+        for v in v1w:
+            if v in variables:
+                for i in range(len(regularGoods)):
+                    good = regularGoods[i]
+                    av.append((v, self.inflationProvider.getProductsCommonWeeklyInflationLastNWeeks(surveyDate, [good], 1)[0]))
+
+        for v in v2w:
+            if v in variables:
+                for i in range(len(regularGoods)):
+                    good = regularGoods[i]
+                    av.append((v, self.inflationProvider.getProductsCommonWeeklyInflationLastNWeeks(surveyDate, [good], 2)[0]))
 
         return av
 

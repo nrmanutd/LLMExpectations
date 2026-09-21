@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import pandas as pd
 
@@ -25,7 +27,7 @@ class SurveyRegressionService:
         return y, r, m, dates
 
     def fit(self, survey, vars, nMonth=1):
-        df = self.datasetCreator.getDataset(survey, nMonth)
+        df = self.datasetCreator.getDataset(survey, vars[0], nMonth)
 
         x = df[vars[0]]
         y = df[vars[1]]
@@ -80,7 +82,8 @@ class SurveyRegressionService:
             Даты прогнозируемых точек.
         """
 
-        df = self.datasetCreator.getDataset(survey, nMonth)
+        df = self.datasetCreator.getDataset(survey, vars[0], nMonth)
+        df.to_excel('tempoos.xlsx')
 
         x = df[vars[0]].to_numpy(dtype=float)
         y = df[vars[1]].to_numpy(dtype=float)
@@ -98,7 +101,14 @@ class SurveyRegressionService:
         pred_list = []
         dates_list = []
 
+        loggingStep = (total_n - start_n) / 20
+        nextValue = loggingStep
+        st = time.time()
+
         for i in range(start_n, total_n):
+            if i - start_n >= nextValue:
+                print(f'[{time.time() - st:.1f}s] OOS progress: {(i - start_n) / (total_n - start_n) * 100:.1f}%')
+                nextValue += loggingStep
             # Expanding window:
             # обучаемся на [0, ..., i-1]
             x_train = x[:i]
@@ -191,7 +201,8 @@ class SurveyRegressionService:
                 f"train_share должен быть между 0 и 1, получено: {train_share}"
             )
 
-        df = self.datasetCreator.getDataset(survey, nMonth)
+        df = self.datasetCreator.getDataset(survey, vars[0], nMonth)
+
 
         x = df[vars[0]].to_numpy(dtype=float)
         y = df[vars[1]].to_numpy(dtype=float)
@@ -278,8 +289,8 @@ class SurveyRegressionService:
 
         return y_true_result, pred_result, "", dates_list
 
-    def estimateCorr(self, survey, nMonth=1):
-        df = self.datasetCreator.getDataset(survey, nMonth)
+    def estimateCorr(self, survey, vars, nMonth=1):
+        df = self.datasetCreator.getDataset(survey, vars[0], nMonth)
 
         r = df['X3']  # pandas Series
         y = df['Y']  # pandas Series

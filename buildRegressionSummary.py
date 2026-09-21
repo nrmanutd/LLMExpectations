@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
-from Configuration import visualizationConfiguration
+from Configuration import visualizationConfiguration, configuration
 from SurveyLogic.PromptBuilders.PromptBuilderFactory import PromptBuilderFactory
 from SurveyResultsAnalysis.RegressionAnalysis.ForecastRobustness import ForecastRobustness
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.AllVariablesProvider import AllVariablesProvider
@@ -51,15 +51,17 @@ modellingResults = [
         ('mlcluster_qwen38_async_news_rlms_exp_-6d', 'QWEN 3.8 (+news +rlms e, 7d)'),
 ]
 
+modellingResults = [modellingResults[x] for x in [4]]
+
 featuresDescriptionPath = Path('data/LLMSurveys_Configurations.xlsx')
-OOSStartPoints = 30
+OOSStartPoints = 110
 
 nStepsAhead = [1, 2, 3, 4, 5, 6]
 useDelta = [False]
 useOOS = [True]
 useExpandingOOS = [True]
 useDummy = [False]
-variables = ['IE', 'CPI']
+variables = ['CPI']
 useXGBoost = [True]
 
 includeDatesFilter = []
@@ -69,7 +71,7 @@ excludeDatesFilter = [('Весь период', '2030-01-01', '2030-01-02')]
 surveyResults = loadSurveyResults(rootFolder, modellingResults)
 
 #keyRateProvider = KeyRateProvider(visualizationConfiguration.keyRatePath)
-directEstimations = load_from_official_statistics(visualizationConfiguration.directInflationEstimationsPath, 1)
+directEstimations = load_from_official_statistics(configuration.inflationExpectations, 1)
 #officialInflation = load_official_inflation(visualizationConfiguration.officialInflationPath)
 #usdrubRate = load_usdrub(visualizationConfiguration.usdrubPath)
 
@@ -100,6 +102,12 @@ for i_learner in range(len(useXGBoost)):
                             excludeDate = excludeDatesFilter[i_excludeDatesFilter]
                             isDummy = useDummy[i_useDummy]
                             isXGBoost = useXGBoost[i_learner]
+
+                            if isXGBoost and var == 'IE':
+                                continue
+
+                            if not isXGBoost and var == 'CPI':
+                                continue
 
                             if isXGBoost:
                                 variablesProvider = AllVariablesProvider(isDelta, featuresMatrix)
@@ -149,6 +157,7 @@ for i_learner in range(len(useXGBoost)):
                                 surveyRegressionService = SurveyRegressionService(dataSetCreator, learner)
 
                                 for j in range(len(nStepsAhead)):
+                                    print(f'[{time.time() - tStart:.2f}s] nStepsAhead = {nStepsAhead[j]}...')
                                     curNMonth=nStepsAhead[j]
 
                                     ty, tr, tm, tdates = surveyRegressionService.fitWithConfig(survey, targetModelVariables, isOOS, isExpandingOOS, start_n=OOSStartPoints, nMonth=curNMonth)
@@ -175,5 +184,5 @@ for i_learner in range(len(useXGBoost)):
                                     if not isOOS:
                                         adjRSquared[i, j] = tm.rsquared_adj - bm.rsquared_adj
 
-                            filePrefix = f'{var}_{excludeDate[0]}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_start points={OOSStartPoints}_{'dummy' if isDummy else 'no_dummy'}_({len(modellingResults)})'
+                            filePrefix = f'{var}_{excludeDate[0]}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_start points={OOSStartPoints}_{'dummy' if isDummy else 'no_dummy'}_{'xgb' if isXGBoost else 'r'}_({len(modellingResults)})'
                             saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names, green_max_flags, featuresMatrix)
