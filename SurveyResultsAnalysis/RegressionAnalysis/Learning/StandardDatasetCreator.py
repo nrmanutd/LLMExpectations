@@ -1,13 +1,22 @@
 import pandas as pd
 import numpy as np
 
+from Configuration import configuration
+from SurveyLogic.PromptBuilders.StatisticsProviders.BaseCurrencyProvider import BaseCurrencyProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.BaseInflationExpectationsProvider import \
+    BaseInflationExpectationsProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.BaseKeyRateProvider import BaseKeyRateProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseInflationProvider import \
+    BaseInflationProvider
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.BaseDatasetCreator import BaseDatasetCreator
 
 
 class StandardDatasetCreator(BaseDatasetCreator):
-    def __init__(self, inflationExpectations, pastYearInflation, usdrubRate, keyRateProvider: BaseKeyRateProvider, targetVariable: str, isDelta: bool, isDummy: bool, datesToExclude = None, datesToInclude = None):
-        self.pastYearInflation = pastYearInflation
+    def __init__(self, inflationExpectations, inflationProvider: BaseInflationProvider, usdrubRateProvider: BaseCurrencyProvider, keyRateProvider: BaseKeyRateProvider, inflationExpectationsProvider: BaseInflationExpectationsProvider, targetVariable: str, isDelta: bool, isDummy: bool, datesToExclude = None, datesToInclude = None):
+        self.usdrubRateProvider = usdrubRateProvider
+        self.inflationProvider = inflationProvider
+        self.inflationExpectationsProvider = inflationExpectationsProvider
+
         self.datesToInclude = (np.datetime64('1900-01-01'),
                                np.datetime64('2100-01-01')) if datesToInclude is None else datesToInclude
         self.datesToExclude = (np.datetime64('2100-01-01'),
@@ -16,7 +25,7 @@ class StandardDatasetCreator(BaseDatasetCreator):
         self.targetVariable = targetVariable
         self.inflationExpectations = inflationExpectations
         self.isDelta = isDelta
-        self.usdrubRate = usdrubRate
+
         self.keyRateProvider = keyRateProvider
 
     def getDataset(self, survey, variables: list[str], nMonth: int = 1):
@@ -64,6 +73,8 @@ class StandardDatasetCreator(BaseDatasetCreator):
             #X6 = deltaKR[0]
             X7 = dummyValue
 
+            additionalVariables = self._getVariables(set(variables), llm_survey_date)
+
             if Y is None or X1 is None or X3 is None or X7 is None:
                 continue
 
@@ -86,14 +97,14 @@ class StandardDatasetCreator(BaseDatasetCreator):
             row = {
                 'Y': Y,
                 'X1': X1,
-                #'X2': X2,
                 'X3': X3,
-                #'X4': X4,
-                #'X6': X6,
                 'X7': X7,
                 'D': llm_survey_date,
                 'YT': 0
             }
+            for v in additionalVariables:
+                row[v[0]] = v[1]
+
             rows.append(row)
 
         regression_df = pd.DataFrame(rows)
@@ -112,23 +123,14 @@ class StandardDatasetCreator(BaseDatasetCreator):
             prev_value = df['expected_inflation'].iloc[i - nMonth]
             current_value = df['expected_inflation'].iloc[i]
 
-            #deltaKR = self.keyRateProvider.getKeyRateIncrements(llm_survey_date, 1)
-            #if len(deltaKR) == 0:
-            #    continue
-
             Y = current_value - prev_value
             X1 = prev_value
-            #X2 = self._getInflationDelta(llm_survey_date)
             X3 = survey['exp_median'].iloc[i - nMonth + 1] - survey['exp_median'].iloc[i - 2*nMonth + 1]
-            #X4 = self._get_usdrub(llm_survey_date)
             X5 = prev_value - prev_prev_value
-            #X6 = deltaKR[0]
             X7 = self._getDummy(current_date)
             YT = prev_value
 
-            #print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
-            #if X4 is None or X2 is None:
-            #    continue
+            additionalVariables = self._getVariables(set(variables), llm_survey_date)
 
             if self.datesToExclude[0] <= llm_survey_date < self.datesToExclude[1]:
                 #print(f'Excluding...{current_date}')
@@ -145,23 +147,79 @@ class StandardDatasetCreator(BaseDatasetCreator):
             row = {
                 'Y': Y,
                 'X1': X1,
-                #'X2': X2,
                 'X3': X3,
-                #'X4': X4,
                 'X5': X5,
-                #'X6': X6,
                 'X7': X7,
                 'D': llm_survey_date,
                 'YT': YT
             }
+
+            for v in additionalVariables:
+                row[v[0]] = v[1]
+
             rows.append(row)
 
         regression_df = pd.DataFrame(rows)
         return regression_df
 
+    def _getVariables(self, variables: set[str], surveyDate):
+        av = []
 
+        if 'X11' in variables:
+            av.append(('X11', self.usdrubRateProvider.getRateDifferenceByDaysOffset(surveyDate, 1)))
 
+        if 'X12' in variables:
+            av.append(('X12', self.usdrubRateProvider.getRateDifferenceByWeeksOffset(surveyDate, 1)))
 
+        if 'X13' in variables:
+            av.append(('X13', self.usdrubRateProvider.getRateDifferenceByWeeksOffset(surveyDate, 2)))
+
+        if 'X14' in variables:
+            av.append(('X14', self.usdrubRateProvider.getRateDifferenceByMonthOffset(surveyDate, 1)))
+
+        if 'X15' in variables:
+            av.append(('X15', self.usdrubRateProvider.getRateDifferenceByMonthOffset(surveyDate, 3)))
+
+        if 'X16' in variables:
+            av.append(('X16', self.usdrubRateProvider.getRateDifferenceByMonthOffset(surveyDate, 6)))
+
+        if 'X17' in variables:
+            av.append(('X17', self.usdrubRateProvider.getRateDifferenceByMonthOffset(surveyDate, 12)))
+
+        if 'X21' in variables:
+            av.append(('X21', self.inflationProvider.getAverageCommonYearInflationLastNMonth(surveyDate, 1)))
+
+        if 'X22' in variables:
+            av.append(('X22', self.inflationProvider.getAverageCommonYearInflationLastNMonth(surveyDate, 3)))
+
+        if 'X23' in variables:
+            av.append(('X23', self.inflationProvider.getAverageCommonYearInflationLastNMonth(surveyDate, 6)))
+
+        if 'X24' in variables:
+            av.append(('X24', self.inflationProvider.getAverageCommonYearInflationLastNMonth(surveyDate, 12)))
+
+        keyRates = self.keyRateProvider.getKeyRateIncrements(surveyDate, 3)
+        if 'X31' in variables:
+            av.append(('X31', keyRates[0]))
+
+        if 'X32' in variables:
+            av.append(('X32', keyRates[1]))
+
+        if 'X33' in variables:
+            av.append(('X33', keyRates[2]))
+
+        regularGoods = configuration.regularMarkerGoods
+        if 'X41' in variables:
+            for i in range(len(regularGoods)):
+                good = regularGoods[i]
+                av.append((f'X41{i:2.0f}', self.inflationProvider.getProductsCommonWeeklyInflationLastNWeeks(surveyDate, [good], 1)[0]))
+
+        if 'X42' in variables:
+            for i in range(len(regularGoods)):
+                good = regularGoods[i]
+                av.append((f'X42{i:2.0f}', self.inflationProvider.getProductsCommonWeeklyInflationLastNWeeks(surveyDate, [good], 2)[0]))
+
+        return av
 
     def _calcDifference(self, date1, date2):
         monthDiff = (date1.year - date2.year) * 12 + date1.month - date2.month

@@ -12,4 +12,6 @@ class AllVariablesProvider(BaseVariablesProvider):
 
         print(self.featuresMatrix)
 
+        raise NotImplementedError('Not implemented error')
+
         return vars

@@ -6,7 +6,6 @@ import numpy as np
 
 from Configuration import visualizationConfiguration
 from SurveyLogic.PromptBuilders.PromptBuilderFactory import PromptBuilderFactory
-from SurveyLogic.PromptBuilders.StatisticsProviders.KeyRateProvider import KeyRateProvider
 from SurveyResultsAnalysis.RegressionAnalysis.ForecastRobustness import ForecastRobustness
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.AllVariablesProvider import AllVariablesProvider
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.RegressionLearner import RegressionLearner
@@ -15,10 +14,9 @@ from SurveyResultsAnalysis.RegressionAnalysis.Learning.StandardDatasetCreator im
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.XGBoostLearner import XGBoostLearner
 from SurveyResultsAnalysis.RegressionAnalysis.SurveyRegressionService import SurveyRegressionService
 from SurveyResultsAnalysis.RegressionAnalysis.regressionHelpers import loadSurveyResults
-from SurveyResultsAnalysis.helpers import load_from_official_statistics, load_official_inflation, \
-    load_usdrub, saveMatricesToExcel, getFeaturesDescriptions
+from SurveyResultsAnalysis.helpers import load_from_official_statistics, saveMatricesToExcel, getFeaturesDescriptions
 
-rootFolder = Path('../data/SurveyResults/')
+rootFolder = Path('data/SurveyResults/')
 
 modellingResults = [
         ('mlcluster_qwen38_async_all_prevexp_-6d', 'QWEN 3.8 (все данные + IE - markers, -7d от Инфом)'),
@@ -53,7 +51,7 @@ modellingResults = [
         ('mlcluster_qwen38_async_news_rlms_exp_-6d', 'QWEN 3.8 (+news +rlms e, 7d)'),
 ]
 
-featuresDescriptionPath = Path('../data/LLMSurveys_Configurations.xlsx')
+featuresDescriptionPath = Path('data/LLMSurveys_Configurations.xlsx')
 OOSStartPoints = 30
 
 nStepsAhead = [1, 2, 3, 4, 5, 6]
@@ -78,6 +76,7 @@ directEstimations = load_from_official_statistics(visualizationConfiguration.dir
 inflationProvider = PromptBuilderFactory.createInflationProvider()
 usdrubRateProvider = PromptBuilderFactory.createCurrencyProvider()
 keyRateProvider = PromptBuilderFactory.createKeyRateProvider()
+inflationExpectationsProvider = PromptBuilderFactory.createInflationExpectationsProvider()
 
 headers = ['Relative RMSE Gain AR(1) + LLM vs AR(1)', 'Clark-West test AR(1) + LLM vs AR(1)', 'Share of points LLM is better', 'Median LOO', 'MIN LOO', 'Share of best point in total gain', 'Adj. R² gain']
 green_max_flags = [True, False, True, True, True, False, True]
@@ -131,8 +130,8 @@ for i_learner in range(len(useXGBoost)):
                                     targetModelVariables[0].append('X7')
                                     baseModelVariables[0].append('X7')
 
-                                dataSetCreator = StandardDatasetCreator(directEstimations, officialInflation, usdrubRate,
-                                                                        keyRateProvider, var, isDelta, isDummy,
+                                dataSetCreator = StandardDatasetCreator(directEstimations, inflationProvider, usdrubRateProvider,
+                                                                        keyRateProvider, inflationExpectationsProvider, var, isDelta, isDummy,
                                                                         datesToExclude)
 
                                 learner = RegressionLearner(isDummy) if not isXGBoost else XGBoostLearner(isDummy)
