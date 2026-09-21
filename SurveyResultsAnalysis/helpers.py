@@ -700,6 +700,7 @@ def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
         True  -> зелёный = максимум, красный = минимум
         False -> наоборот
         РАСКРАСКА ПРИМЕНЯЕТСЯ ОТДЕЛЬНО К КАЖДОМУ СТОЛБЦУ каждой матрицы.
+        ЯЧЕЙКА, ПОЛУЧИВШАЯ ЗЕЛЁНЫЙ ЦВЕТ, ВЫДЕЛЯЕТСЯ ЖИРНЫМ ШРИФТОМ.
     extra_df: pandas.DataFrame со своими колонками, число строк == n.
         Выводится СЛЕВА от всех matrices.
         Значения 'Да' / 'Нет' подсвечиваются зелёным / красным,
@@ -840,6 +841,28 @@ def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
                         end_type='max',   end_color=end_color,
                     )
                 )
+
+        # 4.1) ЖИРНЫЙ ШРИФТ ДЛЯ "ЗЕЛЁНОЙ" ЯЧЕЙКИ В КАЖДОМ СТОЛБЦЕ
+        for j in range(m):
+            col_values = mat[:, j]
+
+            # Если все значения одинаковые — градиент не применяется,
+            # значит явного "зелёного" нет; пропускаем столбец.
+            if col_values.min() == col_values.max():
+                continue
+
+            if green_max_flags[k]:
+                # зелёный = максимум
+                target_val = col_values.max()
+            else:
+                # зелёный = минимум
+                target_val = col_values.min()
+
+            # Находим ВСЕ строки с этим значением (на случай ничьей)
+            target_rows = [i for i in range(n) if col_values[i] == target_val]
+
+            for i in target_rows:
+                ws.cell(row=3 + i, column=start_col + j).font = Font(bold=True)
 
     # 5) Границы названий строк
     for i in range(3, 3 + n):
