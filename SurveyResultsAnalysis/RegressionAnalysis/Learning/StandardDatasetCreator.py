@@ -61,26 +61,15 @@ class StandardDatasetCreator(BaseDatasetCreator):
             else:
                 raise ValueError(f'Unknown target variable name: {self.targetVariable}')
 
-            #deltaKR = self.keyRateProvider.getKeyRateIncrements(llm_survey_date, 1)
-            #if len(deltaKR) == 0:
-            #    continue
-
             Y = current_value
             X1 = prev_currentValue
-            #X2 = self._getInflation(llm_survey_date)
             X3 = survey['exp_median'].iloc[i - nMonth + 1]
-            #X4 = self._get_usdrub(llm_survey_date)
-            #X6 = deltaKR[0]
             X7 = dummyValue
 
             additionalVariables = self._getVariables(set(variables), llm_survey_date)
 
             if Y is None or X1 is None or X3 is None or X7 is None:
                 continue
-
-            #print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
-            #if X2 is None or X4 is None:
-            #    continue
 
             if self.datesToExclude[0] <= llm_survey_date < self.datesToExclude[1]:
                 #print(f'Excluding...{current_date}')
@@ -223,6 +212,9 @@ class StandardDatasetCreator(BaseDatasetCreator):
                 for i in range(len(regularGoods)):
                     good = regularGoods[i]
                     av.append((v, self.inflationProvider.getProductsCommonWeeklyInflationLastNWeeks(surveyDate, [good], 2)[0]))
+
+        if 'X51' in variables:
+            av.append(('X51', self.inflationExpectationsProvider.getInflationExpectations(surveyDate)))
 
         return av
 

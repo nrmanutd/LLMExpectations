@@ -101,13 +101,13 @@ class SurveyRegressionService:
         pred_list = []
         dates_list = []
 
-        loggingStep = (total_n - start_n) / 20
+        loggingStep = (total_n - start_n) / 5
         nextValue = loggingStep
         st = time.time()
 
         for i in range(start_n, total_n):
             if i - start_n >= nextValue:
-                print(f'[{time.time() - st:.1f}s] OOS progress: {(i - start_n) / (total_n - start_n) * 100:.1f}%')
+                #print(f'[{time.time() - st:.1f}s] OOS progress: {(i - start_n) / (total_n - start_n) * 100:.1f}%')
                 nextValue += loggingStep
             # Expanding window:
             # обучаемся на [0, ..., i-1]

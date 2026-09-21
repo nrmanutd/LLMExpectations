@@ -6,6 +6,7 @@ import numpy as np
 
 from Configuration import visualizationConfiguration, configuration
 from SurveyLogic.PromptBuilders.PromptBuilderFactory import PromptBuilderFactory
+from SurveyResultsAnalysis.RegressionAnalysis.CachingSurveyRegressionService import CachingSurveyRegressionService
 from SurveyResultsAnalysis.RegressionAnalysis.ForecastRobustness import ForecastRobustness
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.AllVariablesProvider import AllVariablesProvider
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.RegressionLearner import RegressionLearner
@@ -49,9 +50,8 @@ modellingResults = [
         ('mlcluster_qwen38_async_news_reginf_only_-6d', 'QWEN 3.8 (+news +reg inf, 7d)'),
         ('mlcluster_qwen38_async_reginf_only_-6d', 'QWEN 3.8 (reg inf, 7d)'),
         ('mlcluster_qwen38_async_news_rlms_exp_-6d', 'QWEN 3.8 (+news +rlms e, 7d)'),
+        ('mlcluster_qwen38_async_only_rlms_exp_-6d', 'QWEN 3.8 (rlms e, 7d)')
 ]
-
-modellingResults = [modellingResults[x] for x in [4]]
 
 featuresDescriptionPath = Path('data/LLMSurveys_Configurations.xlsx')
 OOSStartPoints = 30
@@ -62,18 +62,16 @@ useOOS = [True]
 useExpandingOOS = [True]
 useDummy = [True]
 variables = ['IE', 'CPI']
-useXGBoost = [True, False]
+useXGBoost = [True]
 
 includeDatesFilter = []
-#excludeDatesFilter = [('До 01.01.2022', '2022-01-01', '2027-02-01'), ('Без начала СВО 23.02.22-01.06.22', '2022-02-23', '2022-06-01'), ('Весь период', '2030-01-01', '2030-01-02'), ('После 01.01.2022', '2000-01-01', '2022-01-01')]
-excludeDatesFilter = [('Весь период', '2030-01-01', '2030-01-02')]
+excludeDatesFilter = [('До 01.01.2022', '2022-01-01', '2027-02-01'), ('Без начала СВО 23.02.22-01.06.22', '2022-02-23', '2022-06-01'), ('Весь период', '2030-01-01', '2030-01-02'), ('После 01.01.2022', '2000-01-01', '2022-01-01')]
+#excludeDatesFilter = [('Весь период', '2030-01-01', '2030-01-02')]
 
 surveyResults = loadSurveyResults(rootFolder, modellingResults)
 
-#keyRateProvider = KeyRateProvider(visualizationConfiguration.keyRatePath)
+
 directEstimations = load_from_official_statistics(configuration.inflationExpectations, 1)
-#officialInflation = load_official_inflation(visualizationConfiguration.officialInflationPath)
-#usdrubRate = load_usdrub(visualizationConfiguration.usdrubPath)
 
 inflationProvider = PromptBuilderFactory.createInflationProvider()
 usdrubRateProvider = PromptBuilderFactory.createCurrencyProvider()
@@ -103,12 +101,6 @@ for i_learner in range(len(useXGBoost)):
                             isDummy = useDummy[i_useDummy]
                             isXGBoost = useXGBoost[i_learner]
 
-                            if isXGBoost and var == 'IE':
-                                continue
-
-                            if not isXGBoost and var == 'CPI':
-                                continue
-
                             if isXGBoost:
                                 variablesProvider = AllVariablesProvider(isDelta, featuresMatrix)
                                 m = 'XGBoost'
@@ -134,12 +126,20 @@ for i_learner in range(len(useXGBoost)):
 
                             matrices = [relativeRMSEGain, pValueCWTest, shareOfLLMBetter, loom, minloo, shareOfBestPoint, adjRSquared]
 
+                            dataSetCreator = StandardDatasetCreator(directEstimations, inflationProvider,
+                                                                    usdrubRateProvider,
+                                                                    keyRateProvider, inflationExpectationsProvider, var,
+                                                                    isDelta, isDummy,
+                                                                    datesToExclude)
+
+                            surveyRegressionService = SurveyRegressionService(dataSetCreator, learner)
+                            surveyRegressionService = CachingSurveyRegressionService(surveyRegressionService)
+
                             for i in range(len(modellingResults)):
                                 print(f'[{time.time() - tStart:.2f}s] Model: {modellingResults[i][1]}')
                                 modelKey = modellingResults[i][1]
 
                                 survey = surveyResults[modelKey]
-
                                 baseVariables = variablesProvider.getBaseVariables(modelKey)
 
                                 targetModelVariables = (['X3'] + baseVariables, 'Y')
@@ -148,13 +148,6 @@ for i_learner in range(len(useXGBoost)):
                                 if isDummy:
                                     targetModelVariables[0].append('X7')
                                     baseModelVariables[0].append('X7')
-
-                                dataSetCreator = StandardDatasetCreator(directEstimations, inflationProvider, usdrubRateProvider,
-                                                                        keyRateProvider, inflationExpectationsProvider, var, isDelta, isDummy,
-                                                                        datesToExclude)
-
-
-                                surveyRegressionService = SurveyRegressionService(dataSetCreator, learner)
 
                                 for j in range(len(nStepsAhead)):
                                     print(f'[{time.time() - tStart:.2f}s] nStepsAhead = {nStepsAhead[j]}...')

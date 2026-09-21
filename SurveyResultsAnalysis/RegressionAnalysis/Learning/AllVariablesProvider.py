@@ -8,7 +8,7 @@ class AllVariablesProvider(BaseVariablesProvider):
         self.regressionVariables = RegressionVariablesProvider(isDelta).getBaseVariables('')
 
     def getBaseVariables(self, configuration: str) -> list[str]:
-        variables = self.regressionVariables
+        variables = self.regressionVariables.copy()
         row = self.featuresMatrix.loc[configuration]
 
         for col_name, value in row.items():
