@@ -39,6 +39,9 @@ class AsyncSurveyer(BaseSurveyer):
                 )
 
                 resp = response.choices[0].message.content
+                resp = resp.replace('```', '')
+                resp = resp.replace('json', '')
+
                 resp_json = json.loads(resp)
 
                 # Print the text response
