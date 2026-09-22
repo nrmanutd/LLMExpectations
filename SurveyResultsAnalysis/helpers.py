@@ -701,6 +701,9 @@ def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
         False -> наоборот
         РАСКРАСКА ПРИМЕНЯЕТСЯ ОТДЕЛЬНО К КАЖДОМУ СТОЛБЦУ каждой матрицы.
         ЯЧЕЙКА, ПОЛУЧИВШАЯ ЗЕЛЁНЫЙ ЦВЕТ, ВЫДЕЛЯЕТСЯ ЖИРНЫМ ШРИФТОМ.
+        ИСКЛЮЧЕНИЕ: для ПЕРВОЙ матрицы (k == 0) используется диверджующая
+        раскраска с нейтральным нулём: >0 -> градация зелёного, <0 -> градация
+        красного. Жирным НЕ выделяется ничего.
     extra_df: pandas.DataFrame со своими колонками, число строк == n.
         Выводится СЛЕВА от всех matrices.
         Значения 'Да' / 'Нет' подсвечиваются зелёным / красным,
@@ -708,7 +711,9 @@ def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
     """
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font, Border, Side, PatternFill
-    from openpyxl.formatting.rule import ColorScaleRule, CellIsRule
+    from openpyxl.formatting.rule import (
+        ColorScaleRule, CellIsRule, FormatObject, Rule
+    )
     from openpyxl.utils import get_column_letter
 
     wb = Workbook()
@@ -820,29 +825,62 @@ def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
             ws.cell(row=2, column=start_col + j).border = cell_border
             ws.cell(row=1, column=start_col + j).border = cell_border
 
+        # =========================================================
         # 4) Условное форматирование ПО КАЖДОМУ СТОЛБЦУ
-        if green_max_flags[k]:
-            start_color, end_color = 'FF6B6B', '63BE7B'
-        else:
-            start_color, end_color = '63BE7B', 'FF6B6B'
+        # =========================================================
+        if k == 0:
+            # ---- ПЕРВАЯ МАТРИЦА: диверджующая раскраска, нуль = белый,
+            #      симметричный масштаб [-A, +A], A = max(|vmin|, |vmax|)
+            for j in range(m):
+                col_letter = get_column_letter(start_col + j)
+                first_cell = f"{col_letter}3"
+                last_cell = f"{col_letter}{3 + n - 1}"
+                col_range = f"{first_cell}:{last_cell}"
 
-        for j in range(m):
-            col_letter = get_column_letter(start_col + j)
-            first_cell = f"{col_letter}3"
-            last_cell = f"{col_letter}{3 + n - 1}"
-            col_range = f"{first_cell}:{last_cell}"
+                col_values = mat[:, j]
+                vmin = float(col_values.min())
+                vmax = float(col_values.max())
 
-            col_values = mat[:, j]
-            if col_values.min() != col_values.max():
-                ws.conditional_formatting.add(
-                    col_range,
-                    ColorScaleRule(
-                        start_type='min', start_color=start_color,
-                        end_type='max',   end_color=end_color,
-                    )
+                if vmin == vmax:
+                    continue
+
+                A = max(abs(vmin), abs(vmax))
+                if A == 0:
+                    continue
+
+                rule = ColorScaleRule(
+                    start_type='num', start_value=-A, start_color='F8696B',
+                    mid_type='num',   mid_value=0.0, mid_color='FFFFFF',
+                    end_type='num',   end_value=+A,  end_color='63BE7B',
                 )
+                ws.conditional_formatting.add(col_range, rule)
+        else:
+            # ---- ОСТАЛЬНЫЕ МАТРИЦЫ: прежняя логика min/max градиента
+            if green_max_flags[k]:
+                start_color, end_color = 'FF6B6B', '63BE7B'
+            else:
+                start_color, end_color = '63BE7B', 'FF6B6B'
 
+            for j in range(m):
+                col_letter = get_column_letter(start_col + j)
+                first_cell = f"{col_letter}3"
+                last_cell = f"{col_letter}{3 + n - 1}"
+                col_range = f"{first_cell}:{last_cell}"
+
+                col_values = mat[:, j]
+                if col_values.min() != col_values.max():
+                    ws.conditional_formatting.add(
+                        col_range,
+                        ColorScaleRule(
+                            start_type='min', start_color=start_color,
+                            end_type='max',   end_color=end_color,
+                        )
+                    )
+
+        # =========================================================
         # 4.1) ЖИРНЫЙ ШРИФТ ДЛЯ "ЗЕЛЁНОЙ" ЯЧЕЙКИ В КАЖДОМ СТОЛБЦЕ
+        #      Применяется КО ВСЕМ матрицам, включая первую.
+        # =========================================================
         for j in range(m):
             col_values = mat[:, j]
 
@@ -852,13 +890,10 @@ def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
                 continue
 
             if green_max_flags[k]:
-                # зелёный = максимум
                 target_val = col_values.max()
             else:
-                # зелёный = минимум
                 target_val = col_values.min()
 
-            # Находим ВСЕ строки с этим значением (на случай ничьей)
             target_rows = [i for i in range(n) if col_values[i] == target_val]
 
             for i in target_rows:

@@ -48,15 +48,15 @@ class StandardDatasetCreator(BaseDatasetCreator):
             if self.targetVariable == 'CPI':
                 if i + 1 < len(df):
                     next_current_date = df.index[i + 1]
-                    current_value = self.inflationProvider.getAverageCommonYearInflationLastNMonth(next_current_date, 1)
-                    prev_currentValue = self.inflationProvider.getAverageCommonYearInflationLastNMonth(llm_survey_date, 1)
+                    current_value = self.inflationProvider.getAverageCommonYearInflationLastNMonth(next_current_date, 12)
+                    prev_currentValue = self.inflationProvider.getAverageCommonYearInflationLastNMonth(llm_survey_date, 12)
                     dummyValue = self._getDummy(next_current_date)
                 else:
                     continue
             elif self.targetVariable == 'IE':
                 #IE as target variable
-                current_value = df['expected_inflation'].iloc[i]
-                prev_currentValue = df['expected_inflation'].iloc[i - nMonth]
+                current_value = df['expected_inflation'].iloc[i]/100
+                prev_currentValue = df['expected_inflation'].iloc[i - nMonth]/100
                 dummyValue = self._getDummy(current_date)
             else:
                 raise ValueError(f'Unknown target variable name: {self.targetVariable}')
