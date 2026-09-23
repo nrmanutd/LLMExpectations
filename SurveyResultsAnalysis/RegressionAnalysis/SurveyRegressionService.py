@@ -92,7 +92,7 @@ class SurveyRegressionService:
         total_n = len(df)
         start_n = self.getStartIdx(dates, cutoff_date)
 
-        print(f'Start index = {start_n} for cutoff date {cutoff_date}')
+        #print(f'Start index = {start_n} for cutoff date {cutoff_date}')
 
         if start_n is None:
             raise ValueError(f'Невозможно определеить индекс начала для cutoff date {cutoff_date} среди дат {dates}')

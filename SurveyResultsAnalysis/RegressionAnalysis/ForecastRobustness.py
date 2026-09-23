@@ -530,7 +530,6 @@ class ForecastRobustness:
 
         mean_diff = model.params[0]
         se = model.bse[0]
-
         statistic = mean_diff / se
 
         # Clark-West — one-sided test:

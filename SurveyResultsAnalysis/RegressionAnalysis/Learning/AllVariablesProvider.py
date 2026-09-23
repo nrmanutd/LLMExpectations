@@ -5,7 +5,7 @@ from SurveyResultsAnalysis.RegressionAnalysis.Learning.RegressionVariablesProvid
 class AllVariablesProvider(BaseVariablesProvider):
     def __init__(self, isDelta, featuresMatrix):
         self.featuresMatrix = featuresMatrix
-        self.regressionVariables = RegressionVariablesProvider(isDelta).getBaseVariables('')
+        self.regressionVariables = RegressionVariablesProvider(isDelta, 1).getBaseVariables('')
 
     def getBaseVariables(self, configuration: str) -> list[str]:
         variables = self.regressionVariables.copy()

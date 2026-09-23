@@ -53,18 +53,18 @@ modellingResults = [
         ('mlcluster_gemma3_27b_async_news_only_-6d', 'Gemma 3 27b (news only, 7d)')
 ]
 
-modellingResults = [modellingResults[-1]]
 featuresDescriptionPath = Path('data/LLMSurveys_Configurations.xlsx')
 
 cutoff_dates = [None, np.datetime64('2025-06-01')]
 
-nStepsAhead = [1, 2, 3, 4, 5, 6, 12]
+nStepsAhead = [1, 2, 3, 4, 5, 6, 7, 13]
 useDelta = [False]
 useOOS = [True]
 useExpandingOOS = [True]
 useDummy = [True]
-variables = ['CPI']
-learnersNames = ['AR(1)', 'AR(2)', 'AR(3)', 'Ridge', 'Elastic Net', 'XGBoost']
+variables = ['IE']
+learnersNames = ['Ridge']
+#learnersNames = ['Ridge', 'Elastic Net', 'XGBoost']
 
 includeDatesFilter = []
 #excludeDatesFilter = [('До 01.01.2022', '2022-01-01', '2027-02-01'), ('Без начала СВО 23.02.22-01.06.22', '2022-02-23', '2022-06-01'), ('Весь период', '2030-01-01', '2030-01-02'), ('После 01.01.2022', '2000-01-01', '2022-01-01')]
