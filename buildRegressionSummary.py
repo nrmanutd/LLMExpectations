@@ -49,20 +49,22 @@ modellingResults = [
         ('mlcluster_qwen38_async_news_reginf_only_-6d', 'QWEN 3.8 (+news +reg inf, 7d)'),
         ('mlcluster_qwen38_async_reginf_only_-6d', 'QWEN 3.8 (reg inf, 7d)'),
         ('mlcluster_qwen38_async_news_rlms_exp_-6d', 'QWEN 3.8 (+news +rlms e, 7d)'),
-        ('mlcluster_qwen38_async_only_rlms_exp_-6d', 'QWEN 3.8 (rlms e, 7d)')
+        ('mlcluster_qwen38_async_only_rlms_exp_-6d', 'QWEN 3.8 (rlms e, 7d)'),
+        ('mlcluster_gemma3_27b_async_news_only_-6d', 'Gemma 3 27b (news only, 7d)')
 ]
 
+modellingResults = [modellingResults[-1]]
 featuresDescriptionPath = Path('data/LLMSurveys_Configurations.xlsx')
 
-OOSStartPointsArray = [30, 100]
+cutoff_dates = [None, np.datetime64('2025-06-01')]
 
-nStepsAhead = [1, 2, 3, 4, 5, 6]
+nStepsAhead = [1, 2, 3, 4, 5]
 useDelta = [False]
 useOOS = [True]
 useExpandingOOS = [True]
 useDummy = [True]
-variables = ['IE', 'CPI']
-useXGBoost = [False, True]
+variables = ['CPI']
+useXGBoost = [False]
 
 includeDatesFilter = []
 #excludeDatesFilter = [('До 01.01.2022', '2022-01-01', '2027-02-01'), ('Без начала СВО 23.02.22-01.06.22', '2022-02-23', '2022-06-01'), ('Весь период', '2030-01-01', '2030-01-02'), ('После 01.01.2022', '2000-01-01', '2022-01-01')]
@@ -84,7 +86,7 @@ col_names = [f'{f'{x - 1} мес + ' if x > 1 else ''}1 нед' for x in nStepsA
 
 featuresMatrix = getFeaturesDescriptions(featuresDescriptionPath, row_names)
 for i_learner in range(len(useXGBoost)):
-    for i_oosstartingpoints in range(len(OOSStartPointsArray)):
+    for i_cutoff_date in range(len(cutoff_dates)):
         for i_excludeDatesFilter in range(len(excludeDatesFilter)):
             print(f'[{time.time() - tStart:.2f}s] Датасет: {excludeDatesFilter[i_excludeDatesFilter]}')
             for var in variables:
@@ -98,7 +100,7 @@ for i_learner in range(len(useXGBoost)):
                                 excludeDate = excludeDatesFilter[i_excludeDatesFilter]
                                 isDummy = useDummy[i_useDummy]
                                 isXGBoost = useXGBoost[i_learner]
-                                OOSStartPoints = OOSStartPointsArray[i_oosstartingpoints]
+                                cutoff_date = cutoff_dates[i_cutoff_date]
 
                                 if isXGBoost:
                                     variablesProvider = AllVariablesProvider(isDelta, featuresMatrix)
@@ -153,8 +155,8 @@ for i_learner in range(len(useXGBoost)):
                                         print(f'[{time.time() - tStart:.2f}s] nStepsAhead = {nStepsAhead[j]}...')
                                         curNMonth=nStepsAhead[j]
 
-                                        ty, tr, tm, tdates = surveyRegressionService.fitWithConfig(survey, targetModelVariables, isOOS, isExpandingOOS, start_n=OOSStartPoints, nMonth=curNMonth)
-                                        by, br, bm, bdates = surveyRegressionService.fitWithConfig(survey, baseModelVariables, isOOS, isExpandingOOS, start_n=OOSStartPoints, nMonth=curNMonth)
+                                        ty, tr, tm, tdates = surveyRegressionService.fitWithConfig(survey, targetModelVariables, isOOS, isExpandingOOS, cutoff_date=cutoff_date, nMonth=curNMonth)
+                                        by, br, bm, bdates = surveyRegressionService.fitWithConfig(survey, baseModelVariables, isOOS, isExpandingOOS, cutoff_date=cutoff_date, nMonth=curNMonth)
 
                                         e_llm = ty - tr
                                         e_base = by - br
@@ -180,5 +182,5 @@ for i_learner in range(len(useXGBoost)):
                                         if not isOOS:
                                             adjRSquared[i, j] = tm.rsquared_adj - bm.rsquared_adj
 
-                                filePrefix = f'{var}_{excludeDate[0]}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_start points={OOSStartPoints}_{'dummy' if isDummy else 'no_dummy'}_{'xgb' if isXGBoost else 'r'}_({len(modellingResults)})'
+                                filePrefix = f'{var}_{excludeDate[0]}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_cutoff_date={cutoff_date}_{'dummy' if isDummy else 'no_dummy'}_{'xgb' if isXGBoost else 'r'}_({len(modellingResults)})'
                                 saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names, green_max_flags, featuresMatrix)

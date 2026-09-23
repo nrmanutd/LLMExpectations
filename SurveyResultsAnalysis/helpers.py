@@ -35,13 +35,13 @@ def getCategory(answeredCategory: str, type: str):
     if answeredCategory == 'вырастут очень сильно' or answeredCategory == 'high_growth' or answeredCategory == 'вырастут сильно' or answeredCategory=='выросли сильно':
         return 'вырастут очень сильно' if type == 'expected' else 'выросли очень сильно'
 
-    if answeredCategory == 'вырастут умеренно' or answeredCategory == 'medium_growth':
+    if answeredCategory == 'вырастут умеренно' or answeredCategory == 'medium_growth' or answeredCategory == 'вырастят умеренно':
         return 'вырастут умеренно' if type == 'expected' else 'выросли умеренно'
 
     if answeredCategory == 'снизился незначительно' or answeredCategory == 'снизилась незначительно':
         return 'снизились незначительно'
 
-    if answeredCategory == 'вырастут незначительно' or answeredCategory == 'little_growth':
+    if answeredCategory == 'вырастут незначительно' or answeredCategory == 'little_growth' or answeredCategory == 'вырастят незначительно':
         return 'вырастут незначительно' if type == 'expected' else 'выросли незначительно'
 
     if answeredCategory == 'не изменятся' or answeredCategory == 'no_change' or answeredCategory == 'неизменятся':

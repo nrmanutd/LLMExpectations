@@ -69,18 +69,19 @@ class StandardDatasetCreator(BaseDatasetCreator):
             additionalVariables = self._getVariables(set(variables), llm_survey_date)
 
             if Y is None or X1 is None or X3 is None or X7 is None:
+                print(f'Skipping...{current_date} because of none: {Y}, {X1}, {X3}, {X7}')
                 continue
 
             if self.datesToExclude[0] <= llm_survey_date < self.datesToExclude[1]:
-                #print(f'Excluding...{current_date}')
+                print(f'Excluding...{current_date}')
                 continue
 
             if llm_survey_date < self.datesToInclude[0] or llm_survey_date > self.datesToInclude[1]:
-                #print(f'Excluding...{current_date}')
+                print(f'Excluding...{current_date}')
                 continue
 
             if self._calcDifference(current_date, prev_date) > nMonth:
-                #print(f'Skipping date {current_date} because of prev date = {prev_date} is older for {nMonth} month')
+                print(f'Skipping date {current_date} because of prev date = {prev_date} is older for {nMonth} month')
                 continue
 
             row = {

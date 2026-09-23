@@ -6,19 +6,18 @@ import pandas as pd
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.BaseDatasetCreator import BaseDatasetCreator
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.BaseLearner import BaseLearner
 
-
 class SurveyRegressionService:
-    def __init__(self, datasetCreator: BaseDatasetCreator, learner: BaseLearner, filteringDates: set[np.datetime64] = None):
+    def __init__(self, datasetCreator: BaseDatasetCreator, learner: BaseLearner, filteringDates: set[np.datetime64]|None = None):
         self.learner = learner
         self.datasetCreator = datasetCreator
 
         self.filteringDates = set[np.datetime64]() if filteringDates is None else filteringDates
 
-    def fitWithConfig(self, survey, v, isOOS:bool, isExpandingOOS:bool, nMonth: int=1, start_n: int=30, train_share:float=0.8):
+    def fitWithConfig(self, survey, v, isOOS:bool, isExpandingOOS:bool, nMonth: int=1, cutoff_date: np.datetime64|None = None, train_share:float=0.8):
         if isOOS:
             if isExpandingOOS:
                 y, r, m, dates = self.fit_oos(survey, v, nMonth=nMonth,
-                                                                 start_n=start_n)
+                                                                 cutoff_date=cutoff_date)
             else:
                 y, r, m, dates = self.fit_oos_fixedsplit(survey, v, nMonth=nMonth, train_share=train_share)
         else:
@@ -58,7 +57,7 @@ class SurveyRegressionService:
 
         return ay, ap, model, dates_list
 
-    def fit_oos(self, survey, vars, start_n=30, nMonth=1):
+    def fit_oos(self, survey, vars, cutoff_date: np.datetime64|None, nMonth=1):
         """
         Построение регрессии с расширяющимся окном (expanding window)
         для прогнозирования следующей точки.
@@ -91,6 +90,12 @@ class SurveyRegressionService:
         dates = df['D'].to_numpy()
 
         total_n = len(df)
+        start_n = self.getStartIdx(dates, cutoff_date)
+
+        print(f'Start index = {start_n} for cutoff date {cutoff_date}')
+
+        if start_n is None:
+            raise ValueError(f'Невозможно определеить индекс начала для cutoff date {cutoff_date} среди дат {dates}')
 
         if total_n <= start_n:
             raise ValueError(
@@ -314,6 +319,16 @@ class SurveyRegressionService:
         correlation = np.corrcoef(y_diff, r_diff)[0, 1]
         print(f"Корреляция: {correlation}")
         return correlation
+
+    def getStartIdx(self, dates, cutoff_date: np.datetime64|None) -> int|None:
+        if cutoff_date is None:
+            return 30
+
+        for i in range(len(dates)):
+            if cutoff_date < dates[i]:
+                return i
+
+        return None
 
 
 
