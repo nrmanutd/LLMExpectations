@@ -49,27 +49,40 @@ class StandardDatasetCreator(BaseDatasetCreator):
                 if i + 1 < len(df):
                     next_current_date = df.index[i + 1]
                     current_value = self.inflationProvider.getAverageCommonYearInflationLastNMonth(next_current_date, 12)
-                    prev_currentValue = self.inflationProvider.getAverageCommonYearInflationLastNMonth(llm_survey_date, 12)
+                    prevValues = np.full(6, np.nan)
+                    pIdx = i - nMonth + 1
+
+                    for k in range(6):
+                        if pIdx >= 0:
+                            sDate = survey.index[pIdx]
+                            prevValues[k] = self.inflationProvider.getAverageCommonYearInflationLastNMonth(sDate, 12)
+                        pIdx -= 1
+
                     dummyValue = self._getDummy(next_current_date)
                 else:
                     continue
             elif self.targetVariable == 'IE':
                 #IE as target variable
                 current_value = df['expected_inflation'].iloc[i]/100
-                prev_currentValue = df['expected_inflation'].iloc[i - nMonth]/100
+                pIdx = i - nMonth
+                prevValues = np.full(6, np.nan)
+                for k in range(6):
+                    if pIdx >= 0:
+                        prevValues[k] = df['expected_inflation'].iloc[pIdx] / 100
+                    pIdx -= 1
+
                 dummyValue = self._getDummy(current_date)
             else:
                 raise ValueError(f'Unknown target variable name: {self.targetVariable}')
 
             Y = current_value
-            X1 = prev_currentValue
             X3 = survey['exp_median'].iloc[i - nMonth + 1]
             X7 = dummyValue
 
             additionalVariables = self._getVariables(set(variables), llm_survey_date)
 
-            if Y is None or X1 is None or X3 is None or X7 is None:
-                print(f'Skipping...{current_date} because of none: {Y}, {X1}, {X3}, {X7}')
+            if Y is None or np.all(np.isnan(prevValues)) or X3 is None or X7 is None:
+                print(f'Skipping...{current_date} because of none: {Y}, {prevValues}, {X3}, {X7}')
                 continue
 
             if self.datesToExclude[0] <= llm_survey_date < self.datesToExclude[1]:
@@ -86,12 +99,14 @@ class StandardDatasetCreator(BaseDatasetCreator):
 
             row = {
                 'Y': Y,
-                'X1': X1,
                 'X3': X3,
                 'X7': X7,
                 'D': llm_survey_date,
                 'YT': 0
             }
+            for k in range(len(prevValues)):
+                row[f'X0{k + 1}'] = prevValues[k]
+
             for v in additionalVariables:
                 row[v[0]] = v[1]
 
@@ -136,9 +151,9 @@ class StandardDatasetCreator(BaseDatasetCreator):
 
             row = {
                 'Y': Y,
-                'X1': X1,
+                'X01': X1,
                 'X3': X3,
-                'X5': X5,
+                'X051': X5,
                 'X7': X7,
                 'D': llm_survey_date,
                 'YT': YT

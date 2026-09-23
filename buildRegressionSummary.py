@@ -13,7 +13,7 @@ from SurveyResultsAnalysis.RegressionAnalysis.Learning.RegressionVariablesProvid
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.StandardDatasetCreator import StandardDatasetCreator
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.XGBoostLearner import XGBoostLearner
 from SurveyResultsAnalysis.RegressionAnalysis.SurveyRegressionService import SurveyRegressionService
-from SurveyResultsAnalysis.RegressionAnalysis.regressionHelpers import loadSurveyResults
+from SurveyResultsAnalysis.RegressionAnalysis.regressionHelpers import loadSurveyResults, getLearner
 from SurveyResultsAnalysis.helpers import load_from_official_statistics, saveMatricesToExcel, getFeaturesDescriptions
 
 rootFolder = Path('data/SurveyResults/')
@@ -58,13 +58,13 @@ featuresDescriptionPath = Path('data/LLMSurveys_Configurations.xlsx')
 
 cutoff_dates = [None, np.datetime64('2025-06-01')]
 
-nStepsAhead = [1, 2, 3, 4, 5]
+nStepsAhead = [1, 2, 3, 4, 5, 6, 12]
 useDelta = [False]
 useOOS = [True]
 useExpandingOOS = [True]
 useDummy = [True]
 variables = ['CPI']
-useXGBoost = [False]
+learnersNames = ['AR(1)', 'AR(2)', 'AR(3)', 'Ridge', 'Elastic Net', 'XGBoost']
 
 includeDatesFilter = []
 #excludeDatesFilter = [('До 01.01.2022', '2022-01-01', '2027-02-01'), ('Без начала СВО 23.02.22-01.06.22', '2022-02-23', '2022-06-01'), ('Весь период', '2030-01-01', '2030-01-02'), ('После 01.01.2022', '2000-01-01', '2022-01-01')]
@@ -85,7 +85,7 @@ row_names = [x[1] for x in modellingResults]
 col_names = [f'{f'{x - 1} мес + ' if x > 1 else ''}1 нед' for x in nStepsAhead]
 
 featuresMatrix = getFeaturesDescriptions(featuresDescriptionPath, row_names)
-for i_learner in range(len(useXGBoost)):
+for i_learner in range(len(learnersNames)):
     for i_cutoff_date in range(len(cutoff_dates)):
         for i_excludeDatesFilter in range(len(excludeDatesFilter)):
             print(f'[{time.time() - tStart:.2f}s] Датасет: {excludeDatesFilter[i_excludeDatesFilter]}')
@@ -99,32 +99,25 @@ for i_learner in range(len(useXGBoost)):
                                 isExpandingOOS = useExpandingOOS[i_useExpandingOOS]
                                 excludeDate = excludeDatesFilter[i_excludeDatesFilter]
                                 isDummy = useDummy[i_useDummy]
-                                isXGBoost = useXGBoost[i_learner]
+                                learnerName = learnersNames[i_learner]
                                 cutoff_date = cutoff_dates[i_cutoff_date]
 
-                                if isXGBoost:
-                                    variablesProvider = AllVariablesProvider(isDelta, featuresMatrix)
-                                    m = 'XGBoost'
-                                    learner = XGBoostLearner(isDummy)
-                                else:
-                                    variablesProvider = RegressionVariablesProvider(isDelta)
-                                    m = 'AR(1)'
-                                    learner = RegressionLearner(isDummy)
+                                variablesProvider, learner = getLearner(isDelta, isDummy, featuresMatrix, learnerName)
 
                                 datesToExclude = (np.datetime64(excludeDate[1]), np.datetime64(excludeDate[2]))
 
-                                headers = [f'Relative RMSE Gain {m} + LLM vs {m}', f'LLM + {m} RMSE',
-                                           f'Clark-West test {m} + LLM vs {m}', 'Share of points LLM is better',
+                                headers = [f'Relative RMSE Gain {learnerName} + LLM vs {learnerName}', f'LLM + {learnerName} RMSE',
+                                           f'Clark-West test {learnerName} + LLM vs {learnerName}', 'Share of points LLM is better',
                                            'Median LOO', 'MIN LOO', 'Share of best point in total gain', 'Adj. R² gain']
 
-                                relativeRMSEGain = np.zeros((len(modellingResults), len(nStepsAhead)))
-                                llmRMSE = np.zeros((len(modellingResults), len(nStepsAhead)))
-                                pValueCWTest = np.zeros((len(modellingResults), len(nStepsAhead)))
-                                shareOfLLMBetter = np.zeros((len(modellingResults), len(nStepsAhead)))
-                                loom = np.zeros((len(modellingResults), len(nStepsAhead)))
-                                minloo = np.zeros((len(modellingResults), len(nStepsAhead)))
-                                shareOfBestPoint = np.zeros((len(modellingResults), len(nStepsAhead)))
-                                adjRSquared = np.zeros((len(modellingResults), len(nStepsAhead)))
+                                relativeRMSEGain = np.full((len(modellingResults), len(nStepsAhead)), np.nan)
+                                llmRMSE = np.full((len(modellingResults), len(nStepsAhead)), np.nan)
+                                pValueCWTest = np.full((len(modellingResults), len(nStepsAhead)), np.nan)
+                                shareOfLLMBetter = np.full((len(modellingResults), len(nStepsAhead)), np.nan)
+                                loom = np.full((len(modellingResults), len(nStepsAhead)), np.nan)
+                                minloo = np.full((len(modellingResults), len(nStepsAhead)), np.nan)
+                                shareOfBestPoint = np.full((len(modellingResults), len(nStepsAhead)), np.nan)
+                                adjRSquared = np.full((len(modellingResults), len(nStepsAhead)), np.nan)
 
                                 matrices = [relativeRMSEGain, llmRMSE, pValueCWTest, shareOfLLMBetter, loom, minloo, shareOfBestPoint, adjRSquared]
 
@@ -163,6 +156,9 @@ for i_learner in range(len(useXGBoost)):
 
                                         llm_rmse = np.sqrt(np.mean(e_llm**2))
 
+                                        if len(e_llm) < 10:
+                                            continue
+
                                         fr = ForecastRobustness(e_llm, e_base)
                                         #fr.print_robustness_report(block_size=4, n_boot=10_000, hac_lags=3)
                                         loo_results, loo = fr.leave_one_out_gain()
@@ -182,5 +178,5 @@ for i_learner in range(len(useXGBoost)):
                                         if not isOOS:
                                             adjRSquared[i, j] = tm.rsquared_adj - bm.rsquared_adj
 
-                                filePrefix = f'{var}_{excludeDate[0]}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_cutoff_date={cutoff_date}_{'dummy' if isDummy else 'no_dummy'}_{'xgb' if isXGBoost else 'r'}_({len(modellingResults)})'
+                                filePrefix = f'{var}_{excludeDate[0]}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_cutoff_date={cutoff_date}_{'dummy' if isDummy else 'no_dummy'}_{learnerName}_({len(modellingResults)})'
                                 saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names, green_max_flags, featuresMatrix)

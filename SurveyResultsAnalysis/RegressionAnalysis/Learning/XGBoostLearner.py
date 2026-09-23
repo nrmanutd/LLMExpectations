@@ -11,6 +11,9 @@ class XGBoostLearner(BaseLearner):
     def test(self, model, x_test):
         x_test = x_test.astype(np.float32)
 
+        if self.isDummy:
+            x_test[:, -1] = 0
+
         y_pred = model.predict(x_test)
         return y_pred
 
