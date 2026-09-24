@@ -82,7 +82,6 @@ class SurveyRegressionService:
         """
 
         df = self.datasetCreator.getDataset(survey, vars[0], nMonth)
-        df.to_excel('tempoos.xlsx')
 
         x = df[vars[0]].to_numpy(dtype=float)
         y = df[vars[1]].to_numpy(dtype=float)

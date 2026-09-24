@@ -15,6 +15,7 @@ def _load_one(rootFolder: Path, folder: str, name: str):
     f = rootFolder / folder
     s = load_pdtable(f)
     s = aggregate_survey(s)
+    s.to_excel('survey.xlsx')
     return name, s
 
 def loadSurveyResults(rootFolder: Path, surveyResults, max_workers: int = 12):

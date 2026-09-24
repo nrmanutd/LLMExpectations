@@ -1,19 +1,15 @@
-import math
 import time
 from pathlib import Path
 
 import numpy as np
+from joblib import Parallel, delayed
 
 from Configuration import configuration
 from SurveyLogic.PromptBuilders.PromptBuilderFactory import PromptBuilderFactory
-from SurveyResultsAnalysis.RegressionAnalysis.ForecastRobustness import ForecastRobustness
-from SurveyResultsAnalysis.RegressionAnalysis.Learning.AllVariablesProvider import AllVariablesProvider
-from SurveyResultsAnalysis.RegressionAnalysis.Learning.RegressionLearner import RegressionLearner
-from SurveyResultsAnalysis.RegressionAnalysis.Learning.RegressionVariablesProvider import RegressionVariablesProvider
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.StandardDatasetCreator import StandardDatasetCreator
-from SurveyResultsAnalysis.RegressionAnalysis.Learning.XGBoostLearner import XGBoostLearner
 from SurveyResultsAnalysis.RegressionAnalysis.SurveyRegressionService import SurveyRegressionService
 from SurveyResultsAnalysis.RegressionAnalysis.regressionHelpers import loadSurveyResults, getLearner
+from SurveyResultsAnalysis.RegressionAnalysis.statisticsHelpers import process_one_j
 from SurveyResultsAnalysis.helpers import load_from_official_statistics, saveMatricesToExcel, getFeaturesDescriptions
 
 rootFolder = Path('data/SurveyResults/')
@@ -50,9 +46,11 @@ modellingResults = [
         ('mlcluster_qwen38_async_reginf_only_-6d', 'QWEN 3.8 (reg inf, 7d)'),
         ('mlcluster_qwen38_async_news_rlms_exp_-6d', 'QWEN 3.8 (+news +rlms e, 7d)'),
         ('mlcluster_qwen38_async_only_rlms_exp_-6d', 'QWEN 3.8 (rlms e, 7d)'),
-        ('mlcluster_gemma3_27b_async_news_only_-6d', 'Gemma 3 27b (news only, 7d)')
+        ('mlcluster_gemma3_27b_async_news_only_-6d', 'Gemma 3 27b (news only, 7d)'),
+        ('mlcluster_gemma3_27b_async_news_rlms_e_-6d', 'Gemma 3 27b (+news +rlms e, 7d)'),
+        ('mlcluster_llama33_70b_async_news_only_-6d', 'LLama 70b (news only, 7d)')
 ]
-
+#modellingResults = [modellingResults[-1]]
 featuresDescriptionPath = Path('data/LLMSurveys_Configurations.xlsx')
 
 cutoff_dates = [None, np.datetime64('2025-06-01')]
@@ -62,8 +60,8 @@ useDelta = [False]
 useOOS = [True]
 useExpandingOOS = [True]
 useDummy = [True]
-variables = ['IE']
-learnersNames = ['Ridge']
+variables = ['IE', 'CPI']
+learnersNames = ['AR(1)', 'AR(2)', 'AR(3)', 'Ridge', 'XGBoost']
 #learnersNames = ['Ridge', 'Elastic Net', 'XGBoost']
 
 includeDatesFilter = []
@@ -144,39 +142,26 @@ for i_learner in range(len(learnersNames)):
                                         targetModelVariables[0].append('X7')
                                         baseModelVariables[0].append('X7')
 
-                                    for j in range(len(nStepsAhead)):
-                                        print(f'[{time.time() - tStart:.2f}s] nStepsAhead = {nStepsAhead[j]}...')
-                                        curNMonth=nStepsAhead[j]
+                                    results = Parallel(n_jobs=-1, backend="loky", verbose=10)(
+                                        delayed(process_one_j)(
+                                            j, survey, surveyRegressionService, targetModelVariables, baseModelVariables,
+                                            isOOS, isExpandingOOS, cutoff_date, nStepsAhead, tStart
+                                        )
+                                        for j in range(len(nStepsAhead))
+                                    )
 
-                                        ty, tr, tm, tdates = surveyRegressionService.fitWithConfig(survey, targetModelVariables, isOOS, isExpandingOOS, cutoff_date=cutoff_date, nMonth=curNMonth)
-                                        by, br, bm, bdates = surveyRegressionService.fitWithConfig(survey, baseModelVariables, isOOS, isExpandingOOS, cutoff_date=cutoff_date, nMonth=curNMonth)
-
-                                        e_llm = ty - tr
-                                        e_base = by - br
-
-                                        llm_rmse = np.sqrt(np.mean(e_llm**2))
-
-                                        if len(e_llm) < 10:
+                                    for j, res in enumerate(results):
+                                        if res is None:
                                             continue
-
-                                        fr = ForecastRobustness(e_llm, e_base)
-                                        #fr.print_robustness_report(block_size=4, n_boot=10_000, hac_lags=3)
-                                        loo_results, loo = fr.leave_one_out_gain()
-                                        cw = fr.clark_west_test()
-
-                                        sse = loo['full_gain_percent']
-                                        relativeRMSEGainValue = 1 - math.sqrt(1 - sse/100)
-
-                                        relativeRMSEGain[i, j] = relativeRMSEGainValue
-                                        llmRMSE[i, j] = llm_rmse
-                                        minloo[i, j] = loo['loo_min_percent'] / 100
-                                        loom[i, j] = loo['loo_median']
-                                        shareOfLLMBetter[i, j] = loo['share_positive']
-                                        shareOfBestPoint[i, j] = (loo["full_gain"] - loo["loo_min"]) / loo["full_gain"]
-                                        pValueCWTest[i, j] = cw["p_value_one_sided"]
-
+                                        relativeRMSEGain[i, j] = res['relativeRMSEGain']
+                                        llmRMSE[i, j] = res['llmRMSE']
+                                        minloo[i, j] = res['minloo']
+                                        loom[i, j] = res['loom']
+                                        shareOfLLMBetter[i, j] = res['shareOfLLMBetter']
+                                        shareOfBestPoint[i, j] = res['shareOfBestPoint']
+                                        pValueCWTest[i, j] = res['pValueCWTest']
                                         if not isOOS:
-                                            adjRSquared[i, j] = tm.rsquared_adj - bm.rsquared_adj
+                                            adjRSquared[i, j] = res['adjRSquared']
 
                                 filePrefix = f'{var}_{excludeDate[0]}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_cutoff_date={cutoff_date}_{'dummy' if isDummy else 'no_dummy'}_{learnerName}_({len(modellingResults)})'
                                 saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names, green_max_flags, featuresMatrix)

@@ -32,7 +32,8 @@ def load_respond_from_json(file_path: str) -> InflationSurveyRespond:
     return InflationSurveyRespond(**data)
 
 def getCategory(answeredCategory: str, type: str):
-    if answeredCategory == 'вырастут очень сильно' or answeredCategory == 'high_growth' or answeredCategory == 'вырастут сильно' or answeredCategory=='выросли сильно':
+
+    if answeredCategory == 'вырастут очень сильно' or answeredCategory == 'high_growth' or answeredCategory == 'вырастут сильно' or answeredCategory=='выросли сильно' or answeredCategory == 'вырастут очень сильн':
         return 'вырастут очень сильно' if type == 'expected' else 'выросли очень сильно'
 
     if answeredCategory == 'вырастут умеренно' or answeredCategory == 'medium_growth' or answeredCategory == 'вырастят умеренно':
@@ -41,10 +42,10 @@ def getCategory(answeredCategory: str, type: str):
     if answeredCategory == 'снизился незначительно' or answeredCategory == 'снизилась незначительно':
         return 'снизились незначительно'
 
-    if answeredCategory == 'вырастут незначительно' or answeredCategory == 'little_growth' or answeredCategory == 'вырастят незначительно':
+    if answeredCategory == 'вырастут незначительно' or answeredCategory == 'little_growth' or answeredCategory == 'вырастят незначительно' or answeredCategory == 'выростут незначительно' or answeredCategory == 'вырастут чуть-чуть' or answeredCategory == 'выросли чуть-чуть':
         return 'вырастут незначительно' if type == 'expected' else 'выросли незначительно'
 
-    if answeredCategory == 'не изменятся' or answeredCategory == 'no_change' or answeredCategory == 'неизменятся':
+    if answeredCategory == 'не изменятся' or answeredCategory == 'no_change' or answeredCategory == 'неизменятся' or answeredCategory == ' Не изменились':
         return 'не изменятся' if type == 'expected' else 'не изменились'
 
     if answeredCategory == 'снизились' or answeredCategory == 'снизятся' or answeredCategory == 'снизелись':
@@ -64,6 +65,8 @@ def getCategory(answeredCategory: str, type: str):
 
     if answeredCategory is None:
         return None
+
+    return 'затрудняюсь ответить'
 
     raise ValueError(f'Unknown answer category: {answeredCategory}')
 
