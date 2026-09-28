@@ -47,21 +47,23 @@ modellingResults = [
         ('mlcluster_qwen38_async_news_rlms_exp_-6d', 'QWEN 3.8 (+news +rlms e, 7d)'),
         ('mlcluster_qwen38_async_only_rlms_exp_-6d', 'QWEN 3.8 (rlms e, 7d)'),
         ('mlcluster_gemma3_27b_async_news_only_-6d', 'Gemma 3 27b (news only, 7d)'),
-        ('mlcluster_gemma3_27b_async_news_rlms_e_-6d', 'Gemma 3 27b (+news +rlms e, 7d)'),
+        #('mlcluster_gemma3_27b_async_news_rlms_e_-6d', 'Gemma 3 27b (+news +rlms e, 7d)'),
         ('mlcluster_llama33_70b_async_news_only_-6d', 'LLama 70b (news only, 7d)')
 ]
 #modellingResults = [modellingResults[-1]]
 featuresDescriptionPath = Path('data/LLMSurveys_Configurations.xlsx')
 
-cutoff_dates = [None, np.datetime64('2025-06-01')]
+cutoff_dates = [np.datetime64('2025-06-01')]
 
 nStepsAhead = [1, 2, 3, 4, 5, 6, 7, 13]
 useDelta = [False]
 useOOS = [True]
 useExpandingOOS = [True]
 useDummy = [True]
+#variables = ['IE', 'CPI']
 variables = ['IE', 'CPI']
-learnersNames = ['AR(1)', 'AR(2)', 'AR(3)', 'Ridge', 'XGBoost']
+learnersNames = ['XGBoost']
+#learnersNames = ['AR(1)', 'AR(2)', 'AR(3)', 'Ridge', 'XGBoost']
 #learnersNames = ['Ridge', 'Elastic Net', 'XGBoost']
 
 includeDatesFilter = []
