@@ -58,7 +58,7 @@ modellingResults = [
 ]
 
 data_type = 'hard_data'
-idx = [6, 31, 30, 21, 24, 26, 27, 28, 29]
+idx = [6, 31, 30, 21, 24, 26, 27, 28, 29, 32, 33, 34]
 featuresDescriptionPath = Path('data/LLMSurveys_Configurations_harddata.xlsx')
 
 #data_type = 'custom_data'
