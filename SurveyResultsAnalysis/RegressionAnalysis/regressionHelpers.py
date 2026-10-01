@@ -3,7 +3,9 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.ARLearner import ARLearner
+from SurveyResultsAnalysis.RegressionAnalysis.Learning.ARXLearner import ARXLearner
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.AllVariablesProvider import AllVariablesProvider
+from SurveyResultsAnalysis.RegressionAnalysis.Learning.CompositeVariablesProvider import CompositeVariablesProvider
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.ElasticNetLearner import ElasticNetLearner
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.RegressionVariablesProvider import RegressionVariablesProvider
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.RidgeLearner import RidgeLearner
@@ -51,6 +53,13 @@ def getLearner(isDelta: bool, isDummy: bool, featuresMatrix, learnerType: str):
 
         variablesProvider = RegressionVariablesProvider(isDelta, p)
         learner = ARLearner(isDummy, p)
+    elif 'ARX(' in learnerType:
+        p = int(learnerType.replace('ARX(', '').replace(')', ''))
+        if p > 6:
+            raise ValueError(f'p for ARX(p) should be <= 6, instead: {p}')
+
+        variablesProvider = CompositeVariablesProvider([RegressionVariablesProvider(isDelta, p), AllVariablesProvider(isDelta, featuresMatrix)])
+        learner = ARXLearner(isDummy, p)
     elif learnerType == 'Elastic Net':
         variablesProvider = AllVariablesProvider(isDelta, featuresMatrix)
         learner = ElasticNetLearner(isDummy)

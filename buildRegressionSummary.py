@@ -47,22 +47,38 @@ modellingResults = [
         ('mlcluster_qwen38_async_news_rlms_exp_-6d', 'QWEN 3.8 (+news +rlms e, 7d)'),
         ('mlcluster_qwen38_async_only_rlms_exp_-6d', 'QWEN 3.8 (rlms e, 7d)'),
         ('mlcluster_gemma3_27b_async_news_only_-6d', 'Gemma 3 27b (news only, 7d)'),
-        #('mlcluster_gemma3_27b_async_news_rlms_e_-6d', 'Gemma 3 27b (+news +rlms e, 7d)'),
-        ('mlcluster_llama33_70b_async_news_only_-6d', 'LLama 70b (news only, 7d)')
+        ('mlcluster_gemma3_27b_async_news_rlms_e_-6d', 'Gemma 3 27b (+news +rlms e, 7d)'),
+        ('mlcluster_llama33_70b_async_news_only_-6d', 'LLama 70b (news only, 7d)'),
+        ('mlcluster_llama33_70b_async_news_rlms_e_-6d', 'LLama 70b (+news +rlms e, 7d)'),
+        ('mlcluster_llama33_70b_async_hard_data_-6d', 'LLama 70b (hard data, 7d)'),
+        ('mlcluster_gemma3_27b_async_hard_data_-6d', 'Gemma 3 27b (hard data, 7d)'),
+        ('mlcluster_gwen38_27b_async_news_hard_data_-6d', 'QWEN 3.8 (news + hard data, 7d)'),
+        ('mlcluster_gemma3_27b_async_news_hard_data_-6d', 'Gemma 3 27b (news + hard data, 7d)'),
+        ('mlcluster_llama33_70b_async_news_hard_data_-6d', 'LLama 70b (news + hard data, 7d)')
 ]
-#modellingResults = [modellingResults[-1]]
-featuresDescriptionPath = Path('data/LLMSurveys_Configurations.xlsx')
 
-cutoff_dates = [np.datetime64('2025-06-01')]
+data_type = 'hard_data'
+idx = [6, 31, 30, 21, 24, 26, 27, 28, 29]
+featuresDescriptionPath = Path('data/LLMSurveys_Configurations_harddata.xlsx')
+
+#data_type = 'custom_data'
+#idx = range(len(modellingResults))
+#featuresDescriptionPath = Path('data/LLMSurveys_Configurations.xlsx')
+
+modellingResults = [modellingResults[x] for x in idx]
+
+nonDates =('None dates', {'QWEN 3.6': None, 'QWEN 3.8': None, 'Gemma 3': None, 'LLama 70b': None})
+eqCutoffs = ('Equal cutoffs 2025-06-01', {'QWEN 3.6': np.datetime64('2025-06-01'), 'QWEN 3.8': np.datetime64('2025-06-01'), 'Gemma 3': np.datetime64('2025-06-01'), 'LLama 70b': np.datetime64('2025-06-01')})
+diffCutoffs = ('Different cutoffs', {'QWEN 3.6': np.datetime64('2025-06-01'), 'QWEN 3.8': np.datetime64('2025-06-01'), 'Gemma 3': np.datetime64('2024-09-01'), 'LLama 70b': np.datetime64('2024-01-01')})
+cutoff_dates = [nonDates, eqCutoffs, diffCutoffs]
 
 nStepsAhead = [1, 2, 3, 4, 5, 6, 7, 13]
 useDelta = [False]
 useOOS = [True]
 useExpandingOOS = [True]
 useDummy = [True]
-#variables = ['IE', 'CPI']
 variables = ['IE', 'CPI']
-learnersNames = ['XGBoost']
+learnersNames = ['ARX(1)', 'ARX(2)', 'ARX(3)']
 #learnersNames = ['AR(1)', 'AR(2)', 'AR(3)', 'Ridge', 'XGBoost']
 #learnersNames = ['Ridge', 'Elastic Net', 'XGBoost']
 
@@ -100,7 +116,7 @@ for i_learner in range(len(learnersNames)):
                                 excludeDate = excludeDatesFilter[i_excludeDatesFilter]
                                 isDummy = useDummy[i_useDummy]
                                 learnerName = learnersNames[i_learner]
-                                cutoff_date = cutoff_dates[i_cutoff_date]
+                                cutoffs = cutoff_dates[i_cutoff_date]
 
                                 variablesProvider, learner = getLearner(isDelta, isDummy, featuresMatrix, learnerName)
 
@@ -144,6 +160,7 @@ for i_learner in range(len(learnersNames)):
                                         targetModelVariables[0].append('X7')
                                         baseModelVariables[0].append('X7')
 
+                                    cutoff_date = next(v for k, v in cutoffs[1].items() if k in modelKey)
                                     results = Parallel(n_jobs=-1, backend="loky", verbose=10)(
                                         delayed(process_one_j)(
                                             j, survey, surveyRegressionService, targetModelVariables, baseModelVariables,
@@ -165,5 +182,5 @@ for i_learner in range(len(learnersNames)):
                                         if not isOOS:
                                             adjRSquared[i, j] = res['adjRSquared']
 
-                                filePrefix = f'{var}_{excludeDate[0]}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_cutoff_date={cutoff_date}_{'dummy' if isDummy else 'no_dummy'}_{learnerName}_({len(modellingResults)})'
+                                filePrefix = f'{data_type}_{var}_{excludeDate[0]}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_cutoff_date={cutoffs[0]}_{'dummy' if isDummy else 'no_dummy'}_{learnerName}_({len(modellingResults)})'
                                 saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names, green_max_flags, featuresMatrix)
