@@ -57,13 +57,14 @@ modellingResults = [
         ('mlcluster_llama33_70b_async_news_hard_data_-6d', 'LLama 70b (news + hard data, 7d)')
 ]
 
-data_type = 'hard_data'
+#data_type = 'hard_data'
 idx = [6, 31, 30, 21, 24, 26, 27, 28, 29, 32, 33, 34]
-featuresDescriptionPath = Path('data/LLMSurveys_Configurations_harddata.xlsx')
+#featuresDescriptionPath = Path('data/LLMSurveys_Configurations_harddata.xlsx')
 
 #data_type = 'custom_data'
+data_type = 'only_new_data (2)'
 #idx = range(len(modellingResults))
-#featuresDescriptionPath = Path('data/LLMSurveys_Configurations.xlsx')
+featuresDescriptionPath = Path('data/LLMSurveys_Configurations.xlsx')
 
 modellingResults = [modellingResults[x] for x in idx]
 
@@ -78,9 +79,10 @@ useOOS = [True]
 useExpandingOOS = [True]
 useDummy = [True]
 variables = ['IE', 'CPI']
-learnersNames = ['ARX(1)', 'ARX(2)', 'ARX(3)']
-#learnersNames = ['AR(1)', 'AR(2)', 'AR(3)', 'Ridge', 'XGBoost']
+#learnersNames = ['ARX(1)', 'ARX(2)', 'ARX(3)']
+#learnersNames = ['AR(2)', 'ARX(2)', 'Ridge', 'XGBoost']
 #learnersNames = ['Ridge', 'Elastic Net', 'XGBoost']
+learnersNames = ['XGBoost']
 
 includeDatesFilter = []
 #excludeDatesFilter = [('До 01.01.2022', '2022-01-01', '2027-02-01'), ('Без начала СВО 23.02.22-01.06.22', '2022-02-23', '2022-06-01'), ('Весь период', '2030-01-01', '2030-01-02'), ('После 01.01.2022', '2000-01-01', '2022-01-01')]
@@ -118,7 +120,7 @@ for i_learner in range(len(learnersNames)):
                                 learnerName = learnersNames[i_learner]
                                 cutoffs = cutoff_dates[i_cutoff_date]
 
-                                variablesProvider, learner = getLearner(isDelta, isDummy, featuresMatrix, learnerName)
+                                variablesProvider, learner = getLearner(isDelta, isDummy, featuresMatrix, learnerName, data_type)
 
                                 datesToExclude = (np.datetime64(excludeDate[1]), np.datetime64(excludeDate[2]))
 

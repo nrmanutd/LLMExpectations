@@ -42,9 +42,13 @@ def getSurveyVisualization(predictions, dates):
     return result_df
 
 
-def getLearner(isDelta: bool, isDummy: bool, featuresMatrix, learnerType: str):
+def getLearner(isDelta: bool, isDummy: bool, featuresMatrix, learnerType: str, datatype: str):
     if learnerType == 'XGBoost':
-        variablesProvider = AllVariablesProvider(isDelta, featuresMatrix)
+        if 'only_new_data' in datatype:
+            p = int(datatype.replace('only_new_data (', '').replace(')', ''))
+            variablesProvider = RegressionVariablesProvider(isDelta, p)
+        else:
+            variablesProvider = AllVariablesProvider(isDelta, featuresMatrix)
         learner = XGBoostLearner(isDummy)
     elif 'AR(' in learnerType:
         p = int(learnerType.replace('AR(', '').replace(')', ''))
