@@ -76,25 +76,26 @@ modellingResults = [modellingResults[x] for x in idx]
 nonDates =('None dates', {'QWEN 3.6': None, 'QWEN 3.8': None, 'Gemma 3': None, 'LLama 70b': None})
 eqCutoffs = ('Equal cutoffs 2025-06-01', {'QWEN 3.6': np.datetime64('2025-06-01'), 'QWEN 3.8': np.datetime64('2025-06-01'), 'Gemma 3': np.datetime64('2025-06-01'), 'LLama 70b': np.datetime64('2025-06-01')})
 diffCutoffs = ('Different cutoffs', {'QWEN 3.6': np.datetime64('2025-06-01'), 'QWEN 3.8': np.datetime64('2025-06-01'), 'Gemma 3': np.datetime64('2024-09-01'), 'LLama 70b': np.datetime64('2024-01-01')})
-cutoff_dates = [nonDates, eqCutoffs, diffCutoffs]
+cutoff_dates = [nonDates]#, eqCutoffs, diffCutoffs]
 
 nStepsAhead = [1, 2, 3, 4, 5, 6, 7, 13]
 useDelta = [False]
 useOOS = [True]
 useExpandingOOS = [True]
 useDummy = [True]
-variables = ['IE', 'CPI']
+#variables = ['IE', 'CPI']
+variables = ['IE']
 #learnersNames = ['ARX(1)', 'ARX(2)', 'ARX(3)']
 #learnersNames = ['AR(2)', 'ARX(2)', 'Ridge', 'XGBoost']
 #learnersNames = ['Ridge', 'Elastic Net', 'XGBoost']
-learnersNames = ['Ridge']
+learnersNames = ['ARX(2)']
 
 includeDatesFilter = []
 #excludeDatesFilter = [('До 01.01.2022', '2022-01-01', '2027-02-01'), ('Без начала СВО 23.02.22-01.06.22', '2022-02-23', '2022-06-01'), ('Весь период', '2030-01-01', '2030-01-02'), ('После 01.01.2022', '2000-01-01', '2022-01-01')]
 excludeDatesFilter = [('Весь период', '2030-01-01', '2030-01-02')]
 
 surveyResults = loadSurveyResults(rootFolder, modellingResults)
-surveyResults, modellingResutls = transformInputSurveys(averagingMode, surveyResults, modellingResults, bucketSize)
+surveyResults, modellingResults = transformInputSurveys(averagingMode, surveyResults, modellingResults, bucketSize)
 
 directEstimations = load_from_official_statistics(configuration.inflationExpectations, 1)
 
@@ -192,5 +193,5 @@ for i_learner in range(len(learnersNames)):
                                         if not isOOS:
                                             adjRSquared[i, j] = res['adjRSquared']
 
-                                filePrefix = f'{data_type}_{var}_{excludeDate[0]}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_cutoff_date={cutoffs[0]}_{'dummy' if isDummy else 'no_dummy'}_{learnerName}_({len(modellingResults)})'
+                                filePrefix = f'{'avg' if averagingMode else ''}_{data_type}_{var}_{excludeDate[0]}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_cutoff_date={cutoffs[0]}_{'dummy' if isDummy else 'no_dummy'}_{learnerName}_({len(modellingResults)})'
                                 saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names, green_max_flags, featuresMatrix)
