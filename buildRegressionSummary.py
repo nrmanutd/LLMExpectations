@@ -7,8 +7,10 @@ from joblib import Parallel, delayed
 from Configuration import configuration
 from SurveyLogic.PromptBuilders.PromptBuilderFactory import PromptBuilderFactory
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.StandardDatasetCreator import StandardDatasetCreator
+from SurveyResultsAnalysis.RegressionAnalysis.MultipleSurveyRegressionService import MultipleSurveyRegressionService
 from SurveyResultsAnalysis.RegressionAnalysis.SurveyRegressionService import SurveyRegressionService
-from SurveyResultsAnalysis.RegressionAnalysis.regressionHelpers import loadSurveyResults, getLearner
+from SurveyResultsAnalysis.RegressionAnalysis.regressionHelpers import loadSurveyResults, getLearner, \
+    transformInputSurveys
 from SurveyResultsAnalysis.RegressionAnalysis.statisticsHelpers import process_one_j
 from SurveyResultsAnalysis.helpers import load_from_official_statistics, saveMatricesToExcel, getFeaturesDescriptions
 
@@ -57,14 +59,17 @@ modellingResults = [
         ('mlcluster_llama33_70b_async_news_hard_data_-6d', 'LLama 70b (news + hard data, 7d)')
 ]
 
-#data_type = 'hard_data'
-idx = [6, 31, 30, 21, 24, 26, 27, 28, 29, 32, 33, 34]
-#featuresDescriptionPath = Path('data/LLMSurveys_Configurations_harddata.xlsx')
+averagingMode = True
+bucketSize = 3
+
+data_type = 'hard_data'
+idx = [6, 31, 30, 21, 26, 28, 32, 33, 34]
+featuresDescriptionPath = Path('data/LLMSurveys_Configurations_harddata.xlsx')
 
 #data_type = 'custom_data'
-data_type = 'only_new_data (2)'
+#data_type = 'only_new_data (2)'
 #idx = range(len(modellingResults))
-featuresDescriptionPath = Path('data/LLMSurveys_Configurations.xlsx')
+#featuresDescriptionPath = Path('data/LLMSurveys_Configurations.xlsx')
 
 modellingResults = [modellingResults[x] for x in idx]
 
@@ -82,13 +87,15 @@ variables = ['IE', 'CPI']
 #learnersNames = ['ARX(1)', 'ARX(2)', 'ARX(3)']
 #learnersNames = ['AR(2)', 'ARX(2)', 'Ridge', 'XGBoost']
 #learnersNames = ['Ridge', 'Elastic Net', 'XGBoost']
-learnersNames = ['XGBoost']
+learnersNames = ['Ridge']
 
 includeDatesFilter = []
 #excludeDatesFilter = [('До 01.01.2022', '2022-01-01', '2027-02-01'), ('Без начала СВО 23.02.22-01.06.22', '2022-02-23', '2022-06-01'), ('Весь период', '2030-01-01', '2030-01-02'), ('После 01.01.2022', '2000-01-01', '2022-01-01')]
 excludeDatesFilter = [('Весь период', '2030-01-01', '2030-01-02')]
 
 surveyResults = loadSurveyResults(rootFolder, modellingResults)
+surveyResults, modellingResutls = transformInputSurveys(averagingMode, surveyResults, modellingResults, bucketSize)
+
 directEstimations = load_from_official_statistics(configuration.inflationExpectations, 1)
 
 inflationProvider = PromptBuilderFactory.createInflationProvider()
@@ -146,7 +153,8 @@ for i_learner in range(len(learnersNames)):
                                                                         datesToExclude)
 
                                 surveyRegressionService = SurveyRegressionService(dataSetCreator, learner)
-                                #surveyRegressionService = CachingSurveyRegressionService(surveyRegressionService)
+                                if averagingMode:
+                                    surveyRegressionService = MultipleSurveyRegressionService(surveyRegressionService)
 
                                 for i in range(len(modellingResults)):
                                     print(f'[{time.time() - tStart:.2f}s] Model #{i + 1} of {len(modellingResults)}: {modellingResults[i][1]}')

@@ -68,9 +68,37 @@ def getLearner(isDelta: bool, isDummy: bool, featuresMatrix, learnerType: str, d
         variablesProvider = AllVariablesProvider(isDelta, featuresMatrix)
         learner = ElasticNetLearner(isDummy)
     elif learnerType == 'Ridge':
-        variablesProvider = AllVariablesProvider(isDelta, featuresMatrix)
+        if 'only_new_data' in datatype:
+            p = int(datatype.replace('only_new_data (', '').replace(')', ''))
+            variablesProvider = RegressionVariablesProvider(isDelta, p)
+        else:
+            variablesProvider = AllVariablesProvider(isDelta, featuresMatrix)
+
         learner = RidgeLearner(isDummy)
     else:
         raise ValueError(f'Incorrect learner type {learnerType}')
 
     return variablesProvider, learner
+
+def transformInputSurveys(averagingMode: bool, surveyResults, modellingResults, bucketSize: int):
+    if not averagingMode:
+        return surveyResults, modellingResults
+
+    modellingResultsReturn = []
+    surveyResultsReturn = {}
+    currentSurveys = []
+
+    for i in range(len(modellingResults)):
+        key = modellingResults[i][1]
+        curSurvey = surveyResults[key]
+
+        if i%bucketSize == 0 and i != 0:
+            newKey = 'avg_'+key
+            modellingResultsReturn.append(('', newKey))
+            surveyResultsReturn[newKey] = currentSurveys
+            currentSurveys = []
+
+        currentSurveys.append(curSurvey)
+
+    return surveyResultsReturn, modellingResultsReturn
+

@@ -3,10 +3,11 @@ import time
 import numpy as np
 import pandas as pd
 
+from SurveyResultsAnalysis.RegressionAnalysis.BaseSurveyRegressionService import BaseSurveyRegressionService
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.BaseDatasetCreator import BaseDatasetCreator
 from SurveyResultsAnalysis.RegressionAnalysis.Learning.BaseLearner import BaseLearner
 
-class SurveyRegressionService:
+class SurveyRegressionService(BaseSurveyRegressionService):
     def __init__(self, datasetCreator: BaseDatasetCreator, learner: BaseLearner, filteringDates: set[np.datetime64]|None = None):
         self.learner = learner
         self.datasetCreator = datasetCreator
@@ -24,6 +25,10 @@ class SurveyRegressionService:
             y, r, m, dates = self.fit(survey, v, nMonth=nMonth)
 
         return y, r, m, dates
+
+    def fitBaseVariablesWithConfig(self, survey, v, isOOS: bool, isExpandingOOS: bool, nMonth: int = 1,
+                                   cutoff_date: np.datetime64 | None = None, train_share: float = 0.8):
+        return self.fitWithConfig(survey, v, isOOS, isExpandingOOS, nMonth, cutoff_date, train_share)
 
     def fit(self, survey, vars, nMonth=1):
         df = self.datasetCreator.getDataset(survey, vars[0], nMonth)

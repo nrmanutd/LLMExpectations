@@ -2,10 +2,11 @@ import math
 import time
 import numpy as np
 
+from SurveyResultsAnalysis.RegressionAnalysis.BaseSurveyRegressionService import BaseSurveyRegressionService
 from SurveyResultsAnalysis.RegressionAnalysis.ForecastRobustness import ForecastRobustness
 
 
-def process_one_j(j, survey, surveyRegressionService, targetModelVariables, baseModelVariables,
+def process_one_j(j, survey, surveyRegressionService: BaseSurveyRegressionService, targetModelVariables, baseModelVariables,
                   isOOS, isExpandingOOS, cutoff_date, nStepsAhead, tStart):
     curNMonth = nStepsAhead[j]
     print(f'[{time.time() - tStart:.2f}s] nStepsAhead = {curNMonth}...')
@@ -13,7 +14,7 @@ def process_one_j(j, survey, surveyRegressionService, targetModelVariables, base
     ty, tr, tm, tdates = surveyRegressionService.fitWithConfig(
         survey, targetModelVariables, isOOS, isExpandingOOS,
         cutoff_date=cutoff_date, nMonth=curNMonth)
-    by, br, bm, bdates = surveyRegressionService.fitWithConfig(
+    by, br, bm, bdates = surveyRegressionService.fitBaseVariablesWithConfig(
         survey, baseModelVariables, isOOS, isExpandingOOS,
         cutoff_date=cutoff_date, nMonth=curNMonth)
 
