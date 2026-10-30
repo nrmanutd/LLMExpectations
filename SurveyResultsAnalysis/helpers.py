@@ -936,3 +936,78 @@ def getFeaturesDescriptions(fileName: Path, row_list: list[str]):
     # 3) Заполняем NaN прочерками
     result = result.fillna('—')
     return result
+
+import os
+from openpyxl import load_workbook, Workbook
+
+
+def copy_sheet_into_target(source_path: str, target_path: str) -> None:
+    """
+    Копирует единственную вкладку из source_path в НОВУЮ вкладку в target_path.
+
+    - Первая строка новой вкладки: A1 = имя исходного файла.
+    - Начиная со второй строки — данные исходной вкладки без сдвига.
+    - Если target_path не существует — создаётся новый файл.
+    - Имя новой вкладки формируется из имени исходного файла (с уникализацией,
+      чтобы не было конфликтов при повторных вызовах).
+
+    :param source_path: путь к существующему .xlsx с одной вкладкой
+    :param target_path: путь к целевому .xlsx (может не существовать)
+    """
+    if not os.path.isfile(source_path):
+        raise FileNotFoundError(f"Исходный файл не найден: {source_path}")
+
+    # --- 1. Читаем исходный файл ---
+    src_wb = load_workbook(source_path, data_only=True)
+    if len(src_wb.sheetnames) != 1:
+        raise ValueError(
+            f"Ожидалась ровно одна вкладка, а найдено: {src_wb.sheetnames}"
+        )
+    src_ws = src_wb[src_wb.sheetnames[0]]
+
+    src_rows = list(src_ws.iter_rows(values_only=True))
+    src_max_col = src_ws.max_column or 1
+    src_rows = [list(r) + [None] * (src_max_col - len(r)) for r in src_rows]
+
+    source_name = os.path.basename(source_path)
+
+    # --- 2. Открываем или создаём целевой файл ---
+    if os.path.isfile(target_path):
+        tgt_wb = load_workbook(target_path)
+    else:
+        tgt_wb = Workbook()
+        # Удаляем дефолтную пустую вкладку — она нам не нужна
+        default_ws = tgt_wb.active
+        tgt_wb.remove(default_ws)
+
+    # --- 3. Формируем уникальное имя для новой вкладки ---
+    # Excel ограничивает имя вкладки 31 символом и запрещает ряд символов.
+    base_name = os.path.splitext(source_name)[0]
+    for ch in ':\\/?*[]':
+        base_name = base_name.replace(ch, "_")
+    base_name = base_name[:31] or "Sheet"
+
+    sheet_name = base_name
+    counter = 1
+    while sheet_name in tgt_wb.sheetnames:
+        suffix = f"_{counter}"
+        sheet_name = base_name[: 31 - len(suffix)] + suffix
+        counter += 1
+
+    tgt_ws = tgt_wb.create_sheet(title=sheet_name)
+
+    # --- 4. Первая строка: имя исходного файла в A1 ---
+    tgt_ws.cell(row=1, column=1).value = source_name
+
+    # --- 5. Копируем данные, начиная со второй строки ---
+    for r_idx, row in enumerate(src_rows):
+        target_row = 2 + r_idx
+        for c_idx, value in enumerate(row, start=1):
+            tgt_ws.cell(row=target_row, column=c_idx, value=value)
+
+    # --- 6. Сохраняем ---
+    tgt_wb.save(target_path)
+
+
+# Пример использования:
+# copy_sheet_into_target("incoming/report.xlsx", "result/combined.xlsx")

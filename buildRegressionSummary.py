@@ -12,7 +12,8 @@ from SurveyResultsAnalysis.RegressionAnalysis.SurveyRegressionService import Sur
 from SurveyResultsAnalysis.RegressionAnalysis.regressionHelpers import loadSurveyResults, getLearner, \
     transformInputSurveys
 from SurveyResultsAnalysis.RegressionAnalysis.statisticsHelpers import process_one_j
-from SurveyResultsAnalysis.helpers import load_from_official_statistics, saveMatricesToExcel, getFeaturesDescriptions
+from SurveyResultsAnalysis.helpers import load_from_official_statistics, saveMatricesToExcel, getFeaturesDescriptions, \
+    copy_sheet_into_target
 
 rootFolder = Path('data/SurveyResults/')
 
@@ -62,12 +63,12 @@ modellingResults = [
 averagingMode = True
 bucketSize = 3
 
-data_type = 'hard_data'
+#data_type = 'hard_data'
 idx = [6, 31, 30, 21, 26, 28, 32, 33, 34]
 featuresDescriptionPath = Path('data/LLMSurveys_Configurations_harddata.xlsx')
 
 #data_type = 'custom_data'
-#data_type = 'only_new_data (2)'
+data_type = 'only_new_data (2)'
 #idx = range(len(modellingResults))
 #featuresDescriptionPath = Path('data/LLMSurveys_Configurations.xlsx')
 
@@ -76,19 +77,20 @@ modellingResults = [modellingResults[x] for x in idx]
 nonDates =('None dates', {'QWEN 3.6': None, 'QWEN 3.8': None, 'Gemma 3': None, 'LLama 70b': None})
 eqCutoffs = ('Equal cutoffs 2025-06-01', {'QWEN 3.6': np.datetime64('2025-06-01'), 'QWEN 3.8': np.datetime64('2025-06-01'), 'Gemma 3': np.datetime64('2025-06-01'), 'LLama 70b': np.datetime64('2025-06-01')})
 diffCutoffs = ('Different cutoffs', {'QWEN 3.6': np.datetime64('2025-06-01'), 'QWEN 3.8': np.datetime64('2025-06-01'), 'Gemma 3': np.datetime64('2024-09-01'), 'LLama 70b': np.datetime64('2024-01-01')})
-cutoff_dates = [nonDates]#, eqCutoffs, diffCutoffs]
+cutoff_dates = [nonDates, eqCutoffs, diffCutoffs]
 
 nStepsAhead = [1, 2, 3, 4, 5, 6, 7, 13]
+
 useDelta = [False]
 useOOS = [True]
 useExpandingOOS = [True]
 useDummy = [True]
-#variables = ['IE', 'CPI']
-variables = ['IE']
+variables = ['IE', 'CPI']
+
 #learnersNames = ['ARX(1)', 'ARX(2)', 'ARX(3)']
 #learnersNames = ['AR(2)', 'ARX(2)', 'Ridge', 'XGBoost']
 #learnersNames = ['Ridge', 'Elastic Net', 'XGBoost']
-learnersNames = ['ARX(2)']
+learnersNames = ['AR(2)', 'XGBoost']
 
 includeDatesFilter = []
 #excludeDatesFilter = [('До 01.01.2022', '2022-01-01', '2027-02-01'), ('Без начала СВО 23.02.22-01.06.22', '2022-02-23', '2022-06-01'), ('Весь период', '2030-01-01', '2030-01-02'), ('После 01.01.2022', '2000-01-01', '2022-01-01')]
@@ -195,3 +197,6 @@ for i_learner in range(len(learnersNames)):
 
                                 filePrefix = f'{'avg' if averagingMode else ''}_{data_type}_{var}_{excludeDate[0]}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_cutoff_date={cutoffs[0]}_{'dummy' if isDummy else 'no_dummy'}_{learnerName}_({len(modellingResults)})'
                                 saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names, green_max_flags, featuresMatrix)
+
+                                targetFilePrefix = f'{'avg' if averagingMode else ''}_{data_type}_{'delta' if isDelta else 'level'}_{'oos' if isOOS else 'in sample'}_{'expanding' if isExpandingOOS else 'fixed split'}_{'dummy' if isDummy else 'no_dummy'}'
+                                copy_sheet_into_target(f'{filePrefix}.xlsx', f'all_{targetFilePrefix}.xlsx')

@@ -91,15 +91,13 @@ def transformInputSurveys(averagingMode: bool, surveyResults, modellingResults, 
     for i in range(len(modellingResults)):
         key = modellingResults[i][1]
         curSurvey = surveyResults[key]
+        currentSurveys.append(curSurvey)
 
         if i%bucketSize == bucketSize - 1:
             newKey = 'Avg_'+key
             modellingResultsReturn.append(('', newKey))
             surveyResultsReturn[newKey] = currentSurveys
             currentSurveys = []
-
-        currentSurveys.append(curSurvey)
-
 
     return surveyResultsReturn, modellingResultsReturn
 
