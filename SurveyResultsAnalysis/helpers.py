@@ -5,6 +5,11 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font, Border, Side
+from openpyxl.formatting.rule import ColorScaleRule
+from openpyxl.utils import get_column_letter
+
 import pandas as pd
 
 from SurveyLogic.SurveyResults.InflationSurveyRespond import InflationSurveyRespond
@@ -27,22 +32,23 @@ def load_respond_from_json(file_path: str) -> InflationSurveyRespond:
     return InflationSurveyRespond(**data)
 
 def getCategory(answeredCategory: str, type: str):
-    if answeredCategory == 'вырастут очень сильно' or answeredCategory == 'high_growth' or answeredCategory == 'вырастут сильно' or answeredCategory=='выросли сильно':
+
+    if answeredCategory == 'вырастут очень сильно' or answeredCategory == 'high_growth' or answeredCategory == 'вырастут сильно' or answeredCategory=='выросли сильно' or answeredCategory == 'вырастут очень сильн':
         return 'вырастут очень сильно' if type == 'expected' else 'выросли очень сильно'
 
-    if answeredCategory == 'вырастут умеренно' or answeredCategory == 'medium_growth':
+    if answeredCategory == 'вырастут умеренно' or answeredCategory == 'medium_growth' or answeredCategory == 'вырастят умеренно':
         return 'вырастут умеренно' if type == 'expected' else 'выросли умеренно'
 
     if answeredCategory == 'снизился незначительно' or answeredCategory == 'снизилась незначительно':
         return 'снизились незначительно'
 
-    if answeredCategory == 'вырастут незначительно' or answeredCategory == 'little_growth':
+    if answeredCategory == 'вырастут незначительно' or answeredCategory == 'little_growth' or answeredCategory == 'вырастят незначительно' or answeredCategory == 'выростут незначительно' or answeredCategory == 'вырастут чуть-чуть' or answeredCategory == 'выросли чуть-чуть':
         return 'вырастут незначительно' if type == 'expected' else 'выросли незначительно'
 
-    if answeredCategory == 'не изменятся' or answeredCategory == 'no_change':
+    if answeredCategory == 'не изменятся' or answeredCategory == 'no_change' or answeredCategory == 'неизменятся' or answeredCategory == ' Не изменились':
         return 'не изменятся' if type == 'expected' else 'не изменились'
 
-    if answeredCategory == 'снизились' or answeredCategory == 'снизятся':
+    if answeredCategory == 'снизились' or answeredCategory == 'снизятся' or answeredCategory == 'снизелись':
         return 'снизятся' if type == 'expected' else 'снизились'
 
     if answeredCategory == 'no_answer':
@@ -51,7 +57,7 @@ def getCategory(answeredCategory: str, type: str):
     if answeredCategory == 'выросли умеренно' or answeredCategory == 'выросли очень сильно' or answeredCategory == 'выросли незначительно' or answeredCategory == 'не изменились' or answeredCategory == 'затрудняюсь ответить' or answeredCategory == 'снизятся':
         return answeredCategory
 
-    if answeredCategory == 'снизились' or answeredCategory == 'снизлись' or answeredCategory == 'снизился' or answeredCategory == 'снизилась':
+    if answeredCategory == 'снизились' or answeredCategory == 'снизилось' or answeredCategory == 'снизлись' or answeredCategory == 'снизилсь' or answeredCategory == 'снизился' or answeredCategory == 'снизилась':
         return 'снизились'
 
     if answeredCategory == 'снизился незначительно':
@@ -59,6 +65,8 @@ def getCategory(answeredCategory: str, type: str):
 
     if answeredCategory is None:
         return None
+
+    return 'затрудняюсь ответить'
 
     raise ValueError(f'Unknown answer category: {answeredCategory}')
 
@@ -326,19 +334,27 @@ def aggregate_survey(surveys):
     Агрегирует данные по датам
 
     Returns:
-        DataFrame с индексом из дат и колонками 'obs_mean', 'obs_std', 'obs_count',
-        'exp_mean', 'exp_std', 'exp_count'
+        DataFrame с индексом из дат и колонками:
+        - 'obs_mean', 'obs_median', 'obs_q25', 'obs_q75', 'obs_std', 'obs_count'
+        - 'exp_mean', 'exp_median', 'exp_q25', 'exp_q75', 'exp_std', 'exp_count'
     """
     surveys['date'] = pd.to_datetime(surveys['date'])
 
-    quarterly_agg_df = surveys.groupby('date').agg({
-        'observable_12m': ['mean', 'std', 'count'],
-        'expected_12m': ['mean', 'std', 'count']
-    })
+    # Определяем функции агрегации
+    agg_funcs = {
+        'observable_12m': ['mean', 'median', lambda x: x.quantile(0.25),
+                          lambda x: x.quantile(0.75), 'std', 'count'],
+        'expected_12m': ['mean', 'median', lambda x: x.quantile(0.25),
+                        lambda x: x.quantile(0.75), 'std', 'count']
+    }
+
+    quarterly_agg_df = surveys.groupby('date').agg(agg_funcs)
 
     # Переименовываем колонки
-    quarterly_agg_df.columns = ['obs_mean', 'obs_std', 'obs_count',
-                                'exp_mean', 'exp_std', 'exp_count']
+    quarterly_agg_df.columns = [
+        'obs_mean', 'obs_median', 'obs_q25', 'obs_q75', 'obs_std', 'obs_count',
+        'exp_mean', 'exp_median', 'exp_q25', 'exp_q75', 'exp_std', 'exp_count'
+    ]
 
     print(quarterly_agg_df.head())
 
@@ -677,3 +693,321 @@ def generate_title_from_config(
         title = title[:max_length - 3] + '...'
 
     return title
+
+def saveMatricesToExcel(matrices, headers, filePrefix, row_names, col_names,
+                        green_max_flags, extra_df):
+    """
+    matrices: список numpy-матриц (n, m) в долях
+    headers:  список заголовков над каждой матрицей
+    green_max_flags: список bool длины len(matrices)
+        True  -> зелёный = максимум, красный = минимум
+        False -> наоборот
+        РАСКРАСКА ПРИМЕНЯЕТСЯ ОТДЕЛЬНО К КАЖДОМУ СТОЛБЦУ каждой матрицы.
+        ЯЧЕЙКА, ПОЛУЧИВШАЯ ЗЕЛЁНЫЙ ЦВЕТ, ВЫДЕЛЯЕТСЯ ЖИРНЫМ ШРИФТОМ.
+        ИСКЛЮЧЕНИЕ: для ПЕРВОЙ матрицы (k == 0) используется диверджующая
+        раскраска с нейтральным нулём: >0 -> градация зелёного, <0 -> градация
+        красного. Жирным НЕ выделяется ничего.
+    extra_df: pandas.DataFrame со своими колонками, число строк == n.
+        Выводится СЛЕВА от всех matrices.
+        Значения 'Да' / 'Нет' подсвечиваются зелёным / красным,
+        прочерк '—' — без заливки.
+    """
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, Border, Side, PatternFill
+    from openpyxl.formatting.rule import (
+        ColorScaleRule, CellIsRule, FormatObject, Rule
+    )
+    from openpyxl.utils import get_column_letter
+
+    wb = Workbook()
+    ws = wb.active
+
+    n = len(row_names)
+    m = len(col_names)
+    K = len(matrices)
+
+    assert len(green_max_flags) == K, \
+        f"green_max_flags должен иметь длину {K}, получено {len(green_max_flags)}"
+    assert extra_df.shape[0] == n, \
+        f"extra_df должен иметь {n} строк, получено {extra_df.shape[0]}"
+
+    extra_cols = list(extra_df.columns)
+    m_extra = len(extra_cols)
+
+    thin = Side(style='thin', color='FF000000')
+    cell_border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    extra_start_col = 2
+    extra_end_col = extra_start_col + m_extra - 1
+    matrices_start_col = extra_end_col + 2
+
+    def matrix_start_col(k):
+        return matrices_start_col + k * (m + 1)
+
+    # 1a) Заголовок над extra_df
+    extra_title = "Extra"
+    ws.merge_cells(start_row=1, start_column=extra_start_col,
+                   end_row=1, end_column=extra_end_col)
+    c = ws.cell(row=1, column=extra_start_col, value=extra_title)
+    c.alignment = Alignment(horizontal='center', vertical='center')
+    c.font = Font(bold=True)
+
+    # 1b) Заголовки над матрицами
+    for k, title in enumerate(headers):
+        start_col = matrix_start_col(k)
+        end_col = start_col + m - 1
+        ws.merge_cells(start_row=1, start_column=start_col,
+                       end_row=1, end_column=end_col)
+        c = ws.cell(row=1, column=start_col, value=title)
+        c.alignment = Alignment(horizontal='center', vertical='center')
+        c.font = Font(bold=True)
+
+    # 2) Названия строк
+    for i, rname in enumerate(row_names, start=3):
+        ws.cell(row=i, column=1, value=rname).font = Font(bold=True)
+
+    # 3a) extra_df
+    for j, cname in enumerate(extra_cols):
+        c = ws.cell(row=2, column=extra_start_col + j, value=cname)
+        c.font = Font(bold=True)
+        c.alignment = Alignment(horizontal='center')
+        c.border = cell_border
+
+    for i in range(n):
+        for j in range(m_extra):
+            val = extra_df.iat[i, j]
+            if val is None or (isinstance(val, float) and val != val):
+                val = '—'
+            c = ws.cell(row=3 + i, column=extra_start_col + j, value=val)
+            c.border = cell_border
+            c.alignment = Alignment(horizontal='center')
+
+    for j in range(m_extra):
+        ws.cell(row=1, column=extra_start_col + j).border = cell_border
+
+    # 3a.1) Условное форматирование для extra_df
+    first_cell = f"{get_column_letter(extra_start_col)}3"
+    last_cell = f"{get_column_letter(extra_end_col)}{3 + n - 1}"
+    extra_range = f"{first_cell}:{last_cell}"
+
+    ws.conditional_formatting.add(
+        extra_range,
+        CellIsRule(
+            operator='equal',
+            formula=['"Да"'],
+            fill=PatternFill(start_color='C6EFCE', end_color='C6EFCE', fill_type='solid'),
+            font=Font(color='006100'),
+        )
+    )
+    ws.conditional_formatting.add(
+        extra_range,
+        CellIsRule(
+            operator='equal',
+            formula=['"Нет"'],
+            fill=PatternFill(start_color='FFC7CE', end_color='FFC7CE', fill_type='solid'),
+            font=Font(color='9C0006'),
+        )
+    )
+
+    # 3b) Матрицы
+    for k, mat in enumerate(matrices):
+        start_col = matrix_start_col(k)
+
+        for j, cname in enumerate(col_names):
+            c = ws.cell(row=2, column=start_col + j, value=cname)
+            c.font = Font(bold=True)
+            c.alignment = Alignment(horizontal='center')
+
+        for i in range(n):
+            for j in range(m):
+                c = ws.cell(row=3 + i, column=start_col + j, value=float(mat[i, j]))
+                c.number_format = '0.00%'
+                c.border = cell_border
+
+        for j in range(m):
+            ws.cell(row=2, column=start_col + j).border = cell_border
+            ws.cell(row=1, column=start_col + j).border = cell_border
+
+        # =========================================================
+        # 4) Условное форматирование ПО КАЖДОМУ СТОЛБЦУ
+        # =========================================================
+        if k == 0:
+            # ---- ПЕРВАЯ МАТРИЦА: диверджующая раскраска, нуль = белый,
+            #      симметричный масштаб [-A, +A], A = max(|vmin|, |vmax|)
+            for j in range(m):
+                col_letter = get_column_letter(start_col + j)
+                first_cell = f"{col_letter}3"
+                last_cell = f"{col_letter}{3 + n - 1}"
+                col_range = f"{first_cell}:{last_cell}"
+
+                col_values = mat[:, j]
+                vmin = float(col_values.min())
+                vmax = float(col_values.max())
+
+                if vmin == vmax:
+                    continue
+
+                A = max(abs(vmin), abs(vmax))
+                if A == 0:
+                    continue
+
+                rule = ColorScaleRule(
+                    start_type='num', start_value=-A, start_color='F8696B',
+                    mid_type='num',   mid_value=0.0, mid_color='FFFFFF',
+                    end_type='num',   end_value=+A,  end_color='63BE7B',
+                )
+                ws.conditional_formatting.add(col_range, rule)
+        else:
+            # ---- ОСТАЛЬНЫЕ МАТРИЦЫ: прежняя логика min/max градиента
+            if green_max_flags[k]:
+                start_color, end_color = 'FF6B6B', '63BE7B'
+            else:
+                start_color, end_color = '63BE7B', 'FF6B6B'
+
+            for j in range(m):
+                col_letter = get_column_letter(start_col + j)
+                first_cell = f"{col_letter}3"
+                last_cell = f"{col_letter}{3 + n - 1}"
+                col_range = f"{first_cell}:{last_cell}"
+
+                col_values = mat[:, j]
+                if col_values.min() != col_values.max():
+                    ws.conditional_formatting.add(
+                        col_range,
+                        ColorScaleRule(
+                            start_type='min', start_color=start_color,
+                            end_type='max',   end_color=end_color,
+                        )
+                    )
+
+        # =========================================================
+        # 4.1) ЖИРНЫЙ ШРИФТ ДЛЯ "ЗЕЛЁНОЙ" ЯЧЕЙКИ В КАЖДОМ СТОЛБЦЕ
+        #      Применяется КО ВСЕМ матрицам, включая первую.
+        # =========================================================
+        for j in range(m):
+            col_values = mat[:, j]
+
+            # Если все значения одинаковые — градиент не применяется,
+            # значит явного "зелёного" нет; пропускаем столбец.
+            if col_values.min() == col_values.max():
+                continue
+
+            if green_max_flags[k]:
+                target_val = col_values.max()
+            else:
+                target_val = col_values.min()
+
+            target_rows = [i for i in range(n) if col_values[i] == target_val]
+
+            for i in target_rows:
+                ws.cell(row=3 + i, column=start_col + j).font = Font(bold=True)
+
+    # 5) Границы названий строк
+    for i in range(3, 3 + n):
+        ws.cell(row=i, column=1).border = cell_border
+
+    # 6) Ширина колонок
+    last_col = matrix_start_col(K - 1) + m - 1
+    for col in range(1, last_col + 1):
+        ws.column_dimensions[get_column_letter(col)].width = 12
+
+    sep_extra_col = extra_end_col + 1
+    ws.column_dimensions[get_column_letter(sep_extra_col)].width = 3
+
+    for k in range(K - 1):
+        sep_col = matrix_start_col(k) + m
+        ws.column_dimensions[get_column_letter(sep_col)].width = 3
+
+    fileName = f'{filePrefix}.xlsx'
+    wb.save(fileName)
+    print(f"Готово: {fileName}")
+
+def getFeaturesDescriptions(fileName: Path, row_list: list[str]):
+    df = pd.read_excel(fileName, header=0)
+
+    df = df.set_index(df.columns[0]) if df.columns[0] != 'name' else df
+    # Проще и надёжнее так:
+    # df = df.set_index(df.columns[0])
+
+    # 2) Реиндексируем по нужному списку строк.
+    #    Для отсутствующих строк pandas подставит NaN.
+    result = df.reindex(row_list)
+
+    # 3) Заполняем NaN прочерками
+    result = result.fillna('—')
+    return result
+
+import os
+from openpyxl import load_workbook, Workbook
+
+
+def copy_sheet_into_target(source_path: str, target_path: str) -> None:
+    """
+    Копирует единственную вкладку из source_path в НОВУЮ вкладку в target_path.
+
+    - Первая строка новой вкладки: A1 = имя исходного файла.
+    - Начиная со второй строки — данные исходной вкладки без сдвига.
+    - Если target_path не существует — создаётся новый файл.
+    - Имя новой вкладки формируется из имени исходного файла (с уникализацией,
+      чтобы не было конфликтов при повторных вызовах).
+
+    :param source_path: путь к существующему .xlsx с одной вкладкой
+    :param target_path: путь к целевому .xlsx (может не существовать)
+    """
+    if not os.path.isfile(source_path):
+        raise FileNotFoundError(f"Исходный файл не найден: {source_path}")
+
+    # --- 1. Читаем исходный файл ---
+    src_wb = load_workbook(source_path, data_only=True)
+    if len(src_wb.sheetnames) != 1:
+        raise ValueError(
+            f"Ожидалась ровно одна вкладка, а найдено: {src_wb.sheetnames}"
+        )
+    src_ws = src_wb[src_wb.sheetnames[0]]
+
+    src_rows = list(src_ws.iter_rows(values_only=True))
+    src_max_col = src_ws.max_column or 1
+    src_rows = [list(r) + [None] * (src_max_col - len(r)) for r in src_rows]
+
+    source_name = os.path.basename(source_path)
+
+    # --- 2. Открываем или создаём целевой файл ---
+    if os.path.isfile(target_path):
+        tgt_wb = load_workbook(target_path)
+    else:
+        tgt_wb = Workbook()
+        # Удаляем дефолтную пустую вкладку — она нам не нужна
+        default_ws = tgt_wb.active
+        tgt_wb.remove(default_ws)
+
+    # --- 3. Формируем уникальное имя для новой вкладки ---
+    # Excel ограничивает имя вкладки 31 символом и запрещает ряд символов.
+    base_name = os.path.splitext(source_name)[0]
+    for ch in ':\\/?*[]':
+        base_name = base_name.replace(ch, "_")
+    base_name = base_name[:31] or "Sheet"
+
+    sheet_name = base_name
+    counter = 1
+    while sheet_name in tgt_wb.sheetnames:
+        suffix = f"_{counter}"
+        sheet_name = base_name[: 31 - len(suffix)] + suffix
+        counter += 1
+
+    tgt_ws = tgt_wb.create_sheet(title=sheet_name)
+
+    # --- 4. Первая строка: имя исходного файла в A1 ---
+    tgt_ws.cell(row=1, column=1).value = source_name
+
+    # --- 5. Копируем данные, начиная со второй строки ---
+    for r_idx, row in enumerate(src_rows):
+        target_row = 2 + r_idx
+        for c_idx, value in enumerate(row, start=1):
+            tgt_ws.cell(row=target_row, column=c_idx, value=value)
+
+    # --- 6. Сохраняем ---
+    tgt_wb.save(target_path)
+
+
+# Пример использования:
+# copy_sheet_into_target("incoming/report.xlsx", "result/combined.xlsx")

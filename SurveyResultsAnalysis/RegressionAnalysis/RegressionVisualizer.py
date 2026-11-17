@@ -32,6 +32,117 @@ class RegressionVisualizer:
         plt.style.use('seaborn-v0_8-darkgrid')
         self.colors = sns.color_palette("husl", 8)
 
+    def plot_llm_oos_gain(self, e_base: pd.Series, e_llm: pd.Series, title: str = None, threshold: float = None):
+        print('==================')
+        e_base.to_frame().to_excel('ebase.xlsx')
+        e_llm.to_frame().to_excel('ellm.xlsx')
+
+            # Выравниваем ряды по индексам и удаляем пропуски
+        errors = pd.concat(
+                [
+                    e_base.rename("base"),
+                    e_llm.rename("llm")
+                ],
+                axis=1
+            ).dropna()
+
+            # Pointwise improvement (разница квадратов ошибок)
+        delta_sq_error = (errors["base"]**2 - errors["llm"]**2)
+
+            # ФИЛЬТРАЦИЯ: заменяем экстремальные значения на 0
+        if threshold is not None:
+            # Создаем маску для значений, превышающих порог по модулю
+            mask = abs(delta_sq_error) > threshold
+            # Заменяем их на 0
+            delta_sq_error_filtered = delta_sq_error.copy()
+            delta_sq_error_filtered[mask] = 0
+
+            # Сохраняем отфильтрованный ряд в Excel
+            delta_sq_error_filtered.to_frame('delta_filtered').to_excel('delta_filtered.xlsx')
+
+            # Логируем информацию о фильтрации
+            n_filtered = mask.sum()
+            print(f"Отфильтровано {n_filtered} экстремальных значений (порог: {threshold})")
+            print(f"Максимальное значение: {delta_sq_error.max():.4f}")
+            print(f"Минимальное значение: {delta_sq_error.min():.4f}")
+
+            delta_sq_error = delta_sq_error_filtered
+        else:
+                # Сохраняем оригинальный ряд
+            delta_sq_error.to_frame('delta').to_excel('delta.xlsx')
+        print('==================')
+
+        # Cumulative improvement
+        cumulative_gain = delta_sq_error.cumsum()
+
+        fig, axes = plt.subplots(
+            2,
+            1,
+            figsize=(14, 9),
+            sharex=True
+        )
+
+        # --- 1. Pointwise gain ---
+        axes[0].plot(
+            delta_sq_error.index,
+            delta_sq_error.values,
+            marker="o",
+            markersize=3,
+            linewidth=1
+        )
+
+        axes[0].axhline(0, linewidth=1)
+
+        axes[0].set_ylabel(
+            r"$e_{base}^2 - e_{LLM}^2$"
+        )
+
+        axes[0].set_title(
+            f"Pointwise OOS gain from adding LLM {title}"
+        )
+
+        axes[0].grid(alpha=0.3)
+
+        # --- 2. Cumulative gain ---
+        axes[1].plot(
+            cumulative_gain.index,
+            cumulative_gain.values,
+            linewidth=2
+        )
+
+        axes[1].axhline(0, linewidth=1)
+
+        axes[1].set_xlabel("OOS observation")
+
+        axes[1].set_ylabel(
+            r"$\sum (e_{base}^2 - e_{LLM}^2)$"
+        )
+
+        axes[1].set_title(
+            f"Cumulative OOS gain from adding LLM {title}"
+        )
+
+        axes[1].grid(alpha=0.3)
+
+        plt.tight_layout()
+        plt.show()
+
+        # Несколько полезных summary statistics
+        print(
+            f"Mean gain: {delta_sq_error.mean():.4f}"
+        )
+        print(
+            f"Median gain: {delta_sq_error.median():.4f}"
+        )
+        print(
+            "Share where LLM is better: "
+            f"{(delta_sq_error > 0).mean():.2%}"
+        )
+        print(
+            "Final cumulative gain: "
+            f"{cumulative_gain.iloc[-1]:.4f}"
+        )
+
     def visualize(self,
                   regression_results: Dict[str, Tuple[pd.Series, pd.Series, object]],
                   n_cols: int = 2,
@@ -90,9 +201,11 @@ class RegressionVisualizer:
         # ============================================
         # Вычисляем R² для каждой модели
         models_with_r2 = []
+
         for model_name, (actual, predicted, model) in regression_results.items():
             actual_values = actual.values.flatten()
             predicted_values = predicted.values.flatten()
+
             r2 = r2_score(actual_values, predicted_values)
             models_with_r2.append((r2, model_name, actual, predicted, model))
 
@@ -196,7 +309,7 @@ class RegressionVisualizer:
         ax.grid(True, alpha=0.3)
 
         # Заголовок с названием модели (добавляем R² в заголовок для наглядности)
-        ax.set_title(f'{model_name} R² = {r2:.4f}', fontsize=11, fontweight='bold')
+        ax.set_title(f'{model_name} Predicted R² = {r2:.4f}', fontsize=11, fontweight='bold')
 
         # Добавляем статистику на график
         if show_stats and model is not None:
@@ -209,7 +322,7 @@ class RegressionVisualizer:
                     bbox=props, family='monospace')
 
         # Добавляем метрики в правом верхнем углу
-        metrics_text = f'R² = {r2:.4f}\nRMSE = {rmse:.4f}\nMAE = {mae:.4f}'
+        metrics_text = f'Prediction R² = {r2:.4f}\nRMSE = {rmse:.4f}\nMAE = {mae:.4f}'
         props = dict(boxstyle='round', facecolor='lightblue', alpha=0.7)
         ax.text(0.98, 0.98, metrics_text, transform=ax.transAxes,
                 fontsize=8, verticalalignment='top', horizontalalignment='right',
@@ -243,8 +356,10 @@ class RegressionVisualizer:
                         stats_text += f'{var_name}: {coef:.4f} (p={pval:.4f}{stars})\n'
 
                     # Добавляем информацию о модели
+                    if hasattr(model, 'rsquared'):
+                        stats_text += f'Model R² = {model.rsquared:.4f}\n'
                     if hasattr(model, 'rsquared_adj'):
-                        stats_text += f'Adj. R² = {model.rsquared_adj:.4f}\n'
+                        stats_text += f'Model Adj. R² = {model.rsquared_adj:.4f}\n'
                     if hasattr(model, 'fvalue') and hasattr(model, 'f_pvalue'):
                         stats_text += f'F = {model.fvalue:.2f} (p={model.f_pvalue:.4f})'
 

@@ -3,7 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 from Configuration import configuration
-from Configuration.configuration import mlcluster_key
+from Configuration.configuration import mlcluster_key, bothub_key
 from Logging.SimpleLogger import SimpleLogger
 from SurveyExecutionTools.surveyExecutionHelpers import saveExperimentConfiguration
 from SurveyLogic.PromptBuilders.PromptBuilderFactory import PromptBuilderFactory
@@ -15,25 +15,32 @@ from SurveyLogic.surveyHelpers import createAsyncSurveyRunner, extractDatesFromF
 from experimentsConfiguration import ExperimentsConfiguration
 
 offsetDays = -6
-experimentUniqueName=f'mlcluster_qwen38_async_all_{offsetDays}d'
+experimentUniqueName=f'mlcluster_llama33_70b_async_news_hard_data_{offsetDays}d'
 profilesFolder = Path('./data/Target profiles')
 profilesCount = 100
 resultsFolder = Path('data/SurveyResults/')/experimentUniqueName
 copyPromptTemplatesToFolder(Path('SurveyLogic/PromptBuilders/Prompts/'), resultsFolder/'Prompts')
 
-surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDays=offsetDays)
+surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDays=offsetDays, start_date=datetime.strptime('2022.03.05', '%Y.%m.%d'))
+#surveyDates = extractDatesFromFile(configuration.inflationSurveysDates, offsetDays=offsetDays)
 
 #surveyDates = getDatesRowWithMonthlyStep('2020.12.01', '2021.01.01')
 #surveyDates = getDatesRowWithWeeklyStep('2022.03.12', '2022.05.07')
 
 cfg = ExperimentsConfiguration(
-    useIndividualRLMSData=True,
-    useFamilyInformation=True,
-    useFamilyExpenses=True,
-    useStateExpenses=True,
+    useIndividualRLMSData=False,
+    useFamilyInformation=False,
+    useFamilyExpenses=False,
+    useStateExpenses=False,
+    useMarkerGoods=True,
     useEconomy=True,
+    useRegionalInflation=True,
     useInflation=True,
-    usePreviousInflationExpectations=True
+    useKeyRateIncrements=True,
+    usePreviousInflationExpectations=False,
+    usePolitics=False,
+    useNews=True,
+    useANews=False
     )
 
 saveExperimentConfiguration(cfg, resultsFolder)
@@ -42,8 +49,13 @@ factory = PromptBuilderFactory()
 systemPromptBuilder, promptBuilder = factory.createCustomPromptBuilder(cfg)
 logger = SimpleLogger()
 
+#surveyer = AsyncSurveyer(modelToUse='google/gemma-3-27b-it', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
 #surveyer = AsyncSurveyer(modelToUse='Qwen/Qwen3.8-27B', key=mlcluster_key, logger=logger, baseUrl=configuration.mlclusterUrl)
-surveyer = StubSurveyer()
+#surveyer = AsyncSurveyer(modelToUse='gemma-3-27b-it', key=bothub_key, logger=logger, baseUrl=configuration.bothubUrl)
+surveyer = AsyncSurveyer(modelToUse='llama-3.3-70b-instruct', key=bothub_key, logger=logger, baseUrl=configuration.bothubUrl, maxAttempts=100)
+#deepseek-chat-v3-0324
+#surveyer = AsyncSurveyer(modelToUse='qwen3.6-27b', key=aitunnel_key, logger=logger, baseUrl=configuration.aitunnelUrl, maxAttempts=100)
+#surveyer = StubSurveyer()
 
 surveySerializer = SurveySerializer(resultsFolder)
 

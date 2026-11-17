@@ -258,3 +258,4 @@ data/newsDB/*.db-shm
 data/newsDB/*.db-journal
 data/newsDB/*.bak-*
 data/*.txz
+/Configuration/aitunnel_key.txt

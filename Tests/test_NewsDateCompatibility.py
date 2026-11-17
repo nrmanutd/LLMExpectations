@@ -121,6 +121,16 @@ def syntheticProfile() -> ProfileData:
     )
 
 
+def composeExpectedPrompt(parts: list[str]) -> str:
+    titles = ['Основные параметры опроса и респондента', 'Новости', 'Задача']
+    sections = []
+    for title, part in zip(titles, parts, strict=True):
+        heading = f'======================{title}======================'
+        border = '=' * len(heading)
+        sections.append(f'{border}\n{heading}\n{border}\n{part}')
+    return '\n'.join(sections)
+
+
 def checkComposition(
     surveyDate: date, compatibleDate: datetime, profile: ProfileData, tmpPath: Path
 ) -> None:
@@ -145,11 +155,7 @@ def checkComposition(
         renderNewsSection(provider.context),
         taskBuilder.buildPrompt(surveyDate, profile),
     ]
-    expected = expectedParts[0]
-    for header, part in zip(['Новости', 'Задача'], expectedParts[1:], strict=True):
-        heading = f'======================{header}======================'
-        border = '=' * len(heading)
-        expected += f'\n{border}\n{heading}\n{border}\n{part}'
+    expected = composeExpectedPrompt(expectedParts)
 
     with patch.object(taskBuilder, 'buildPrompt', wraps=taskBuilder.buildPrompt) as taskCall:
         actual = builder.buildPrompt(surveyDate, profile)
@@ -359,11 +365,7 @@ def test_realNewsCompositionKeepsCalendarWindowAndCache(
         section,
         task.buildPrompt(compatible, syntheticProfile),
     ]
-    expected = parts[0]
-    for heading, part in zip(['Новости', 'Задача'], parts[1:], strict=True):
-        title = f'======================{heading}======================'
-        border = '=' * len(title)
-        expected += f'\n{border}\n{title}\n{border}\n{part}'
+    expected = composeExpectedPrompt(parts)
     actual = composite.buildPrompt(value, syntheticProfile)
     assert sha256(actual.encode()).digest() == sha256(expected.encode()).digest()
 

@@ -1,6 +1,8 @@
 from Configuration import configuration
 from SurveyLogic.PromptBuilders.CompositePromptBuilder import CompositePromptBuilder
 from SurveyLogic.PromptBuilders.ConstantPromptBuilder import ConstantPromptBuilder
+from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.KeyRatePromptBuilder import \
+    KeyRatePromptBuilder
 from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.MarkerGoodsInflationPromptBuilder import \
     MarkerGoodsInflationPromptBuilder
 from SurveyLogic.PromptBuilders.ContextPromptBuilders.StatePromptBuilders.PrevoiusInflationExpectationsPromptBuilder import \
@@ -25,6 +27,8 @@ from SurveyLogic.PromptBuilders.StatisticsProviders.AverageExpensesProvider impo
 from SurveyLogic.PromptBuilders.StatisticsProviders.ConvertingAverageExpensesProvider import \
     ConvertingAverageExpensesProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationExpectationsProvider import InflationExpectationsProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseInflationProvider import \
+    BaseInflationProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.BaseSingleMonthInflationProvider import \
     BaseSingleMonthInflationProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.ConvertingInflationProvider import \
@@ -40,6 +44,7 @@ from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.Multi
     MultipleWeeklyInflationProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.InflationProviderLogic.RosstatWeeklyInflationProvider import \
     RosstatWeeklyInflationProvider
+from SurveyLogic.PromptBuilders.StatisticsProviders.KeyRateProvider import KeyRateProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.MROTProvider import MROTProvider
 from SurveyLogic.PromptBuilders.StatisticsProviders.USDRUBRateProvider import USDRUBRateProvider
 from SurveyLogic.PromptBuilders.SystemPromptBuilder import SystemPromptBuilder
@@ -58,39 +63,65 @@ class PromptBuilderFactory:
 
         self.commonProfilePromptBuilder = CommonProfilePromptBuilder(prompts.respondentPrompt, mrotProvider, averageBuyingsProvider)
 
-        multipleWeeklyProvider = MultipleWeeklyInflationProvider(configuration.weeklyInflationDataPath,
-                                                                 list(range(2022, 2027)))
-        weeklyInflationProvider = RosstatWeeklyInflationProvider(multipleWeeklyProvider)
-
-        singleMonthInflationProvider = self._createSingleMonthInflationProvider()
-        singleMonthInflationProvider = DateRoundingSingleMonthInflationProvider(singleMonthInflationProvider)
-
-        inflationProvider = InflationProvider(singleMonthInflationProvider, weeklyInflationProvider)
-        inflationProvider = ConvertingInflationProvider(inflationProvider, configuration.rlmsToInflationRegionsPath)
+        self.inflationProvider = self.createInflationProvider()
 
         self.householdInformationBuilder = HouseholdProfilePromptBuilder(prompts.househouldCommonPrompt,
                                                                         averageBuyingsProvider)
-        self.expensesProfilePromptBuilder = ExpensesProfilePromptBuilder(prompts.expensesPrompt, inflationProvider,
+        self.expensesProfilePromptBuilder = ExpensesProfilePromptBuilder(prompts.expensesPrompt, self.inflationProvider,
                                                                         [configuration.regularGoods,
                                                                          configuration.durableGoods,
                                                                          configuration.services])
         paths = [configuration.weeklyRegularGoods, configuration.weeklyDurableGoods, configuration.weeklyServices]
         self.stateExpensesPromptBuilder = StateExpensesProfilePromptBuilder(prompts.stateWeeklyExpensesPrompt,
-                                                                           inflationProvider, paths)
-        self.stateInflationProvider = StateInflationContextPromptBuilder(prompts.stateInflationPrompt, inflationProvider)
+                                                                           self.inflationProvider, paths)
+        self.stateInflationProvider = StateInflationContextPromptBuilder(prompts.stateInflationPrompt, self.inflationProvider)
         self.regionInflationProvider = RegionalInflationContextPromptBuilder(prompts.regionInflationPrompt,
-                                                                            inflationProvider)
-        currencyProvider = USDRUBRateProvider(configuration.usdrubDataPath)
-        self.stateEconomyContextPromptBuilder = StateEconomyContextPromptBuilder(prompts.stateEconomyPrompt, currencyProvider)
+                                                                            self.inflationProvider)
+        self.currencyProvider = self.createCurrencyProvider()
+
+        self.stateEconomyContextPromptBuilder = StateEconomyContextPromptBuilder(prompts.stateEconomyPrompt, self.currencyProvider)
 
         self.politicsProvider = MonthlyFromFilePromptBuilder(prompts.politicsPath)
+        self.newsProvider = MonthlyFromFilePromptBuilder(prompts.newsPath)
+        self.anonymizedNewsProvider = MonthlyFromFilePromptBuilder(prompts.anonymizedNewsPath)
+
         self.taskPromptBuilder = TaskPromptBuilder(prompts.taskPrompt)
 
-        self.markerGoodsInflationProvider = MarkerGoodsInflationPromptBuilder(inflationProvider, configuration.regularMarkerGoods, configuration.durableMarkerGoods, configuration.servicesMarker)
-        inflationExpectationsProvider = InflationExpectationsProvider(configuration.inflationExpectations)
-        self.previousInflationExpectationsPromptBuilder = PrevoiusInflationExpectationsPromptBuilder(inflationExpectationsProvider)
+        self.markerGoodsInflationProvider = MarkerGoodsInflationPromptBuilder(self.inflationProvider, configuration.regularMarkerGoods, configuration.durableMarkerGoods, configuration.servicesMarker)
+        self.inflationExpectationsProvider = self.createInflationExpectationsProvider()
 
-    def _createSingleMonthInflationProvider(self) -> BaseSingleMonthInflationProvider:
+        self.previousInflationExpectationsPromptBuilder = PrevoiusInflationExpectationsPromptBuilder(self.inflationExpectationsProvider)
+
+        self.keyRateProvider = self.createKeyRateProvider()
+        self.keyRatePromptBuilder = KeyRatePromptBuilder(self.keyRateProvider)
+
+    @staticmethod
+    def createInflationExpectationsProvider() -> InflationExpectationsProvider:
+        return InflationExpectationsProvider(configuration.inflationExpectations)
+
+    @staticmethod
+    def createKeyRateProvider() -> KeyRateProvider:
+        return KeyRateProvider(configuration.keyRateFile)
+
+    @staticmethod
+    def createCurrencyProvider() -> USDRUBRateProvider:
+        return USDRUBRateProvider(configuration.usdrubDataPath)
+
+    @staticmethod
+    def createInflationProvider() -> BaseInflationProvider:
+        multipleWeeklyProvider = MultipleWeeklyInflationProvider(configuration.weeklyInflationDataPath,
+                                                                 list(range(2022, 2027)))
+        weeklyInflationProvider = RosstatWeeklyInflationProvider(multipleWeeklyProvider)
+
+        singleMonthInflationProvider = PromptBuilderFactory._createSingleMonthInflationProvider()
+        singleMonthInflationProvider = DateRoundingSingleMonthInflationProvider(singleMonthInflationProvider)
+
+        inflationProvider = InflationProvider(singleMonthInflationProvider, weeklyInflationProvider)
+        inflationProvider = ConvertingInflationProvider(inflationProvider, configuration.rlmsToInflationRegionsPath)
+        return inflationProvider
+
+    @staticmethod
+    def _createSingleMonthInflationProvider() -> BaseSingleMonthInflationProvider:
         files = [configuration.inflation20092014DataPath, configuration.inflation20152020DataPath,
                  configuration.inflation20212026DataPath]
         yearsSets = [configuration.years20092014, configuration.years20152020, configuration.years20212026]
@@ -105,55 +136,57 @@ class PromptBuilderFactory:
 
         if cfg.useIndividualRLMSData:
             builders.append(self.commonProfilePromptBuilder)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append('Основные параметры опроса и респондента')
+            headers.append('Основные параметры опроса и респондента')
 
         if cfg.useFamilyInformation:
             builders.append(self.householdInformationBuilder)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append('Детальная информация о домохозяйстве, членом которого является индивид')
+            headers.append('Детальная информация о домохозяйстве, членом которого является индивид')
 
         if cfg.useFamilyExpenses:
             builders.append(self.expensesProfilePromptBuilder)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append(
-            'Детальная информация об инфляции на уровне региона на товары в топ-расходах семьи индивида (регулярные траты, товары длительного использования, услуги)')
+            headers.append(
+                'Детальная информация об инфляции на уровне региона на товары в топ-расходах семьи индивида (регулярные траты, товары длительного использования, услуги)')
 
         if cfg.useStateExpenses:
             builders.append(self.stateExpensesPromptBuilder)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append(
-            'Детальная наиболее свежая информация об инфляции на уровне Российской Федерации в целом на товары, покупаемые домохозяйством')
+            headers.append(
+                'Детальная наиболее свежая информация об инфляции на уровне Российской Федерации в целом на товары, покупаемые домохозяйством')
+
+        if cfg.useMarkerGoods:
+            builders.append(self.markerGoodsInflationProvider)
+            headers.append('Инфляция по товарам-маркерам в РФ и регионе проживания')
+
+        if cfg.useRegionalInflation:
+            builders.append(self.regionInflationProvider)
+            headers.append('Официальная государственная статистика по инфляции в регионе проживания в целом')
 
         if cfg.useInflation:
-            inflationBuilders = [self.stateInflationProvider, self.regionInflationProvider, self.markerGoodsInflationProvider]
-            inflationPromptBuilder = CompositePromptBuilder(inflationBuilders, ['Инфляция по РФ в целом', 'Инфляция по региону проживания', 'Инфляция по товарам-маркерам в РФ и регионе проживания'])
-            builders.append(inflationPromptBuilder)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append('Официальная государственная статистика по инфляции')
+            builders.append(self.stateInflationProvider)
+            headers.append('Официальная государственная статистика по инфляции по РФ в целом')
 
         if cfg.useEconomy:
             builders.append(self.stateEconomyContextPromptBuilder)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append('Основная информация об экономических показателях РФ в целом в мире')
+            headers.append('Основная информация об экономических показателях РФ в целом в мире')
 
         if cfg.usePreviousInflationExpectations:
             builders.append(self.previousInflationExpectationsPromptBuilder)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append('Предыдущие агрегированные инфляционные ожидания')
+            headers.append('Предыдущие агрегированные инфляционные ожидания')
+
+        if cfg.useNews:
+            builders.append(self.newsProvider)
+            headers.append('Общий контекст (новости, события в РФ и в мире)')
+
+        if cfg.useANews:
+            builders.append(self.anonymizedNewsProvider)
+            headers.append('Общий контекст (без указания конкретных новостей и событий)')
 
         if cfg.usePolitics:
             builders.append(self.politicsProvider)
-        else:
-            builders.append(self.noInformationPromptBuilder)
-        headers.append('Основная политико-экономическая информация по РФ в целом')
+            headers.append('Основная политико-экономическая информация по РФ в целом')
+
+        if cfg.useKeyRateIncrements:
+            builders.append(self.keyRatePromptBuilder)
+            headers.append('Общий макроэкономический фон: последние изменения ключевой ставки ЦБ')
 
         builders.append(self.taskPromptBuilder)
         headers.append('Задача')

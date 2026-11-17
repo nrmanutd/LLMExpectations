@@ -84,11 +84,28 @@ def getDescriptionMonth(inflation: float, month: int, isInflation: bool = False)
         return f'за {description} нет информации'
 
     direction = getDirection(inflation, isInflation)
-    if abs(inflation) < 0.00001:
+    if abs(inflation) < 0.01:
         return f"за {description} не изменилась"
 
     clearInflation = (inflation + 1)**(month/12) - 1
     return f'за {description} {direction} на {showInflation(abs(clearInflation))}%'
+
+def getDescriptionRate(rateChange: float):
+    direction = getRateChangeDirection(rateChange)
+
+    if direction == 'не изменил':
+        return 'не измеинл ключевую ставку'
+
+    return f'{direction} ключевую ставку на {abs(rateChange):.2f} процентных пункта'
+
+def getRateChangeDirection(rateChange: float):
+    if rateChange < 0:
+        return 'понизил'
+
+    if rateChange > 0:
+        return 'повысил'
+
+    return 'не изменил'
 
 def getDescriptionWeeks(inflation: float, weeks: int, isInflation: bool = False):
     description = getDescriptionNumberWeeks(weeks)

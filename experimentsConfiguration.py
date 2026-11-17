@@ -4,10 +4,15 @@ from dataclasses import dataclass
 class ExperimentsConfiguration:
     useEconomy: bool = False
     usePolitics: bool = False
+    useNews: bool = False
+    useANews: bool = False
     useInflation: bool = False
+    useKeyRateIncrements: bool = False
+    useMarkerGoods: bool = False
     useFamilyInformation: bool = False
     useFamilyExpenses: bool = False
     useStateExpenses: bool = False
+    useRegionalInflation: bool = False
     usePreviousInflationExpectations: bool = False
     useIndividualRLMSData: bool = False
 
@@ -18,8 +23,16 @@ class ExperimentsConfiguration:
             features.append('economy')
         if self.usePolitics:
             features.append('politics')
+        if self.useNews:
+            features.append('news')
+        if self.useANews:
+            features.append('a_news')
         if self.useInflation:
             features.append('inf')
+        if self.useKeyRateIncrements:
+            features.append('key')
+        if self.useRegionalInflation:
+            features.append('inf_reg')
         if self.useFamilyInformation:
             features.append('family_info')
         if self.useFamilyExpenses:
@@ -30,6 +43,8 @@ class ExperimentsConfiguration:
             features.append('individual_info')
         if self.usePreviousInflationExpectations:
             features.append('previous_exp')
+        if self.useMarkerGoods:
+            features.append('marker_goods')
         return features
 
     def get_feature_names_en(self) -> list[str]:
@@ -37,12 +52,17 @@ class ExperimentsConfiguration:
         names_map = {
             'economy': 'Economy',
             'politics': 'Politics',
-            'inf': 'Inflation info',
+            'news': 'News',
+            'a_news': 'ANews',
+            'inf': 'Inflation',
+            'key': 'Key Rate Increments',
+            'inf_reg': 'Regional inflation',
             'family_info': 'Family Information',
             'family_exp': 'Family Expenses',
             'state_exp': 'State Expenses',
             'individual_info': 'Individual Information',
-            'previous_exp': 'Previous Inflation Expectations'
+            'previous_exp': 'Previous Inflation Expectations',
+            'marker_goods': 'Marker Goods'
         }
         active = self.get_active_features()
         return [names_map[f] for f in active]
@@ -52,12 +72,17 @@ class ExperimentsConfiguration:
         abbr_map = {
             'economy': 'Econ',
             'politics': 'Pol',
+            'news': 'News',
+            'a_news': 'ANews',
             'inf': 'Inf',
+            'key': 'Key',
+            'inf_reg': 'InfReg',
             'family_info': 'FamInf',
             'family_exp': 'FamExp',
             'state_exp': 'StExp',
             'individual_info': 'IndInfo',
-            'previous_exp': 'PrevInfExp'
+            'previous_exp': 'PrevInfExp',
+            'marker_goods': 'MGoods'
         }
         active = self.get_active_features()
         if not active:

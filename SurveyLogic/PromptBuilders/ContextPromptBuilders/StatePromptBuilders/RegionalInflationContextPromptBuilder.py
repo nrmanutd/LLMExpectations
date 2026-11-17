@@ -20,10 +20,14 @@ class RegionalInflationContextPromptBuilder(BasePromptBuilder):
         inflation6m = self.inflationProvider.getAverageRegionalYearInflationLastNMonth(surveyDate, region, 6)
         inflation1Y = self.inflationProvider.getAverageRegionalYearInflationLastNMonth(surveyDate, region, 12)
 
+        if inflation1m is None and inflation3m is None and inflation6m is None and inflation1Y is None:
+            return None
+
         prompt = self.prompt.replace(constants.inflation1M, getDescriptionMonth(inflation1m, 1, True))
         prompt = prompt.replace(constants.inflation3M, getDescriptionMonth(inflation3m, 3, True))
         prompt = prompt.replace(constants.inflation6M, getDescriptionMonth(inflation6m, 6, True))
         prompt = prompt.replace(constants.inflation1Y, getDescriptionMonth(inflation1Y, 12, True))
-        prompt = prompt.replace(constants.localityRegionTag, profile.currentLocalityRegion)
+        #prompt = prompt.replace(constants.localityRegionTag, profile.currentLocalityRegion)
+        prompt = prompt.replace(constants.localityRegionTag, 'регионе проживания респондента')
 
         return prompt

@@ -24,3 +24,17 @@ class TestInflationExpectationsProvider(TestCase):
                 assert abs(expectedValues[i] - inflation) < 0.00001
             else:
                 assert inflation is None
+
+    def test_get_inflation_expectations_delta(self):
+        dates = ['01.01.2016', '10.03.2022', '11.03.2022', '15.03.2022', '01.08.2026', '31.03.2010', '01.06.2010']
+
+        format = '%d.%m.%Y'
+        expectedValues = [16.44344473 - 15.84010152, 13.5372 - 13.7279, 18.3345 - 13.5372, 18.3345 - 13.5372, 14.7045 - 12.4462, None, None]
+
+        for i in range(len(dates)):
+            inflation = self.inflationExpectationsProvider.getInflationExpectationsDelta(datetime.strptime(dates[i], format))
+            print(f'Expected: {expectedValues[i]}, actual: {inflation}')
+            if expectedValues[i] is not None:
+                assert abs(expectedValues[i] - inflation) < 0.00001
+            else:
+                assert inflation is None

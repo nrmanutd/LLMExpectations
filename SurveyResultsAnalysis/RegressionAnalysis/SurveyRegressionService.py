@@ -1,153 +1,339 @@
+import time
+
+import numpy as np
 import pandas as pd
-import statsmodels.api as sm
 
-class SurveyRegressionService:
-    def __init__(self, inflationExpectations, pastYearInflation, usdrubRate):
-        self.usdrubRate = usdrubRate
-        self.pastYearInflation = pastYearInflation
-        self.inflationExpectations = inflationExpectations
+from SurveyResultsAnalysis.RegressionAnalysis.BaseSurveyRegressionService import BaseSurveyRegressionService
+from SurveyResultsAnalysis.RegressionAnalysis.Learning.BaseDatasetCreator import BaseDatasetCreator
+from SurveyResultsAnalysis.RegressionAnalysis.Learning.BaseLearner import BaseLearner
 
-    def fit(self, survey, vars):
-        df = self._createDataset(survey)
-        df.to_excel('temp.xlsx')
+class SurveyRegressionService(BaseSurveyRegressionService):
+    def __init__(self, datasetCreator: BaseDatasetCreator, learner: BaseLearner, filteringDates: set[np.datetime64]|None = None):
+        self.learner = learner
+        self.datasetCreator = datasetCreator
 
-        x = df[vars]
-        y = df['Y']
+        self.filteringDates = set[np.datetime64]() if filteringDates is None else filteringDates
 
-        dates = df['D']
+    def fitWithConfig(self, survey, v, isOOS:bool, isExpandingOOS:bool, nMonth: int=1, cutoff_date: np.datetime64|None = None, train_share:float=0.8):
+        if isOOS:
+            if isExpandingOOS:
+                y, r, m, dates = self.fit_oos(survey, v, nMonth=nMonth,
+                                                                 cutoff_date=cutoff_date)
+            else:
+                y, r, m, dates = self.fit_oos_fixedsplit(survey, v, nMonth=nMonth, train_share=train_share)
+        else:
+            y, r, m, dates = self.fit(survey, v, nMonth=nMonth)
 
-        x_const = sm.add_constant(x)
-        model_sm = sm.OLS(y, x_const).fit()
+        return y, r, m, dates
 
-        prediction = model_sm.predict(x_const)
+    def fitBaseVariablesWithConfig(self, survey, v, isOOS: bool, isExpandingOOS: bool, nMonth: int = 1,
+                                   cutoff_date: np.datetime64 | None = None, train_share: float = 0.8):
+        return self.fitWithConfig(survey, v, isOOS, isExpandingOOS, nMonth, cutoff_date, train_share)
 
-        return y, prediction, model_sm, dates
+    def fit(self, survey, vars, nMonth=1):
+        df = self.datasetCreator.getDataset(survey, vars[0], nMonth)
 
-    def _createDataset(self, survey):
-        rows = []
-        print(survey)
+        x = df[vars[0]]
+        y = df[vars[1]]
+        yt = df['YT']
 
-        df = self.inflationExpectations
+        dates = df['D'].to_numpy()
+        dates_list = []
+        for i in range(len(dates)):
+            dates_list.append(dates[i])
 
-        for i in range(1, len(df)):
-            prev_date = df.index[i - 1]
-            current_date = df.index[i]
-            llm_survey_date = survey.index[i]
+        model = self.learner.train(x, y)
+        prediction = self.learner.test(model, x)
 
-            current_value = df['expected_inflation'].iloc[i]
+        adjustedPrediction = prediction + yt
+        adjustedY = y + yt
 
-            Y = current_value
-            X1 = df['expected_inflation'].iloc[i - 1]
-            X2 = self._getInflation(llm_survey_date)
-            X3 = survey['exp_mean'].iloc[i]
-            X4 = self._get_usdrub(llm_survey_date)
+        ay = pd.Series(
+            adjustedY.to_numpy().tolist(),
+            index=dates_list,
+            name='actual'
+        )
 
-            #print(f'Y = {Y}, X1 = {X1}, X2 = {X2}, X3 = {X3}, D = {current_date}')
-            if X2 is None or X4 is None:
-                continue
+        ap = pd.Series(
+            adjustedPrediction.to_numpy().tolist(),
+            index=dates_list,
+            name='prediction'
+        )
 
-            if self._calcDifference(current_date, prev_date) > 1:
-                #print(f'Skipping date {current_date} because of prev date = {prev_date} is older for 1 month')
-                continue
+        return ay, ap, model, dates_list
 
-            row = {
-                'Y': Y,
-                'X1': X1,
-                'X2': X2,
-                'X3': X3,
-                'X4': X4,
-                'D': llm_survey_date
-            }
-            rows.append(row)
-
-        regression_df = pd.DataFrame(rows)
-        return regression_df
-
-    def _calcDifference(self, date1, date2):
-        monthDiff = (date1.year - date2.year) * 12 + date1.month - date2.month
-        return monthDiff
-
-    def _getInflation(self, date):
-        df = self.pastYearInflation
-        actualValue = None
-        actualValueDate = None
-
-        for i in range(len(df)):
-            current_date = df.index[i]
-            current_value = df['Значение'].iloc[i]
-
-            if current_date > date:
-                if actualValueDate is None:
-                    return None
-
-                month_diff = self._calcDifference(date, actualValueDate)
-                if month_diff > 1:
-                    return None
-                return actualValue
-
-            actualValue = current_value
-            actualValueDate = current_date
-
-        if actualValueDate is None:
-            return None
-
-        month_diff = self._calcDifference(date, actualValueDate)
-        if month_diff > 1:
-            return None
-        return actualValue
-
-    def _get_usdrub(self, target_date, positions_back=10):
+    def fit_oos(self, survey, vars, cutoff_date: np.datetime64|None, nMonth=1):
         """
-        Всегда берет дату из прошлого (или саму дату, если есть).
+        Построение регрессии с расширяющимся окном (expanding window)
+        для прогнозирования следующей точки.
+
+        Parameters:
+        -----------
+        survey : данные опроса
+        vars : список переменных для модели
+        start_n : int
+            Начальный размер обучающей выборки.
+
+        Returns:
+        --------
+        y_true : pd.Series
+            Фактические значения для OOS-периода.
+        predictions : pd.Series
+            OOS-прогнозы.
+        model_sm : str
+            Пустая строка для совместимости.
+        dates : list
+            Даты прогнозируемых точек.
         """
-        # Фильтруем только даты <= target_date
-        df = self.usdrubRate
-        past_dates = df.index[df.index <= target_date]
 
-        if len(past_dates) == 0:
-            return None  # нет данных в прошлом
+        df = self.datasetCreator.getDataset(survey, vars[0], nMonth)
 
-        # Берем самую позднюю дату из прошлого
-        found_date = past_dates[-1]
-        current_idx = df.index.get_loc(found_date)
+        x = df[vars[0]].to_numpy(dtype=float)
+        y = df[vars[1]].to_numpy(dtype=float)
+        yt = df['YT'].to_numpy(dtype=float)
+        dates = df['D'].to_numpy()
 
-        past_idx = current_idx - positions_back
+        total_n = len(df)
+        start_n = self.getStartIdx(dates, cutoff_date)
 
-        if past_idx < 0:
-            return None
+        #print(f'Start index = {start_n} for cutoff date {cutoff_date}')
 
-        current_value = df.iloc[current_idx, 1]
-        past_value = df.iloc[past_idx, 1]
+        if start_n is None:
+            raise ValueError(f'Невозможно определеить индекс начала для cutoff date {cutoff_date} среди дат {dates}')
 
-        return current_value/past_value - 1
+        if total_n <= start_n:
+            raise ValueError(
+                f"Недостаточно данных: total_n={total_n}, start_n={start_n}"
+            )
 
-    def _get_values_by_position(self, df, current_date, positions_back=10):
+        y_true_list = []
+        pred_list = []
+        dates_list = []
+
+        loggingStep = (total_n - start_n) / 5
+        nextValue = loggingStep
+        st = time.time()
+
+        for i in range(start_n, total_n):
+            if i - start_n >= nextValue:
+                #print(f'[{time.time() - st:.1f}s] OOS progress: {(i - start_n) / (total_n - start_n) * 100:.1f}%')
+                nextValue += loggingStep
+            # Expanding window:
+            # обучаемся на [0, ..., i-1]
+            x_train = x[:i]
+            y_train = y[:i]
+
+            # ВАЖНО:
+            # i:i+1 сохраняет двумерную форму (1, n_features)
+            x_test = x[i:i + 1]
+            y_test = y[i]
+
+            model = self.learner.train(x_train, y_train)
+            pred = self.learner.test(model, x_test).item()
+
+            if dates[i] not in self.filteringDates:
+                y_true_list.append(y_test + yt[i])
+                pred_list.append(pred + yt[i])
+            else:
+                #print(f'Fixing: {y_test + yt[i]} instead of prediction {pred + yt[i]} at date {dates[i]}')
+                y_true_list.append(y_test + yt[i])
+                pred_list.append(y_test + yt[i])
+
+            dates_list.append(dates[i])
+
+        y_true_result = pd.Series(
+            y_true_list,
+            index=dates_list,
+            name='actual'
+        )
+
+        pred_result = pd.Series(
+            pred_list,
+            index=dates_list,
+            name='prediction'
+        )
+
+        return y_true_result, pred_result, "", dates_list
+
+    def fit_oos_fixedsplit(
+            self,
+            survey,
+            vars,
+            train_share: float = 0.8,
+            nMonth: int = 1
+    ):
         """
-        Получает значения по позиции (не по дате).
+        OOS-прогноз с фиксированным хронологическим train/test split.
+
+        Первые train_share наблюдений используются для обучения модели.
+        Оставшиеся (1 - train_share) наблюдений используются как OOS test.
+
+        В отличие от expanding-window подхода, модель обучается ровно один раз
+        и затем прогнозирует весь тестовый период.
+
+        Parameters
+        ----------
+        survey
+            Данные опроса.
+
+        vars
+            Список переменных для модели.
+
+        isDelta : bool
+            Если True, используется датасет приростов.
+            Если False, используется датасет уровней.
+
+        train_share : float, default=0.8
+            Доля первых наблюдений, используемых для обучения.
+            Например, 0.8 = первые 80% train, последние 20% test.
+
+        nMonth : int, default=1
+            Горизонт прогноза.
+
+        Returns
+        -------
+        y_true : pd.Series
+            Фактические значения для OOS test-периода.
+
+        predictions : pd.Series
+            OOS-прогнозы для test-периода.
+
+        model_sm : str
+            Пустая строка для совместимости.
+
+        dates : list
+            Даты прогнозируемых точек.
         """
-        # Находим позицию текущей даты
-        try:
-            current_idx = df.index.get_loc(current_date)
-        except KeyError:
-            # Если даты нет, ищем ближайшую
-            current_idx = df.index.get_indexer([current_date], method='nearest')[0]
-            current_date = df.index[current_idx]
 
-        # Получаем значение 10 позиций назад
-        past_idx = current_idx - positions_back
+        if not 0 < train_share < 1:
+            raise ValueError(
+                f"train_share должен быть между 0 и 1, получено: {train_share}"
+            )
 
-        if past_idx < 0:
-            raise ValueError(f"Недостаточно данных: нужно {positions_back} позиций назад")
+        df = self.datasetCreator.getDataset(survey, vars[0], nMonth)
 
-        current_value = df.iloc[current_idx]
-        past_value = df.iloc[past_idx]
-        past_date = df.index[past_idx]
 
-        return {
-            'current_date': current_date,
-            'current_value': current_value,
-            'past_date': past_date,
-            'past_value': past_value,
-            'positions_back': positions_back
-        }
+        x = df[vars[0]].to_numpy(dtype=float)
+        y = df[vars[1]].to_numpy(dtype=float)
+        yt = df['YT'].to_numpy(dtype=float)
+        dates = df['D'].to_numpy()
+
+        total_n = len(df)
+
+        # Первые train_share наблюдений идут в train.
+        # int() дает floor, т.е. при n=141 и train_share=0.8:
+        # train_n = 112, test_n = 29.
+        train_n = int(total_n * train_share)
+
+        if train_n < 1:
+            raise ValueError(
+                f"Слишком маленькая обучающая выборка: "
+                f"total_n={total_n}, train_share={train_share}"
+            )
+
+        if train_n >= total_n:
+            raise ValueError(
+                f"Нет наблюдений для test: "
+                f"total_n={total_n}, train_n={train_n}"
+            )
+
+        # ---------------------------------------------------------
+        # Fixed chronological split
+        # ---------------------------------------------------------
+        #print(f'Date = {dates[train_n]}')
+
+        x_train = x[:train_n]
+        y_train = y[:train_n]
+
+        x_test = x[train_n:]
+        y_test = y[train_n:]
+
+        yt_test = yt[train_n:]
+        dates_test = dates[train_n:]
+
+        model = self.learner.train(x_train, y_train)
+        predictions = self.learner.test(model, x_test)
+
+        # ---------------------------------------------------------
+        # Формируем результат точно в той же логике,
+        # что и в исходной функции
+        # ---------------------------------------------------------
+
+        y_true_list = []
+        pred_list = []
+        dates_list = []
+
+        for i in range(len(y_test)):
+
+            actual_value = y_test[i] + yt_test[i]
+            predicted_value = predictions[i] + yt_test[i]
+            date = dates_test[i]
+
+            if date not in self.filteringDates:
+                y_true_list.append(actual_value)
+                pred_list.append(predicted_value)
+            else:
+                print(
+                    f'Fixing: {actual_value} '
+                    f'instead of prediction {predicted_value} '
+                    f'at date {date}'
+                )
+
+                y_true_list.append(actual_value)
+                pred_list.append(actual_value)
+
+            dates_list.append(date)
+
+        y_true_result = pd.Series(
+            y_true_list,
+            index=dates_list,
+            name='actual'
+        )
+
+        pred_result = pd.Series(
+            pred_list,
+            index=dates_list,
+            name='prediction'
+        )
+
+        return y_true_result, pred_result, "", dates_list
+
+    def estimateCorr(self, survey, vars, nMonth=1):
+        df = self.datasetCreator.getDataset(survey, vars[0], nMonth)
+
+        r = df['X3']  # pandas Series
+        y = df['Y']  # pandas Series
+
+        y_diff = y.diff().dropna()
+        r_minus_y_prev = (r - y.shift(1)).dropna()
+        r_diff = r.diff().dropna()
+
+        #print('corr(y(t)-y(t-1), llm(t) - y(t-1))')
+        #self._estimateCorrInternal(y_diff, r_minus_y_prev)
+
+        #print('corr(y(t)-y(t-1), llm(t) - llm(t-1))')
+        self._estimateCorrInternal(y_diff, r_diff)
+
+    def _estimateCorrInternal(self, y_diff, r_diff):
+        # Проверяем, что длины совпадают
+        print(f"Длина y(t) - y(t-1): {len(y_diff)}")
+        print(f"Длина llm(t) - llm(t-1): {len(r_diff)}")
+
+        # Считаем корреляцию
+        correlation = np.corrcoef(y_diff, r_diff)[0, 1]
+        print(f"Корреляция: {correlation}")
+        return correlation
+
+    def getStartIdx(self, dates, cutoff_date: np.datetime64|None) -> int|None:
+        if cutoff_date is None:
+            return 30
+
+        for i in range(len(dates)):
+            if cutoff_date < dates[i]:
+                return i
+
+        return None
+
+
+
 
