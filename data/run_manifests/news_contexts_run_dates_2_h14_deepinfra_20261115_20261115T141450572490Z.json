@@ -1,0 +1,1340 @@
+{
+  "run_id": "news_contexts_run_dates_2_h14_deepinfra_20261115_20261115T141450572490Z",
+  "experiment": "news_contexts_run_dates_2_h14_deepinfra_20261115",
+  "code_environment": {
+    "started_at_utc": "2026-11-15T14:14:50.572490+00:00",
+    "commit": "00094a3d099d1ce7c6cda23899214e59cd791010",
+    "branch": "dev",
+    "dirty": true,
+    "amnesiac": {
+      "tag": "v0.2.0",
+      "commit": "c26be79b910f2b1be5eed959b414028bec5373a4"
+    }
+  },
+  "corpus": {
+    "path": "/home/ustyantsev/workspace/amnesiacDB/corpus.db",
+    "size_bytes": 16674463744,
+    "mtime": 1794475489.3327742,
+    "meta": {
+      "schema_version": "1",
+      "embedding_model": "ai-forever/FRIDA",
+      "embedding_dim": "1536",
+      "embedding_dtype": "<f4",
+      "embedding_normalized": "true",
+      "embedding_document_prefix": "search_document: ",
+      "embedding_query_prefix": "search_query: ",
+      "embedding_input": "lead",
+      "preprocess_lead_sentences": "3",
+      "preprocess_min_text_length": "50",
+      "preprocess_sentenizer": "razdel",
+      "preprocess_digest_policy": "mark_invalid",
+      "corpus_start": "2016-03-21T16:09:08+00:00",
+      "corpus_end": "2026-10-02T09:22:36+00:00",
+      "last_scraped_at": "2026-10-02T09:23:21.275074+00:00",
+      "counts_channels": "12",
+      "counts_messages": "1377766",
+      "counts_processed_valid": "1095268",
+      "counts_embeddings": "1092553",
+      "historical_validity_revision": "S01-validity-20261112",
+      "historical_embedding_revision": "S01-frida-20261112"
+    }
+  },
+  "news_rag": {
+    "axes": {
+      "дкп": [
+        "решение по ключевой ставке",
+        "денежно-кредитная политика Банка России"
+      ],
+      "инфляция": [
+        "рост потребительских цен",
+        "инфляция в России"
+      ],
+      "продовольствие": [
+        "цены на продукты питания"
+      ],
+      "курс": [
+        "курс рубля к доллару",
+        "ослабление рубля"
+      ],
+      "тарифы": [
+        "повышение тарифов ЖКХ",
+        "цены на бензин"
+      ],
+      "зарплаты": [
+        "рост зарплат",
+        "реальные доходы населения"
+      ],
+      "труд": [
+        "дефицит кадров в России",
+        "безработица в России"
+      ],
+      "кризис": [
+        "экономический кризис в России",
+        "экономическая неопределённость",
+        "санкции против России"
+      ],
+      "бюджет": [
+        "бюджетные расходы",
+        "дефицит бюджета"
+      ]
+    },
+    "horizon_days": 14,
+    "top_k_per_axis": 50,
+    "dedup_threshold": 0.9,
+    "exclude_channels": [
+      "prime1"
+    ],
+    "mode": "two_stage",
+    "summarize_model": "deepseek/deepseek-v4-flash",
+    "summarize_base_url": "https://openrouter.ai/api/v1",
+    "summarize_temperature": 0.3,
+    "config_hash": "d4bc7f68978ceb74cbf23579ac61619b9415fe79450e2b6766fd37ea8c1a3ebf",
+    "axis_order": [
+      "дкп",
+      "инфляция",
+      "продовольствие",
+      "курс",
+      "тарифы",
+      "зарплаты",
+      "труд",
+      "кризис",
+      "бюджет"
+    ],
+    "query_hash": {
+      "дкп": "ed727fa2282d5adf6796a06c194752b871adc5cd11742076a46754a959f03078",
+      "инфляция": "2b10b46b3575cf6d3225eb3794b53f9cb7812e32ba2a1eb04edf551aa2bb2826",
+      "продовольствие": "05a85ffcca95ba3ae0d3bb8be88dceca30c40d4cb9ac69116572ea299fa5fd35",
+      "курс": "98888f6da5e19af98010a898bf3e33a682f9d001da48b772f34461c3aebdd0df",
+      "тарифы": "319107e66f3975b35d72128024a2848d55195463730cff5a4f35abb6a8cb447b",
+      "зарплаты": "9ff9cb99ab5029a7e8e9ea32953297fbcf7a8b9c3ad1eb80f4b8b94dbae56db5",
+      "труд": "bece1ca4b6f39515543647cebf0e7ba4f5c0db81a3e588dec9ceab80f145c1a2",
+      "кризис": "9a62b3f8a7d58efa3636407635dec6e2ce56e92918402ff068ea10e4c4c05b7a",
+      "бюджет": "6e4dfb1acbf350f28c47bda7e5cfd294e4d693d97273b3611d44b6b6b259e599"
+    },
+    "timezone_rule": "full_moscow_days_survey_day_excluded",
+    "utc_offset_hours": 3
+  },
+  "models": {
+    "summarization": {
+      "model": "deepseek/deepseek-v4-flash",
+      "endpoint": "https://openrouter.ai/api/v1",
+      "configured_provider": "deepinfra/fp8",
+      "provider_pin_verification": "DeepInfra",
+      "provider_pin_verification_status": "provider_name_verified",
+      "configured_quantization": "fp8",
+      "quantization_verification_status": "not_reported",
+      "api_key_variable": "OPENROUTER_API_KEY",
+      "timeout": 600.0,
+      "SummarizeConfig": {
+        "temperature": 0.3,
+        "concurrency": 5,
+        "max_attempts": 3,
+        "retry_delays": [
+          5.0,
+          15.0,
+          45.0
+        ],
+        "max_failed_axes": 2,
+        "failed_axis_placeholder": "(нет данных по оси из-за ошибки провайдера)"
+      }
+    },
+    "respondent": {
+      "model": "Qwen/Qwen3.6-27B",
+      "endpoint": "https://litellm.mlcluster.ru"
+    }
+  },
+  "prompt": {
+    "factory": "createNewsPromptBuilder",
+    "composition": [
+      "NewsProfilePromptBuilder",
+      "NewsPromptBuilder",
+      "TaskPromptBuilder"
+    ],
+    "section_headers": [
+      "Основные параметры опроса и респондента",
+      "Новости",
+      "Задача"
+    ],
+    "experiments_configuration_note": "D-018: news-фабрика имеет фиксированный состав, без семи бит",
+    "system_builder": "SystemPromptBuilder"
+  },
+  "respondent_data": {
+    "extractor_seed": 42,
+    "profiles_sha256": "6298d8b372a102afe0285233a0107ac46a4a265ac0d7d7f60a720d804a5d7365",
+    "profiles_sha256_by_year": {
+      "2009": "a8f0d8bdecda166292eace592da11bef7cdf9c6bb3b8c3dfef60ed5e993945bc",
+      "2010": "b3fe0460312610348bf8a4501f7daaefd9fb18cee80e37b89cf03702349c9790",
+      "2011": "03195184b21cb524fc093d4f00fa7af1ef899e3d305eeb288cdc589a33f32d48",
+      "2012": "168d50858cf93ce3016c3718f97ad3a6f86017859ed011291f810976c3599673",
+      "2013": "83fa6f05b3801f75d39d63075545b1d069988282a34a711c186b8d922dc2fb3c",
+      "2014": "c7359a8ff4a5458262caadedd9e9a31a6b311fbf383e3b26fb1d223caeb3c420",
+      "2015": "ecf6023e97a8d7540aeff895e7f6ce07b7165b0558e10e709faaf6fd76d35a75",
+      "2016": "b7885cdd56546f170bdbfdabf210673a99f3d27c1565136968ced90916626815",
+      "2017": "f746e45b9d69d73a1cc5d2dea53237d1c304f087e6effa7b4cfe91d311689d43",
+      "2018": "edda103aeb0720b37559bdbf3c3240da2cd469902706e09d8f5c6ee4daa844ce",
+      "2019": "0c06d72327d9ba19eb57a042025999f9e92c25fbb69323a7e458fa415e849654",
+      "2020": "51cef30e6770d39edd8e9274320c3d7346da1e350331ee640f306064f41d79cc",
+      "2021": "9f394a6ca9f64991ca37f4fb1540c37f69a92510f85fc09e0920d4a14b5f98da",
+      "2022": "3aebd13090ff27ea08d9973ca1a80508b030932385e87d03b45a57d47fecfe27",
+      "2023": "9cd814701a90d3fbdd35eba4b9d90371fb59009fc9303df97d951465cfd8e49e",
+      "2024": "3ca9d5512668b3704fa7d8a44a5e2d458f6184630d40497650cfdfe1e5bf9337"
+    },
+    "extractor_commit": null,
+    "seed42_verification": null,
+    "provenance_status": "Происхождение не проверено: результат проверки хранится вне репозитория; сравнение через profiles_sha256_by_year",
+    "wave_sha256": {
+      "data/RLMS waves/2009.zip": "d71ad36f57e688a04e0d5beb3ba5c11f89ff4147761b06850acfe7f5eea3860d",
+      "data/RLMS waves/2010.zip": "4bf9d8ecc46f841abacc3c9961a8aa14f72b10ccca0b24692fe38155e6848be0",
+      "data/RLMS waves/2011.zip": "b0241e99b1974a377fbf1c60eb1c21881cae35594d923d89d5f2d10f33271e5b",
+      "data/RLMS waves/2012.zip": "149463998c69dbf6739b0fff88af17883218437ffe1b5bdef1d92a1d209f2fd4",
+      "data/RLMS waves/2013.zip": "00e97ee88ab7bfee7dc92047fd695614502a985562d3a3e4b9b836ed029a1707",
+      "data/RLMS waves/2014.zip": "2272c86c3e5a811b179c591958c6df3c80df702071ddac1a90ba9c6190cdadd2",
+      "data/RLMS waves/2015.zip": "3bd4aef052e9ddf28849a9ed9b11a85d3b0903d28236baf9a83ae97963e68ca6",
+      "data/RLMS waves/2016.zip": "e25512fa3c6e2c985d423120425df3057c62b5f0f6c1276d4dae6fd345909353",
+      "data/RLMS waves/2017.zip": "74a9efbb192955805cc315ab02cf748c287fde1e761f86eb1df3fc197696193c",
+      "data/RLMS waves/2018.zip": "301a895a7c8d97e5b5bf64a0940d734479c664ff5692139a32f17b86d80cbdf3",
+      "data/RLMS waves/2019.zip": "6c15fbc6ad64b20732b8fe687f7263ea20c52b684edfdb196b9f2a1097619ed2",
+      "data/RLMS waves/2020.zip": "b3729785a4d8fdd4e8b67c0e6f154490b579f27ac0ea905b35dd4f34ae8006a1",
+      "data/RLMS waves/2021.zip": "8727a2597b37da452a08f11300157a66ef2b6055588da7db53438c8d408ab230",
+      "data/RLMS waves/2022.zip": "e178ab98ea0931a29fb845a699ca2e9bafdd230eda5db597c3386acc68d89eeb",
+      "data/RLMS waves/2023.zip": "1b6830c03bb01a2a2c2dadf556463ff54205ae633b58d4e3f3039d5fa943043a",
+      "data/RLMS waves/2024.zip": "6a246c75712450ae591e09727c28b8cc05b9a72fc92d982a303ca78e49f0dd1c",
+      "data/RLMS waves/r18h_os_71.sav": "c12de0b62dc7f6fd82bc87b4aa95d15535248f374e825702dbd1cc8b6d49a061",
+      "data/RLMS waves/r18i_os_82.sav": "386599b0d5164485304bca9052eb4e2a23a5670b59249cfcfb0c250f5880ffc9",
+      "data/RLMS waves/r19h_os_71.sav": "c2fdb4633c3b608aa5fe9ef41f5ae4eab392ca1403d4839bf1b6164030b90434",
+      "data/RLMS waves/r19i_os_82.sav": "8ac9f85c07273374519e839097b5fc73026f45b2e1ea0256937806f1ac96da26",
+      "data/RLMS waves/r20h_os_82.sav": "0c01f454eea60d4a0dedc9b3dc2ccb3c0ffa4979c07e0db3eac776563cbbd493",
+      "data/RLMS waves/r20i_os_82.sav": "96b6ed210eb7a67ddf3dd895dca0ff7fb2087c07aa43eb1c8059b543057ad771",
+      "data/RLMS waves/r21h_os_82.sav": "8d60615b15929b50f7b901f366a3d422ac15050ba355485957cf1e3f3ab05ec1",
+      "data/RLMS waves/r21i_os_82.sav": "e650e7e6ce14ae107267f7419b0a8c5c699897e6c7c5ab4a9e7b2ec49f43ea78",
+      "data/RLMS waves/r22h_os_82.sav": "ebf3069972fba8b6f38252210fdc1563ae6052dea1df4fd3b90163291381e8c6",
+      "data/RLMS waves/r22i_os_82.sav": "dafcbcdf72b1a9aeb20819fbe3014a460c33bbbfee207268f3e539e2e37f01bd",
+      "data/RLMS waves/r23h_os_82.sav": "864f576d16074dbf010e4c55b5897f64250663a92a7b03c70e2ddb769232715d",
+      "data/RLMS waves/r23i_os_82.sav": "c697f3c5ec126315b7427ad3e6e45bfb73889db7e9633d1b8d54f059a1267bd0",
+      "data/RLMS waves/r24h_os_82.sav": "4d1b1fe3143b79c6e92174ed41a4c3034ca47e35376a94eb985e330ff6440e59",
+      "data/RLMS waves/r24i_os_82.sav": "835a8e1645b2ec199cea5606f201d28e4cba376f9e08779d59d023d0f6ce74df",
+      "data/RLMS waves/r25h_os_82.dta": "43c8542bfda3fdb1e3848e4fed43b7e2bc774e0bd3c5f631af89754e4a571d82",
+      "data/RLMS waves/r25i_os_82.dta": "e64ff241e618ae3410402bbc5f763f8bbce55d4cacd05d641aa083a3d3acef91",
+      "data/RLMS waves/r26h_os_82.dta": "49328edd11a57dac6cce9caee85f3fb290cfaf9f2bf900e2db31e5bd3aa8b9f8",
+      "data/RLMS waves/r26i_os_81.dta": "1d31c1de5edf964a72996dc138e8381f46f7862c2b27bfc163a9ac88d1707b5f",
+      "data/RLMS waves/r27h_os_82.dta": "7f0284f65c387c1ce3a074bbdf69b6a2651dd676d03e73e6d31f2e2fb7a54004",
+      "data/RLMS waves/r27i_os_81.dta": "60e50521d8366e13a37d9999b5b70f606e3148894b740eeca278f2ff011d8126",
+      "data/RLMS waves/r28h_os_82.dta": "4756725ade3bb62bf5c4eeb25a5e05d359c0a9991156e57f893721d86c6522ff",
+      "data/RLMS waves/r28i_os_81.dta": "c91ae33cc40280ce28829c021b25630d1e501c45b2daede659a9cfebe6813096",
+      "data/RLMS waves/r29h_os_82.dta": "a9d9baab56b67ee8141f639f20d61e902e2524925a5906ed35e5aa8d0f18556d",
+      "data/RLMS waves/r29i_os_81.dta": "7d75d961d98ad92e37bd5bfaae39089518b154838089c383bac10f5162606d28",
+      "data/RLMS waves/r30h_os_82.dta": "66714af3b851f8be686669d9f9cce8d060884f322d7b907aee91a00e7d58c8df",
+      "data/RLMS waves/r30i_os_82.dta": "02ad2f10f3023b34de3d78bf97dc4fe45695e21f0954aa37f0b8ec2d731abb80",
+      "data/RLMS waves/r31h_os_82.dta": "c2a5090fdde94c7af631c8c5bb71c1197574927f6cd0c3334824665a690b49f4",
+      "data/RLMS waves/r31i_os_82.dta": "98b1230e0bf19188d5ec56047c784220c8174577f7fc94929ae701f88b9a1e1e",
+      "data/RLMS waves/r32h_os_82.dta": "4b8defedf4b738d0b49282fc482e92d0c743078b9541780d3c4fb14c0a50ec5d",
+      "data/RLMS waves/r32i_os_82.dta": "6c9c5f4f053cd130f97b7070a2c5aabeb5da05197f00c92c3eda6647e68653d6",
+      "data/RLMS waves/r33h_os_83.dta": "29a6dcd4cabd754dad18251494c12d2ee38382b06fe0f1be00c6fc792c17b7f7",
+      "data/RLMS waves/r33i_os_84.dta": "601c84764c2bb60f1670af94ce7b228d98c28e7afcae9d5273de07d9a1b0c804"
+    },
+    "profiles_per_date": 100,
+    "profile_files_available": 1600
+  },
+  "preflight": {
+    "outcome": "succeeded",
+    "attempts": 1,
+    "transient_errors": [],
+    "usage": {
+      "prompt_tokens": 8,
+      "completion_tokens": 1,
+      "total_tokens": 9,
+      "calls": 1
+    },
+    "usage_complete": true,
+    "usage_note": null,
+    "reported_cost": 9e-07
+  },
+  "totals": {
+    "status": "completed",
+    "dates_requested": [
+      "2019-11-26",
+      "2020-01-03",
+      "2020-01-30",
+      "2020-02-27",
+      "2020-07-30",
+      "2020-08-27",
+      "2020-09-26",
+      "2020-10-30",
+      "2020-11-27",
+      "2021-01-08",
+      "2021-02-02",
+      "2021-02-26",
+      "2021-03-30",
+      "2021-05-01",
+      "2021-05-29",
+      "2021-06-29",
+      "2021-07-30",
+      "2021-08-31",
+      "2021-09-28",
+      "2021-10-30",
+      "2021-11-26",
+      "2022-01-07",
+      "2022-02-01",
+      "2022-02-25",
+      "2022-03-26",
+      "2022-04-29",
+      "2022-05-28",
+      "2022-06-25",
+      "2022-07-29",
+      "2022-08-26",
+      "2022-09-30",
+      "2022-10-29",
+      "2022-11-25",
+      "2023-01-05",
+      "2023-01-28",
+      "2023-02-25",
+      "2023-03-29",
+      "2023-04-27",
+      "2023-05-31",
+      "2023-06-29",
+      "2023-07-28",
+      "2023-08-30",
+      "2023-09-29",
+      "2023-10-28",
+      "2023-11-30",
+      "2024-01-05",
+      "2024-01-27",
+      "2024-02-28",
+      "2024-03-29",
+      "2024-04-27",
+      "2024-05-29",
+      "2024-06-28",
+      "2024-07-31",
+      "2024-08-30",
+      "2024-09-27",
+      "2024-10-30",
+      "2024-11-29",
+      "2025-01-10",
+      "2025-01-31",
+      "2025-02-28",
+      "2025-03-29",
+      "2025-05-01",
+      "2025-05-28",
+      "2025-06-28",
+      "2025-08-01",
+      "2025-08-29",
+      "2025-10-03",
+      "2025-11-01",
+      "2025-11-28",
+      "2026-01-08",
+      "2026-01-31",
+      "2026-02-27",
+      "2026-03-28",
+      "2026-04-30",
+      "2026-05-28",
+      "2026-07-02"
+    ],
+    "dates_computed": [
+      "2019-11-26",
+      "2020-01-03",
+      "2020-01-30",
+      "2020-02-27",
+      "2020-07-30",
+      "2020-08-27",
+      "2020-09-26",
+      "2020-10-30",
+      "2020-11-27",
+      "2021-01-08",
+      "2021-02-02",
+      "2021-02-26",
+      "2021-03-30",
+      "2021-05-01",
+      "2021-05-29",
+      "2021-06-29",
+      "2021-07-30",
+      "2021-08-31",
+      "2021-09-28",
+      "2021-10-30",
+      "2021-11-26",
+      "2022-01-07",
+      "2022-02-01",
+      "2022-02-25",
+      "2022-03-26",
+      "2022-04-29",
+      "2022-05-28",
+      "2022-06-25",
+      "2022-07-29",
+      "2022-08-26",
+      "2022-09-30",
+      "2022-10-29",
+      "2022-11-25",
+      "2023-01-05",
+      "2023-01-28",
+      "2023-02-25",
+      "2023-03-29",
+      "2023-04-27",
+      "2023-05-31",
+      "2023-06-29",
+      "2023-07-28",
+      "2023-08-30",
+      "2023-09-29",
+      "2023-10-28",
+      "2023-11-30",
+      "2024-01-05",
+      "2024-01-27",
+      "2024-02-28",
+      "2024-03-29",
+      "2024-04-27",
+      "2024-05-29",
+      "2024-06-28",
+      "2024-07-31",
+      "2024-08-30",
+      "2024-09-27",
+      "2024-10-30",
+      "2024-11-29",
+      "2025-01-10",
+      "2025-01-31",
+      "2025-02-28",
+      "2025-03-29",
+      "2025-05-01",
+      "2025-05-28",
+      "2025-06-28",
+      "2025-08-01",
+      "2025-08-29",
+      "2025-10-03",
+      "2025-11-01",
+      "2025-11-28",
+      "2026-01-08",
+      "2026-01-31",
+      "2026-02-27",
+      "2026-03-28",
+      "2026-04-30",
+      "2026-05-28",
+      "2026-07-02"
+    ],
+    "dates_skipped": [],
+    "skipped_count": 0,
+    "degraded_dates_count": 0,
+    "unknown_degradation_dates_count": 0,
+    "surveys_completed": [],
+    "surveys_already_saved": [],
+    "per_date": {
+      "2019-11-26": {
+        "usage": {
+          "prompt_tokens": 75767,
+          "completion_tokens": 15671,
+          "total_tokens": 91438,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 442,
+        "usage_complete": true
+      },
+      "2020-01-03": {
+        "usage": {
+          "prompt_tokens": 70508,
+          "completion_tokens": 14932,
+          "total_tokens": 85440,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 440,
+        "usage_complete": true
+      },
+      "2020-01-30": {
+        "usage": {
+          "prompt_tokens": 58862,
+          "completion_tokens": 14870,
+          "total_tokens": 73732,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 432,
+        "usage_complete": true
+      },
+      "2020-02-27": {
+        "usage": {
+          "prompt_tokens": 76324,
+          "completion_tokens": 17672,
+          "total_tokens": 93996,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 436,
+        "usage_complete": true
+      },
+      "2020-07-30": {
+        "usage": {
+          "prompt_tokens": 56238,
+          "completion_tokens": 18038,
+          "total_tokens": 74276,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 419,
+        "usage_complete": true
+      },
+      "2020-08-27": {
+        "usage": {
+          "prompt_tokens": 53842,
+          "completion_tokens": 18524,
+          "total_tokens": 72366,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 404,
+        "usage_complete": true
+      },
+      "2020-09-26": {
+        "usage": {
+          "prompt_tokens": 60432,
+          "completion_tokens": 18026,
+          "total_tokens": 78458,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 423,
+        "usage_complete": true
+      },
+      "2020-10-30": {
+        "usage": {
+          "prompt_tokens": 51724,
+          "completion_tokens": 18250,
+          "total_tokens": 69974,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 403,
+        "usage_complete": true
+      },
+      "2020-11-27": {
+        "usage": {
+          "prompt_tokens": 47994,
+          "completion_tokens": 16430,
+          "total_tokens": 64424,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 408,
+        "usage_complete": true
+      },
+      "2021-01-08": {
+        "usage": {
+          "prompt_tokens": 48373,
+          "completion_tokens": 16515,
+          "total_tokens": 64888,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 388,
+        "usage_complete": true
+      },
+      "2021-02-02": {
+        "usage": {
+          "prompt_tokens": 52215,
+          "completion_tokens": 18484,
+          "total_tokens": 70699,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 402,
+        "usage_complete": true
+      },
+      "2021-02-26": {
+        "usage": {
+          "prompt_tokens": 51624,
+          "completion_tokens": 18472,
+          "total_tokens": 70096,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 403,
+        "usage_complete": true
+      },
+      "2021-03-30": {
+        "usage": {
+          "prompt_tokens": 55500,
+          "completion_tokens": 16466,
+          "total_tokens": 71966,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 402,
+        "usage_complete": true
+      },
+      "2021-05-01": {
+        "usage": {
+          "prompt_tokens": 63143,
+          "completion_tokens": 146417,
+          "total_tokens": 209560,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 419,
+        "usage_complete": true
+      },
+      "2021-05-29": {
+        "usage": {
+          "prompt_tokens": 65565,
+          "completion_tokens": 21684,
+          "total_tokens": 87249,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 395,
+        "usage_complete": true
+      },
+      "2021-06-29": {
+        "usage": {
+          "prompt_tokens": 63593,
+          "completion_tokens": 23806,
+          "total_tokens": 87399,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 409,
+        "usage_complete": true
+      },
+      "2021-07-30": {
+        "usage": {
+          "prompt_tokens": 57853,
+          "completion_tokens": 20654,
+          "total_tokens": 78507,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 398,
+        "usage_complete": true
+      },
+      "2021-08-31": {
+        "usage": {
+          "prompt_tokens": 63900,
+          "completion_tokens": 20576,
+          "total_tokens": 84476,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 405,
+        "usage_complete": true
+      },
+      "2021-09-28": {
+        "usage": {
+          "prompt_tokens": 58747,
+          "completion_tokens": 24455,
+          "total_tokens": 83202,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 388,
+        "usage_complete": true
+      },
+      "2021-10-30": {
+        "usage": {
+          "prompt_tokens": 56314,
+          "completion_tokens": 22148,
+          "total_tokens": 78462,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 408,
+        "usage_complete": true
+      },
+      "2021-11-26": {
+        "usage": {
+          "prompt_tokens": 55756,
+          "completion_tokens": 22659,
+          "total_tokens": 78415,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 390,
+        "usage_complete": true
+      },
+      "2022-01-07": {
+        "usage": {
+          "prompt_tokens": 51424,
+          "completion_tokens": 17277,
+          "total_tokens": 68701,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 407,
+        "usage_complete": true
+      },
+      "2022-02-01": {
+        "usage": {
+          "prompt_tokens": 51770,
+          "completion_tokens": 17135,
+          "total_tokens": 68905,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 386,
+        "usage_complete": true
+      },
+      "2022-02-25": {
+        "usage": {
+          "prompt_tokens": 47604,
+          "completion_tokens": 19348,
+          "total_tokens": 66952,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 385,
+        "usage_complete": true
+      },
+      "2022-03-26": {
+        "usage": {
+          "prompt_tokens": 51406,
+          "completion_tokens": 21538,
+          "total_tokens": 72944,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 362,
+        "usage_complete": true
+      },
+      "2022-04-29": {
+        "usage": {
+          "prompt_tokens": 58807,
+          "completion_tokens": 21677,
+          "total_tokens": 80484,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 339,
+        "usage_complete": true
+      },
+      "2022-05-28": {
+        "usage": {
+          "prompt_tokens": 50912,
+          "completion_tokens": 17236,
+          "total_tokens": 68148,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 345,
+        "usage_complete": true
+      },
+      "2022-06-25": {
+        "usage": {
+          "prompt_tokens": 56303,
+          "completion_tokens": 20306,
+          "total_tokens": 76609,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 320,
+        "usage_complete": true
+      },
+      "2022-07-29": {
+        "usage": {
+          "prompt_tokens": 61963,
+          "completion_tokens": 20419,
+          "total_tokens": 82382,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 325,
+        "usage_complete": true
+      },
+      "2022-08-26": {
+        "usage": {
+          "prompt_tokens": 60437,
+          "completion_tokens": 19721,
+          "total_tokens": 80158,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 291,
+        "usage_complete": true
+      },
+      "2022-09-30": {
+        "usage": {
+          "prompt_tokens": 63883,
+          "completion_tokens": 22214,
+          "total_tokens": 86097,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 321,
+        "usage_complete": true
+      },
+      "2022-10-29": {
+        "usage": {
+          "prompt_tokens": 68607,
+          "completion_tokens": 20246,
+          "total_tokens": 88853,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 310,
+        "usage_complete": true
+      },
+      "2022-11-25": {
+        "usage": {
+          "prompt_tokens": 70764,
+          "completion_tokens": 18661,
+          "total_tokens": 89425,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 306,
+        "usage_complete": true
+      },
+      "2023-01-05": {
+        "usage": {
+          "prompt_tokens": 72945,
+          "completion_tokens": 21968,
+          "total_tokens": 94913,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 328,
+        "usage_complete": true
+      },
+      "2023-01-28": {
+        "usage": {
+          "prompt_tokens": 76749,
+          "completion_tokens": 16472,
+          "total_tokens": 93221,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 307,
+        "usage_complete": true
+      },
+      "2023-02-25": {
+        "usage": {
+          "prompt_tokens": 79858,
+          "completion_tokens": 20685,
+          "total_tokens": 100543,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 336,
+        "usage_complete": true
+      },
+      "2023-03-29": {
+        "usage": {
+          "prompt_tokens": 78253,
+          "completion_tokens": 21716,
+          "total_tokens": 99969,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 315,
+        "usage_complete": true
+      },
+      "2023-04-27": {
+        "usage": {
+          "prompt_tokens": 85225,
+          "completion_tokens": 19645,
+          "total_tokens": 104870,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 310,
+        "usage_complete": true
+      },
+      "2023-05-31": {
+        "usage": {
+          "prompt_tokens": 86996,
+          "completion_tokens": 18836,
+          "total_tokens": 105832,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 321,
+        "usage_complete": true
+      },
+      "2023-06-29": {
+        "usage": {
+          "prompt_tokens": 83303,
+          "completion_tokens": 22328,
+          "total_tokens": 105631,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 330,
+        "usage_complete": true
+      },
+      "2023-07-28": {
+        "usage": {
+          "prompt_tokens": 89735,
+          "completion_tokens": 24271,
+          "total_tokens": 114006,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 338,
+        "usage_complete": true
+      },
+      "2023-08-30": {
+        "usage": {
+          "prompt_tokens": 79781,
+          "completion_tokens": 22113,
+          "total_tokens": 101894,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 298,
+        "usage_complete": true
+      },
+      "2023-09-29": {
+        "usage": {
+          "prompt_tokens": 92900,
+          "completion_tokens": 20774,
+          "total_tokens": 113674,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 347,
+        "usage_complete": true
+      },
+      "2023-10-28": {
+        "usage": {
+          "prompt_tokens": 94114,
+          "completion_tokens": 20983,
+          "total_tokens": 115097,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 335,
+        "usage_complete": true
+      },
+      "2023-11-30": {
+        "usage": {
+          "prompt_tokens": 75692,
+          "completion_tokens": 23827,
+          "total_tokens": 99519,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 304,
+        "usage_complete": true
+      },
+      "2024-01-05": {
+        "usage": {
+          "prompt_tokens": 72687,
+          "completion_tokens": 18403,
+          "total_tokens": 91090,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 305,
+        "usage_complete": true
+      },
+      "2024-01-27": {
+        "usage": {
+          "prompt_tokens": 77607,
+          "completion_tokens": 19709,
+          "total_tokens": 97316,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 281,
+        "usage_complete": true
+      },
+      "2024-02-28": {
+        "usage": {
+          "prompt_tokens": 78028,
+          "completion_tokens": 18975,
+          "total_tokens": 97003,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 303,
+        "usage_complete": true
+      },
+      "2024-03-29": {
+        "usage": {
+          "prompt_tokens": 74393,
+          "completion_tokens": 18520,
+          "total_tokens": 92913,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 316,
+        "usage_complete": true
+      },
+      "2024-04-27": {
+        "usage": {
+          "prompt_tokens": 79916,
+          "completion_tokens": 20450,
+          "total_tokens": 100366,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 305,
+        "usage_complete": true
+      },
+      "2024-05-29": {
+        "usage": {
+          "prompt_tokens": 79932,
+          "completion_tokens": 20098,
+          "total_tokens": 100030,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 279,
+        "usage_complete": true
+      },
+      "2024-06-28": {
+        "usage": {
+          "prompt_tokens": 69214,
+          "completion_tokens": 20405,
+          "total_tokens": 89619,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 276,
+        "usage_complete": true
+      },
+      "2024-07-31": {
+        "usage": {
+          "prompt_tokens": 70543,
+          "completion_tokens": 21210,
+          "total_tokens": 91753,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 277,
+        "usage_complete": true
+      },
+      "2024-08-30": {
+        "usage": {
+          "prompt_tokens": 68187,
+          "completion_tokens": 16164,
+          "total_tokens": 84351,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 269,
+        "usage_complete": true
+      },
+      "2024-09-27": {
+        "usage": {
+          "prompt_tokens": 77229,
+          "completion_tokens": 21751,
+          "total_tokens": 98980,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 312,
+        "usage_complete": true
+      },
+      "2024-10-30": {
+        "usage": {
+          "prompt_tokens": 62401,
+          "completion_tokens": 19941,
+          "total_tokens": 82342,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 287,
+        "usage_complete": true
+      },
+      "2024-11-29": {
+        "usage": {
+          "prompt_tokens": 67682,
+          "completion_tokens": 20245,
+          "total_tokens": 87927,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 279,
+        "usage_complete": true
+      },
+      "2025-01-10": {
+        "usage": {
+          "prompt_tokens": 71057,
+          "completion_tokens": 19089,
+          "total_tokens": 90146,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 328,
+        "usage_complete": true
+      },
+      "2025-01-31": {
+        "usage": {
+          "prompt_tokens": 73219,
+          "completion_tokens": 19674,
+          "total_tokens": 92893,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 298,
+        "usage_complete": true
+      },
+      "2025-02-28": {
+        "usage": {
+          "prompt_tokens": 74226,
+          "completion_tokens": 20462,
+          "total_tokens": 94688,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 316,
+        "usage_complete": true
+      },
+      "2025-03-29": {
+        "usage": {
+          "prompt_tokens": 67925,
+          "completion_tokens": 17212,
+          "total_tokens": 85137,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 300,
+        "usage_complete": true
+      },
+      "2025-05-01": {
+        "usage": {
+          "prompt_tokens": 75128,
+          "completion_tokens": 21969,
+          "total_tokens": 97097,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 299,
+        "usage_complete": true
+      },
+      "2025-05-28": {
+        "usage": {
+          "prompt_tokens": 72250,
+          "completion_tokens": 20457,
+          "total_tokens": 92707,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 298,
+        "usage_complete": true
+      },
+      "2025-06-28": {
+        "usage": {
+          "prompt_tokens": 64961,
+          "completion_tokens": 19933,
+          "total_tokens": 84894,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 307,
+        "usage_complete": true
+      },
+      "2025-08-01": {
+        "usage": {
+          "prompt_tokens": 74533,
+          "completion_tokens": 22751,
+          "total_tokens": 97284,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 314,
+        "usage_complete": true
+      },
+      "2025-08-29": {
+        "usage": {
+          "prompt_tokens": 74657,
+          "completion_tokens": 17883,
+          "total_tokens": 92540,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 294,
+        "usage_complete": true
+      },
+      "2025-10-03": {
+        "usage": {
+          "prompt_tokens": 65837,
+          "completion_tokens": 20717,
+          "total_tokens": 86554,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 287,
+        "usage_complete": true
+      },
+      "2025-11-01": {
+        "usage": {
+          "prompt_tokens": 78223,
+          "completion_tokens": 21275,
+          "total_tokens": 99498,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 307,
+        "usage_complete": true
+      },
+      "2025-11-28": {
+        "usage": {
+          "prompt_tokens": 84955,
+          "completion_tokens": 21565,
+          "total_tokens": 106520,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 298,
+        "usage_complete": true
+      },
+      "2026-01-08": {
+        "usage": {
+          "prompt_tokens": 87571,
+          "completion_tokens": 21035,
+          "total_tokens": 108606,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 337,
+        "usage_complete": true
+      },
+      "2026-01-31": {
+        "usage": {
+          "prompt_tokens": 73020,
+          "completion_tokens": 18149,
+          "total_tokens": 91169,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 269,
+        "usage_complete": true
+      },
+      "2026-02-27": {
+        "usage": {
+          "prompt_tokens": 83162,
+          "completion_tokens": 19669,
+          "total_tokens": 102831,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 312,
+        "usage_complete": true
+      },
+      "2026-03-28": {
+        "usage": {
+          "prompt_tokens": 76638,
+          "completion_tokens": 19659,
+          "total_tokens": 96297,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 284,
+        "usage_complete": true
+      },
+      "2026-04-30": {
+        "usage": {
+          "prompt_tokens": 74136,
+          "completion_tokens": 19489,
+          "total_tokens": 93625,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 282,
+        "usage_complete": true
+      },
+      "2026-05-28": {
+        "usage": {
+          "prompt_tokens": 77485,
+          "completion_tokens": 20071,
+          "total_tokens": 97556,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 274,
+        "usage_complete": true
+      },
+      "2026-07-02": {
+        "usage": {
+          "prompt_tokens": 81847,
+          "completion_tokens": 18819,
+          "total_tokens": 100666,
+          "calls": 10
+        },
+        "summaryFromCache": false,
+        "failed_axes": [],
+        "documents_count": 315,
+        "usage_complete": true
+      }
+    },
+    "usage": {
+      "prompt_tokens": 5242362,
+      "completion_tokens": 1629895,
+      "total_tokens": 6872257,
+      "calls": 761
+    },
+    "usage_scope": "Суммаризация и preflight; только возвращённый usage",
+    "usage_complete": true,
+    "preflight_reported_cost": 9e-07
+  }
+}
