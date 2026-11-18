@@ -1,10 +1,12 @@
 from Configuration import configuration
+from NewsLogic.NewsContextProvider import NewsContextProvider
 from SHAPAnalysis.AllMinusOneShapCalculator import AllMinusOneShapCalculator
 from SHAPAnalysis.BruteforceSHAPCalculator import BruteforceSHAPCalculator
 from SHAPAnalysis.ZeroPlusOneShapCalculator import ZeroPlusOneShapCalculator
 from SHAPAnalysis.shapHelpers import getBitArray
 from SurveyLogic.PromptBuilders.BasePromptBuilder import BasePromptBuilder
 from SurveyLogic.PromptBuilders.CompositePromptBuilder import CompositePromptBuilder
+from SurveyLogic.PromptBuilders.ContextPromptBuilders.NewsProfilePromptBuilder import NewsProfilePromptBuilder
 from SurveyLogic.PromptBuilders.ContextPromptBuilders.NewsPromptBuilder import NewsPromptBuilder
 from SurveyLogic.PromptBuilders.ProfileSepcificPromptBuilders.CommonProfilePromptBuilder import \
     CommonProfilePromptBuilder
@@ -29,7 +31,7 @@ def createSimplePromptBuilder() -> (BasePromptBuilder, BasePromptBuilder):
 
     return SystemPromptBuilder(prompts.systemPrompt), CompositePromptBuilder(builders, headers)
 
-def createNewsPromptBuilder() -> (BasePromptBuilder, BasePromptBuilder):
+def createNewsPromptBuilder(newsContextProvider: NewsContextProvider) -> (BasePromptBuilder, BasePromptBuilder):
     builders = []
 
     mrotProvider = MROTProvider(configuration.mrotStatisticsPath)
@@ -37,8 +39,8 @@ def createNewsPromptBuilder() -> (BasePromptBuilder, BasePromptBuilder):
     averageBuyingsProvider = ConvertingAverageExpensesProvider(averageBuyingsProvider,
                                                                configuration.rlmsToInflationRegionsPath)
 
-    builders.append(CommonProfilePromptBuilder(prompts.respondentPrompt, mrotProvider, averageBuyingsProvider))
-    builders.append(NewsPromptBuilder())
+    builders.append(NewsProfilePromptBuilder(prompts.respondentPrompt, mrotProvider, averageBuyingsProvider))
+    builders.append(NewsPromptBuilder(newsContextProvider))
     builders.append(TaskPromptBuilder(prompts.taskPrompt))
 
     headers = ['Основные параметры опроса и респондента', 'Новости', 'Задача']

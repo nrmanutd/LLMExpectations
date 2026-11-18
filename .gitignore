@@ -231,4 +231,31 @@ __marimo__/
 /data/RLMS waves/2023.zip
 /data/RLMS waves/2024.zip
 /SurveyLogic/Surveyers/gabriel_test.ipynb
+
+# Микроданные RLMS-HSE и производные от них (D-012).
+# Исходные волны — целиком, не перечислением файлов: рядом с архивами лежат
+# распакованные .dta и .sav, которых прежние правила не покрывали.
+/data/RLMS waves/
+# Профили генерируются из волн скриптом extractRLMSData.py и в git не хранятся.
+/data/Target profiles/
+
+artefacts/
+.claude/
+.codex/
+AGENTS.md
+CLAUDE.md
+/Configuration/openrouter_key.txt
+data/Target profiles/
+data/RLMS waves/
+Configuration/*_key.txt
+data/SurveyResults/
+notebooks/
+tmp/
+.idea/
+data/newsDB/*.db
+data/newsDB/*.db-wal
+data/newsDB/*.db-shm
+data/newsDB/*.db-journal
+data/newsDB/*.bak-*
+data/*.txz
 /Configuration/aitunnel_key.txt

@@ -14,8 +14,8 @@ class StandardProfilesProvider(BaseProfilesProvider):
         year = str(surveyDate.year)
         subfolders = [p for p in self.folder.iterdir() if p.is_dir()]
 
-        leftDelta = 1000
-        rightDelta = -1000
+        leftDelta = float('inf')
+        rightDelta = float('-inf')
 
         closestLeftFolder = None
         closestRightFolder = None
@@ -27,10 +27,12 @@ class StandardProfilesProvider(BaseProfilesProvider):
             curDelta = int(year) - int(folder.name)
             if 0 < curDelta < leftDelta:
                 closestLeftFolder = folder
+                leftDelta = curDelta
                 continue
 
             if 0 > curDelta > rightDelta:
                 closestRightFolder = folder
+                rightDelta = curDelta
                 continue
 
         if closestLeftFolder is not None:
